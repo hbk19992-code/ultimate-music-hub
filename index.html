@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Music Hub V22 (Advanced Digging)</title>
+    <title>Ultimate Music Hub V22.1 (Advanced Digging & Trivia)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -22,7 +22,6 @@
         .card-fav-active { color: #10b981 !important; fill: #10b981 !important; }
         .aura-chill { background: linear-gradient(to right, #0f172a, #1e1b4b, #000000) !important; } .aura-groove { background: linear-gradient(to right, #064e3b, #065f46, #000000) !important; } .aura-hype { background: linear-gradient(to right, #7f1d1d, #991b1b, #000000) !important; }
         
-        /* 팝업 모달 애니메이션 */
         .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
@@ -59,7 +58,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Ultimate Music Hub</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Advanced Digging Engine V22</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Advanced Digging Engine V22.1</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -100,7 +99,7 @@
 </div>
 
 <div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950/98 backdrop-blur-3xl transition-all duration-500 studio-view-exit flex flex-col">
-    <button onclick="closeStudioView()" class="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-zinc-800 hover:bg-red-500 text-white rounded-full z-[160] shadow-2xl transition-all hover:rotate-90">
+    <button onclick="closeStudioView()" class="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-zinc-800 hover:bg-red-500 text-white rounded-full z-[160] shadow-2xl transition-transform hover:rotate-90">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
     </button>
     
@@ -126,8 +125,14 @@
                     <h5 id="discogs-track-title" class="text-white font-bold text-base md:text-lg mb-4 truncate border-b border-zinc-800 pb-2">🎵 트랙 제목</h5>
                     <div id="discogs-track-data-ui" class="text-sm font-mono space-y-4"></div>
                 </section>
-                <section><h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Encyclopedia</h4><p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium"></p></section>
-                <section><h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Full Session Credits</h4><div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-4"></div></section>
+                <section>
+                    <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Encyclopedia & Trivia</h4>
+                    <p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium"></p>
+                </section>
+                <section>
+                    <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Full Session Credits</h4>
+                    <div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-4"></div>
+                </section>
             </div>
         </div>
     </div>
@@ -151,7 +156,6 @@
 </div>
 
 <script>
-    // 파이어베이스
     const firebaseConfig = { apiKey: "AIzaSyAhqMdOeEw8Z5lwuVebUkMeMsAzEWT2DDQ", authDomain: "owb-digging.firebaseapp.com", databaseURL: "https://owb-digging-default-rtdb.firebaseio.com", projectId: "owb-digging", storageBucket: "owb-digging.firebasestorage.app", messagingSenderId: "96150663418", appId: "1:96150663418:web:c17b3b61e18c670fa31943", measurementId: "G-NGH9PQSPRD" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(), db = firebase.firestore();
@@ -162,10 +166,7 @@
     let fetchState = { albumsDone: false, featuresDone: false };
     let currentAlbumTracks = [], currentTrackIndex = 0, currentAlbumCover = "", currentDiscogsReleaseData = null;
     let albumSortOrder = 'desc';
-
-    // ⭐️ [신규] 커스텀 폴더 상태
-    let pendingFavItem = null, pendingFavType = null;
-    let currentFavFolder = '전체 보관함';
+    let pendingFavItem = null, pendingFavType = null, currentFavFolder = '전체 보관함';
 
     function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
     function signOut() { auth.signOut(); }
@@ -177,16 +178,11 @@
 
     async function loadFavoritesFromCloud() { if (!currentUser) return; const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); favorites = []; snap.forEach(d => favorites.push(d.data())); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
 
-    // ⭐️ [개선] 다중 보관함(폴더) 로직
     async function toggleFavorite(e, item, type) {
         e.stopPropagation(); if (!currentUser) return showToast("로그인 후 이용 가능합니다!", "error");
         const itemId = `${type}_${item.id}`, idx = favorites.findIndex(f => f.dbId === itemId);
-        if (idx > -1) { 
-            favorites.splice(idx, 1); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).delete(); 
-            showToast("보관함에서 삭제됨", "info"); if (isFavoritesTab) renderFavorites(); else renderAllSections();
-        } else { 
-            pendingFavItem = item; pendingFavType = type; openFolderModal(); 
-        }
+        if (idx > -1) { favorites.splice(idx, 1); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).delete(); showToast("보관함에서 삭제됨", "info"); if (isFavoritesTab) renderFavorites(); else renderAllSections(); } 
+        else { pendingFavItem = item; pendingFavType = type; openFolderModal(); }
     }
 
     function openFolderModal() {
@@ -195,7 +191,6 @@
         list.innerHTML = existingFolders.map(f => `<button onclick="document.getElementById('new-folder-input').value='${f}'" class="block w-full text-left px-4 py-2.5 hover:bg-zinc-800 rounded-lg text-sm text-zinc-300 font-bold transition-colors">${f}</button>`).join('');
         m.classList.remove('hidden'); document.getElementById('new-folder-input').focus();
     }
-
     function closeFolderModal() { document.getElementById('folder-modal').classList.add('hidden'); document.getElementById('new-folder-input').value = ''; pendingFavItem = null; }
 
     async function saveToFolder() {
@@ -205,15 +200,12 @@
         const newItem = { ...pendingFavItem, dbId: itemId, itemType: pendingFavType, artistNameCache: currentArtist || pendingFavItem.artist?.name, folderName: folderName };
         favorites.push(newItem);
         await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).set(JSON.parse(JSON.stringify(newItem)));
-        showToast(`[${folderName}] 에 저장됨 📁`, "success");
-        closeFolderModal(); if (isFavoritesTab) renderFavorites(); else renderAllSections();
+        showToast(`[${folderName}] 에 저장됨 📁`, "success"); closeFolderModal(); if (isFavoritesTab) renderFavorites(); else renderAllSections();
     }
 
-    // ⭐️ [신규] 디바운스 자동 검색 (Live Search)
     let searchDebounceTimeout;
     document.getElementById('search-input').addEventListener('input', (e) => {
-        clearTimeout(searchDebounceTimeout);
-        const val = e.target.value.trim();
+        clearTimeout(searchDebounceTimeout); const val = e.target.value.trim();
         if(val.length >= 2) { searchDebounceTimeout = setTimeout(() => { initSearch(); }, 600); }
     });
 
@@ -227,7 +219,7 @@
 
     window.handleArtistSearch = function(d) {
         document.getElementById('status-message').classList.add('hidden'); const grid = document.getElementById('artist-selection-grid'); grid.innerHTML = ''; document.getElementById('artist-selection-container').classList.remove('hidden');
-        if(!d.data || d.data.length === 0) { grid.innerHTML = "<p class='text-zinc-600 text-sm'>검색 결과가 없습니다.</p>"; return; }
+        if(!d.data || d.data.length === 0) return;
         d.data.forEach(a => { const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; div.onclick = () => selectArtist(a.id, a.name); div.innerHTML = `<img src="${a.picture_medium}" class="w-20 h-20 md:w-28 md:h-28 rounded-full mb-3 shadow-lg border border-zinc-700"><h4 class="text-white text-center font-bold text-xs md:text-sm truncate w-full">${a.name}</h4>`; grid.appendChild(div); });
     };
 
@@ -252,18 +244,15 @@
         renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album'); renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album'); renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album'); renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album'); renderSection('🤝 피처링 참여곡', albumsData.features.filter(f), 'track');
     }
 
-    // ⭐️ [개선] 다중 폴더 탭 렌더링
     function renderFavorites() {
         const c = document.getElementById('sections-container'); c.innerHTML = '';
         const allFolders = ['전체 보관함', ...new Set(favorites.map(f => f.folderName || '기본 보관함'))];
-        
         let tabsHtml = `<div class="flex flex-wrap gap-2 mb-8 px-4 md:px-0">`;
         allFolders.forEach(f => {
             const active = currentFavFolder === f;
             tabsHtml += `<button onclick="setFavFolder('${f}')" class="px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${f}</button>`;
         });
-        tabsHtml += `</div>`;
-        c.innerHTML = tabsHtml;
+        tabsHtml += `</div>`; c.innerHTML = tabsHtml;
 
         const q = document.getElementById('local-search-input').value.toLowerCase();
         const fItems = favorites.filter(it => (!q || it.title.toLowerCase().includes(q)) && (currentFavFolder === '전체 보관함' || (it.folderName || '기본 보관함') === currentFavFolder));
@@ -283,62 +272,77 @@
         });
     }
 
-    // ⭐️ 딥링킹 (URL 공유) 초기화
+    // URL 딥링킹 
     window.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search);
         const type = params.get('type'), id = params.get('id');
-        if (type && id) {
-            const s = document.createElement('script'); 
-            s.src = `https://api.deezer.com/${type}/${id}?output=jsonp&callback=handleDeepLinkInit`; document.body.appendChild(s);
-        }
+        if (type && id) { const s = document.createElement('script'); s.src = `https://api.deezer.com/${type}/${id}?output=jsonp&callback=handleDeepLinkInit`; document.body.appendChild(s); }
     });
-
-    window.handleDeepLinkInit = function(d) {
-        if(d && !d.error) {
-            const cover = d.cover_medium || (d.album && d.album.cover_medium);
-            const title = d.title, artist = d.artist?.name, type = d.record_type ? 'album' : 'track';
-            playMedia(type, d.id, cover, title, artist, false); // false = URL 재작성 안함 (이미 되어있으므로)
-        }
-    };
-
-    window.copyDeepLink = function() {
-        navigator.clipboard.writeText(window.location.href).then(() => showToast("앨범 링크가 복사되었습니다! 🔗", "success"));
-    };
+    window.handleDeepLinkInit = function(d) { if(d && !d.error) { const cover = d.cover_medium || (d.album && d.album.cover_medium); const title = d.title, artist = d.artist?.name, type = d.record_type ? 'album' : 'track'; playMedia(type, d.id, cover, title, artist, false); } };
+    window.copyDeepLink = function() { navigator.clipboard.writeText(window.location.href).then(() => showToast("앨범 링크가 복사되었습니다! 🔗", "success")); };
 
     window.searchSessionMusician = function(name) { if (!name) return; closeStudioView(); const searchInput = document.getElementById('search-input'), searchMode = document.getElementById('search-mode'); if (searchInput && searchMode) { searchMode.value = 'artist'; searchInput.value = name; window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { initSearch(); }, 400); } };
     function createSessionElement(role, name) { const cleanName = name.replace(/\s\(\d+\)$/, ''); return `<div class="mb-3 flex items-start gap-3"><span class="role-badge shrink-0 mt-0.5">${role}</span><button class="session-trigger text-left text-white hover:text-[#10b981] font-black border-b-2 border-zinc-900 transition-all" data-name="${cleanName.replace(/"/g, '&quot;')}">${cleanName}</button></div>`; }
     document.getElementById('studio-view').addEventListener('click', function(e) { const trigger = e.target.closest('.session-trigger'); if (trigger) window.searchSessionMusician(trigger.getAttribute('data-name')); });
 
+    // Vercel Discogs
     async function fetchDiscogsCreditsFromServer(title, artist) { const out = document.getElementById('discogs-credit-text'); out.innerHTML = "SEARCHING..."; try { const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`); const d = await r.json(); currentDiscogsReleaseData = d; if (d.extraartists?.length) { let h = ""; d.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); out.innerHTML = h; } else out.innerHTML = "NO DATA"; if (currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); } catch (e) { out.innerHTML = "ERROR"; } }
-
     function updateTrackSpecificCredits(title) { const cont = document.getElementById('discogs-track-credits-container'), dataUi = document.getElementById('discogs-track-data-ui'); if (!currentDiscogsReleaseData?.tracklist) return cont.classList.add('hidden'); const track = currentDiscogsReleaseData.tracklist.find(tr => tr.title.toLowerCase().includes(title.toLowerCase())); if (track?.extraartists?.length) { document.getElementById('discogs-track-title').textContent = `TRACK: ${track.title}`; let h = ""; track.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); dataUi.innerHTML = h; cont.classList.remove('hidden'); } else cont.classList.add('hidden'); }
 
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); }
-    window.closeStudioView = function() { 
-        document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); 
-        // 딥링크 지우기
-        window.history.pushState({}, '', window.location.pathname);
-    }
+    window.closeStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); window.history.pushState({}, '', window.location.pathname); }
 
-    // ⭐️ 딥링킹 URL 업데이트 추가
+    // ⭐️ 아티스트 정보를 넘기며 딥링크 지원 및 Last.fm 호출
     window.playMedia = function(type, id, cover, title, artist, updateUrl = true) {
-        if(updateUrl) {
-            const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id);
-            window.history.pushState({}, '', url);
-        }
+        if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); window.history.pushState({}, '', url); }
         currentAlbumCover = cover; currentDiscogsReleaseData = null; document.getElementById('studio-cover').src = cover; document.getElementById('studio-title').textContent = title; document.getElementById('studio-artist').textContent = artist; openStudioView();
         const s = document.createElement('script'); s.src = `https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`; document.body.appendChild(s);
-        fetchAlbumWikiStory(title); fetchDiscogsCreditsFromServer(title, artist);
+        
+        fetchAlbumWikiStory(title, artist); // 👈 Lastfm/위키 연동 호출
+        fetchDiscogsCreditsFromServer(title, artist);
     };
 
     window.handleTracks = function(d) { currentAlbumTracks = d.data || [d]; const list = document.getElementById('studio-track-list'); list.innerHTML = ''; currentAlbumTracks.forEach((t, i) => { const hasP = !!t.preview; const div = document.createElement('div'); div.className = `p-3 md:p-4 hover:bg-white/5 cursor-pointer rounded-xl text-xs md:text-sm border-b border-zinc-900/50 flex items-center gap-4 ${!hasP?'opacity-20':''}`; div.onclick = () => hasP ? playSpecificTrack(i) : null; div.innerHTML = `<span class="text-zinc-600 font-mono w-6 text-center">${i+1}</span> <span class="font-bold flex-1 truncate">${t.title}</span>`; list.appendChild(div); }); };
-
     function playSpecificTrack(i) { currentTrackIndex = i; loadTrack(); }
     function loadTrack() { const t = currentAlbumTracks[currentTrackIndex]; if(!t?.preview) return; document.getElementById('global-player').classList.remove('translate-y-full'); document.getElementById('player-title').textContent = t.title; document.getElementById('player-artist').textContent = t.artist.name; document.getElementById('player-cover').src = currentAlbumCover; audio.src = t.preview.replace(/^http:\/\//i, 'https://'); audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); updateTrackSpecificCredits(t.title); fetchBpm(t.id); }
 
     function fetchBpm(id) { window[`handleBpm_${id}`] = (d) => { const b = document.getElementById('aura-badge'), p = document.getElementById('global-player'); if(d.bpm) { b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden'); p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[120] transition-all duration-500 border-t border-zinc-900 shadow-2xl ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`; } else b.classList.add('hidden'); }; const s = document.createElement('script'); s.src = `https://api.deezer.com/track/${id}?output=jsonp&callback=handleBpm_${id}`; document.body.appendChild(s); }
 
-    async function fetchAlbumWikiStory(title) { try { const r = await fetch(`https://ko.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=5&explaintext=true&origin=*&titles=${encodeURIComponent(title)}`); const d = await r.json(); const id = Object.keys(d.query.pages)[0]; document.getElementById('wiki-credit-text').innerHTML = d.query.pages[id].extract || "WIKI UNAVAILABLE"; } catch(e){} }
+    // ⭐️ [신규 통합] 하이브리드 백과/트리비아 엔진 (위키백과 -> Last.fm)
+    async function fetchAlbumWikiStory(title, artist) {
+        const wikiUI = document.getElementById('wiki-credit-text');
+        wikiUI.innerHTML = "<span class='animate-pulse text-zinc-500'>데이터베이스 검색 중... 🔍</span>";
+        
+        try {
+            // 1차 시도: 한국어 위키백과
+            const wikiRes = await fetch(`https://ko.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=4&explaintext=true&origin=*&titles=${encodeURIComponent(title)}`);
+            const wikiData = await wikiRes.json();
+            const pageId = Object.keys(wikiData.query.pages)[0];
+            const extract = wikiData.query.pages[pageId].extract;
+
+            if (extract && extract.length > 20) {
+                wikiUI.innerHTML = extract;
+                return; // 위키에 내용이 충분하면 조기 종료
+            }
+
+            // 2차 시도: Last.fm API
+            wikiUI.innerHTML = "<span class='animate-pulse text-[#10b981]'>위키 정보 없음. Last.fm 글로벌 DB 검색 중... 🌐</span>";
+            const LAST_FM_API_KEY = "bc6dfd44dfc503c39ec41ade07e02778";
+            const lastFmUrl = `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LAST_FM_API_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`;
+            
+            const lastFmRes = await fetch(lastFmUrl);
+            const lastFmData = await lastFmRes.json();
+
+            if (lastFmData.album && lastFmData.album.wiki && lastFmData.album.wiki.summary) {
+                let cleanSummary = lastFmData.album.wiki.summary.replace(/<a href=.*<\/a>/, '').trim();
+                wikiUI.innerHTML = `<span class="text-[#10b981] font-bold text-[10px] bg-[#10b981]/20 px-2 py-1 rounded mb-2 inline-block">Last.fm Trivia</span><br>${cleanSummary}`;
+            } else {
+                wikiUI.innerHTML = "이 앨범에 대한 공식 배경 설명이나 트리비아가 글로벌 DB에도 아직 없습니다 💿";
+            }
+        } catch(e) {
+            wikiUI.innerHTML = "정보를 불러오는 데 실패했습니다.";
+        }
+    }
 
     const audio = document.getElementById('audio-element'), pI = document.getElementById('play-icon'), psI = document.getElementById('pause-icon');
     function togglePlay() { if(audio.paused) { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); } else { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); } }
@@ -349,8 +353,8 @@
     function applyAlbumSort() { albumSortOrder = document.getElementById('album-sort-select').value; renderAllSections(); }
     function switchTab(t) { 
         isFavoritesTab = (t === 'fav'); const ts = document.getElementById('tab-search'), tf = document.getElementById('tab-fav'); if(isFavoritesTab && !currentUser) return showToast("로그인 후 이용 가능합니다!", "error");
-        ts.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500 transition-all" : "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-all shadow-lg";
-        tf.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-all shadow-lg" : "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500 transition-all";
+        ts.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500 transition-colors" : "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-colors shadow-lg";
+        tf.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-colors shadow-lg" : "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500 transition-colors";
         renderAllSections(); 
     }
     function showToast(m, t) { const c = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = `toast-animate bg-zinc-900 border ${t === 'success' ? 'border-[#10b981]' : 'border-zinc-500'} text-white px-6 py-3 rounded-full shadow-2xl font-bold text-xs md:text-sm flex items-center gap-2 mb-2`; toast.innerHTML = `<span>${t==='success'?'✅':'✨'}</span> <span>${m}</span>`; c.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
