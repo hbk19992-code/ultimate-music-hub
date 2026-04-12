@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Music Hub V20 (Studio View Final)</title>
+    <title>Ultimate Music Hub V20.2 (Vercel & Digging Fixed)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -26,8 +26,6 @@
         .aura-hype { background: linear-gradient(to right, #7f1d1d, #b91c1c, #000000) !important; }
         
         #main-scroll-area { overflow-y: auto; flex-grow: 1; height: 100%; padding-bottom: 40px; }
-        
-        /* 스튜디오 뷰 애니메이션 */
         .studio-view-enter { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .studio-view-exit { transform: translateY(100%); opacity: 0; pointer-events: none; }
     </style>
@@ -49,7 +47,7 @@
     <div class="max-w-7xl mx-auto pt-10 md:pt-14 px-4 md:px-8">
         <header class="mb-6 text-center">
             <h1 class="text-3xl md:text-5xl font-extrabold mb-2"><span class="text-gradient tracking-tight">Ultimate Music Hub</span></h1>
-            <p class="text-zinc-400 text-sm">에러 완전 제거 & 스플릿 스튜디오 뷰 통합판</p>
+            <p class="text-zinc-400 text-sm">트랙 & 세션 통합 디깅 시스템 (Vercel Edition)</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-6">
@@ -83,29 +81,23 @@
 
         <div id="results-controls" class="hidden flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-zinc-900/50 p-3 rounded-2xl border border-zinc-800 shadow-lg">
             <div class="relative w-full md:w-80">
-                <input type="text" id="local-search-input" oninput="handleLocalSearch()" placeholder="현재 결과 내에서 필터링..." class="w-full bg-zinc-900 border border-zinc-700 text-white pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-[#10b981] text-sm shadow-inner transition-colors">
+                <input type="text" id="local-search-input" oninput="handleLocalSearch()" placeholder="결과 내 필터링..." class="w-full bg-zinc-900 border border-zinc-700 text-white pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-[#10b981] text-sm shadow-inner transition-colors">
                 <svg class="w-4 h-4 absolute left-4 top-3 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
             <div class="flex gap-2 w-full md:w-auto">
                 <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-700 px-3 py-2 rounded-xl text-sm w-1/2 md:w-auto">
                     <span class="text-zinc-400 hidden lg:inline">💿 앨범:</span>
                     <select id="album-sort-select" onchange="applyAlbumSort()" class="bg-transparent text-white focus:outline-none cursor-pointer font-bold w-full">
-                        <option value="desc" class="bg-zinc-800">최신순</option>
-                        <option value="asc" class="bg-zinc-800">과거순</option>
-                    </select>
-                </div>
-                <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-700 px-3 py-2 rounded-xl text-sm w-1/2 md:w-auto">
-                    <span class="text-zinc-400 hidden lg:inline">🎵 피처링:</span>
-                    <select id="track-sort-select" onchange="applyTrackSort()" class="bg-transparent text-[#10b981] focus:outline-none cursor-pointer font-bold w-full">
-                        <option value="desc" class="bg-zinc-800">최신순</option>
-                        <option value="asc" class="bg-zinc-800">과거순</option>
+                        <option value="desc">최신순</option>
+                        <option value="asc">과거순</option>
                     </select>
                 </div>
             </div>
         </div>
 
         <div id="sections-container" class="space-y-12"></div>
-        <div class="w-full h-[120px]"></div> </div>
+        <div class="w-full h-[120px]"></div>
+    </div>
 </div>
 
 <div id="studio-view" class="fixed inset-x-0 top-0 bottom-[88px] z-[80] bg-zinc-950/95 backdrop-blur-2xl transition-transform duration-500 studio-view-exit shadow-[0_-10px_50px_rgba(0,0,0,0.8)] overflow-y-auto lg:overflow-hidden flex flex-col">
@@ -120,7 +112,7 @@
             <div class="flex items-end gap-6 mb-6 shrink-0">
                 <img id="studio-cover" src="" class="w-32 h-32 md:w-48 md:h-48 rounded-xl shadow-2xl object-cover border border-zinc-800">
                 <div class="pb-2 min-w-0 flex-1">
-                    <span class="text-[10px] font-bold text-[#10b981] uppercase tracking-widest mb-1.5 block">Album / Single</span>
+                    <span class="text-[10px] font-bold text-[#10b981] uppercase tracking-widest mb-1.5 block">Album Info</span>
                     <h2 id="studio-title" class="text-3xl md:text-5xl font-extrabold text-white truncate mb-2 tracking-tight">앨범 제목</h2>
                     <p id="studio-artist" class="text-lg md:text-xl text-zinc-400 font-medium truncate">아티스트</p>
                 </div>
@@ -135,24 +127,22 @@
 
             <div id="studio-loading" class="py-12 text-center text-zinc-500 shrink-0">
                 <svg class="animate-spin h-6 w-6 text-[#10b981] mx-auto mb-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                트랙 데이터를 불러오는 중...
+                데이터 로딩 중...
             </div>
             
-            <div id="studio-track-list" class="flex-1 overflow-y-auto scrollbar-thin pr-3 space-y-1 hidden pb-8 lg:pb-0">
-                </div>
+            <div id="studio-track-list" class="flex-1 overflow-y-auto scrollbar-thin pr-3 space-y-1 hidden pb-8 lg:pb-0"></div>
         </div>
 
         <div class="flex-1 flex flex-col h-full min-w-0 border-t lg:border-t-0 lg:border-l border-zinc-800 pt-8 lg:pt-0 lg:pl-10">
             <h3 class="text-2xl font-extrabold text-white mb-6 shrink-0 flex items-center gap-2">
-                <span class="text-xl">📓</span> 디깅 노트 (Digging Note)
+                <span class="text-xl">📓</span> 디깅 노트 (Credits)
             </h3>
-
             <div class="flex-1 overflow-y-auto scrollbar-thin pr-3 space-y-8 pb-8 lg:pb-0">
                 <section id="discogs-track-credits-container" class="hidden bg-zinc-900/60 p-5 rounded-2xl border border-[#10b981]/30 shadow-inner">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-2">
                             <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span></span>
-                            <h4 class="text-[#10b981] font-bold text-sm tracking-wide">NOW PLAYING CREDITS</h4>
+                            <h4 class="text-[#10b981] font-bold text-sm tracking-wide">NOW PLAYING</h4>
                         </div>
                     </div>
                     <h5 id="discogs-track-title" class="text-white font-bold mb-3 truncate">🎵 트랙 제목</h5>
@@ -164,16 +154,16 @@
                         <span class="text-[10px] font-bold bg-zinc-800 text-zinc-300 px-2 py-1 rounded">WIKIPEDIA</span>
                         <h4 class="text-white font-bold text-sm">앨범 스토리</h4>
                     </div>
-                    <p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/50">데이터를 수집 중입니다...</p>
+                    <p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/50">수집 중...</p>
                 </section>
 
                 <section>
                     <div class="flex items-center gap-2 mb-3">
                         <span class="text-[10px] font-bold bg-zinc-200 text-black px-2 py-1 rounded tracking-wide">DISCOGS</span>
-                        <h4 class="text-white font-bold text-sm">앨범 전체 공통 세션</h4>
+                        <h4 class="text-white font-bold text-sm">앨범 전체 세션</h4>
                     </div>
                     <div class="bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/50">
-                        <p id="discogs-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium font-mono">백엔드 서버와 통신 중...</p>
+                        <p id="discogs-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium font-mono">로딩 중...</p>
                     </div>
                 </section>
             </div>
@@ -191,7 +181,7 @@
             <div class="min-w-0">
                 <h4 id="player-title" class="text-white font-bold truncate text-sm group-hover:text-[#10b981] transition-colors">곡 제목</h4>
                 <div class="flex items-center gap-2 mt-0.5">
-                    <p id="player-artist" class="text-[#10b981] text-xs truncate">아티스트</p>
+                    <p id="player-artist" class="text-zinc-400 text-xs truncate">아티스트</p>
                     <span id="aura-badge" class="hidden text-[9px] font-bold px-1.5 py-0.5 rounded text-white/80 bg-white/10 backdrop-blur-sm">BPM</span>
                 </div>
             </div>
@@ -204,105 +194,96 @@
         </div>
         
         <div class="flex-1 flex justify-end items-center w-1/3">
-            <button onclick="closePlayerEntirely()" class="p-2 hover:bg-zinc-800 rounded-full transition-colors group" title="플레이어 완전히 닫기">
-                <svg class="w-5 h-5 stroke-zinc-500 group-hover:stroke-white" fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+            <button onclick="closePlayerEntirely()" class="p-2 hover:bg-zinc-800 rounded-full transition-colors group"><svg class="w-5 h-5 stroke-zinc-500 group-hover:stroke-white" fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
     </div>
 </div>
 
 <script>
-    // 파이어베이스 설정 유지
+    // 파이어베이스 설정
     const firebaseConfig = { apiKey: "AIzaSyAhqMdOeEw8Z5lwuVebUkMeMsAzEWT2DDQ", authDomain: "owb-digging.firebaseapp.com", databaseURL: "https://owb-digging-default-rtdb.firebaseio.com", projectId: "owb-digging", storageBucket: "owb-digging.firebasestorage.app", messagingSenderId: "96150663418", appId: "1:96150663418:web:c17b3b61e18c670fa31943", measurementId: "G-NGH9PQSPRD" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(), db = firebase.firestore();
     let currentUser = null, favorites = [];
 
-    function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    function signOut() { auth.signOut(); }
+    // 인증 로직
     auth.onAuthStateChanged(u => {
         const lb = document.getElementById('login-btn'), up = document.getElementById('user-profile');
         if (u) { currentUser = u; lb.classList.add('hidden'); up.classList.remove('hidden'); document.getElementById('user-photo').src = u.photoURL; document.getElementById('user-name').textContent = u.displayName; loadFavoritesFromCloud(); } 
-        else { currentUser = null; favorites = []; lb.classList.remove('hidden'); up.classList.add('hidden'); }
+        else { currentUser = null; lb.classList.remove('hidden'); up.classList.add('hidden'); }
     });
-
+    function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    function signOut() { auth.signOut(); }
     async function loadFavoritesFromCloud() { if (!currentUser) return; const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); favorites = []; snap.forEach(d => favorites.push(d.data())); if (isFavoritesTab) renderFavorites(); }
 
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container'); const toast = document.createElement('div');
-        toast.className = `toast-animate bg-zinc-900 border ${type === 'success' ? 'border-pink-500' : 'border-zinc-500'} text-white px-6 py-3 rounded-full shadow-2xl font-bold text-sm flex items-center gap-2 transform`;
-        toast.innerHTML = `<span>${type === 'success' ? '❤️' : '🤍'}</span> <span>${message}</span>`;
-        container.appendChild(toast); setTimeout(() => { if(toast.parentNode) toast.remove(); }, 3000);
-    }
-
-    async function toggleFavorite(e, id, type) {
-        e.stopPropagation(); if (!currentUser) return alert("로그인이 필요합니다!");
-        const idx = favorites.findIndex(f => f.id === id && f.itemType === type), ref = db.collection('users').doc(currentUser.uid).collection('favorites').doc(`${type}_${id}`);
-        if (idx > -1) { favorites.splice(idx, 1); showToast('보관함에서 삭제됨', 'info'); await ref.delete(); if(isFavoritesTab) renderFavorites(); } 
-        else { 
-            let it = type === 'album' ? [...albumsData.regular, ...albumsData.ep, ...albumsData.live, ...albumsData.compilation].find(a => a.id === id) : albumsData.features.find(t => t.id === id);
-            if (it) { it.itemType = type; if(!it.artistNameCache) it.artistNameCache = currentArtist; favorites.push(it); showToast('보관함에 저장됨!', 'success'); await ref.set(JSON.parse(JSON.stringify(it))); } 
-        }
-        if(!isFavoritesTab) renderAllSections();
-    }
-
+    // 전역 상태
     let currentArtist = null, currentArtistId = null, isFavoritesTab = false;
     let albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
     let fetchState = { albumsDone: false, featuresDone: false };
     let expandedSections = { regular: false, ep: false, live: false, compilation: false, features: false };
-    
     let currentAlbumTracks = [], currentTrackIndex = 0, currentAlbumCover = "";
     let targetTrackIdAfterLoad = null;
-    let albumSortOrder = 'desc', trackSortOrder = 'desc';
+    let albumSortOrder = 'desc';
     let currentDiscogsReleaseData = null;
 
+    // 공통 유틸리티
+    function showToast(m, t = 'success') {
+        const container = document.getElementById('toast-container'); const toast = document.createElement('div');
+        toast.className = `toast-animate bg-zinc-900 border ${t === 'success' ? 'border-pink-500' : 'border-zinc-500'} text-white px-6 py-3 rounded-full shadow-2xl font-bold text-sm flex items-center gap-2 transform`;
+        toast.innerHTML = `<span>${t === 'success' ? '❤️' : '🤍'}</span> <span>${m}</span>`;
+        container.appendChild(toast); setTimeout(() => { if(toast.parentNode) toast.remove(); }, 3000);
+    }
+
+    // ⭐️ [핵심] 세션 뮤지션 클릭 시 디깅 로직
+    window.searchSessionMusician = function(m) {
+        closeStudioView(); // 1. 스튜디오 뷰 닫기
+        const searchInput = document.getElementById('search-input');
+        const searchMode = document.getElementById('search-mode');
+        if (searchInput && searchMode) {
+            searchMode.value = 'artist'; // 2. 아티스트 모드로 변경
+            searchInput.value = m; // 3. 이름 입력
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // 4. 최상단 이동
+            initSearch(); // 5. 검색 실행
+            showToast(`${m} 탐색 중...`, 'success');
+        }
+    };
+
+    // 검색 로직
     function initSearch() {
         const q = document.getElementById('search-input').value.trim(); if (!q) return;
         const mode = document.getElementById('search-mode').value;
-        document.getElementById('sections-container').innerHTML = ''; document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('results-controls').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); document.getElementById('local-search-input').value = ''; 
-        
+        document.getElementById('sections-container').innerHTML = ''; document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden');
         albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false };
-
-        if (mode === 'artist') {
-            document.getElementById('loading-text').textContent = "아티스트 목록 찾는 중...";
-            const s = document.createElement('script'); s.src = `https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=5&output=jsonp&callback=handleArtistSearch`; document.body.appendChild(s);
-        } else {
-            document.getElementById('loading-text').textContent = "곡명으로 검색 중...";
-            const s = document.createElement('script'); s.src = `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=20&output=jsonp&callback=handleTrackGlobalSearch`; document.body.appendChild(s);
-        }
+        const s = document.createElement('script');
+        if (mode === 'artist') s.src = `https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=5&output=jsonp&callback=handleArtistSearch`;
+        else s.src = `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=20&output=jsonp&callback=handleTrackGlobalSearch`;
+        document.body.appendChild(s);
     }
 
-    window.handleTrackGlobalSearch = function(data) {
+    window.handleTrackGlobalSearch = function(d) {
         document.getElementById('status-message').classList.add('hidden');
-        if (data.data && data.data.length > 0) {
-            const selContainer = document.getElementById('artist-selection-container'), selGrid = document.getElementById('artist-selection-grid');
-            document.getElementById('selection-title').textContent = "검색된 곡들을 확인하세요 🎵"; selContainer.classList.remove('hidden'); selGrid.innerHTML = '';
-            data.data.forEach(track => {
-                const btn = document.createElement('div'); btn.className = "flex flex-col items-center gap-3 bg-zinc-900 border border-zinc-700 p-5 rounded-2xl cursor-pointer hover:border-[#10b981] hover:bg-zinc-800 transition-all w-64 shadow-lg";
-                
-                // ⭐️ [버그픽스] 앨범 제목과 아티스트 이름의 특수문자 안전 처리
-                const safeAlbumTitle = track.album.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                const safeArtistName = track.artist.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                
-                btn.onclick = () => { targetTrackIdAfterLoad = track.id; playMedia('album', track.album.id, track.album.cover_medium, safeAlbumTitle, safeArtistName); };
-                btn.innerHTML = `<img src="${track.album.cover_medium}" class="w-24 h-24 rounded-lg object-cover shadow-lg border-2 border-zinc-700"><div class="text-center w-full"><h4 class="text-white font-extrabold text-sm truncate w-full" title="${track.title}">${track.title}</h4><p class="text-[#10b981] font-bold text-xs mt-1 truncate">${track.artist.name}</p><p class="text-zinc-500 text-[10px] mt-2 italic truncate">${track.album.title}</p></div>`;
-                selGrid.appendChild(btn);
+        if (d.data?.length > 0) {
+            const container = document.getElementById('artist-selection-container'), grid = document.getElementById('artist-selection-grid');
+            document.getElementById('selection-title').textContent = "검색된 곡들"; container.classList.remove('hidden'); grid.innerHTML = '';
+            d.data.forEach(t => {
+                const btn = document.createElement('div'); btn.className = "flex flex-col items-center gap-3 bg-zinc-900 border border-zinc-700 p-5 rounded-2xl cursor-pointer hover:border-[#10b981] w-64";
+                btn.onclick = () => { targetTrackIdAfterLoad = t.id; playMedia('album', t.album.id, t.album.cover_medium, t.album.title.replace(/'/g, "\\'"), t.artist.name.replace(/'/g, "\\'")); };
+                btn.innerHTML = `<img src="${t.album.cover_medium}" class="w-24 h-24 rounded-lg object-cover shadow-lg border-2 border-zinc-700"><div class="text-center w-full"><h4 class="text-white font-bold text-sm truncate">${t.title}</h4><p class="text-[#10b981] text-xs mt-1 truncate">${t.artist.name}</p></div>`;
+                grid.appendChild(btn);
             });
-        } else { document.getElementById('sections-container').innerHTML = `<div class="text-center py-20 text-zinc-500">검색 결과가 없습니다.</div>`; }
-    }
+        }
+    };
 
-    window.handleArtistSearch = function(data) {
+    window.handleArtistSearch = function(d) {
         document.getElementById('status-message').classList.add('hidden');
-        if (data.data && data.data.length > 0) {
-            const selContainer = document.getElementById('artist-selection-container'), selGrid = document.getElementById('artist-selection-grid');
-            document.getElementById('selection-title').textContent = "어떤 아티스트를 찾으시나요? 👇"; selContainer.classList.remove('hidden'); selGrid.innerHTML = '';
-            data.data.forEach(artist => {
-                const btn = document.createElement('div'); btn.className = "flex flex-col items-center gap-3 bg-zinc-900 border border-zinc-700 p-5 rounded-2xl cursor-pointer hover:border-[#10b981] transition-all w-64 shadow-lg";
-                btn.onclick = () => selectArtist(artist.id, artist.name);
-                btn.innerHTML = `<img src="${artist.picture_medium}" class="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-zinc-700"><div class="text-center w-full"><h4 class="text-white font-extrabold text-lg truncate w-full">${artist.name}</h4><p class="text-[#10b981] font-bold text-xs mt-1 mb-2">팬 ${artist.nb_fan.toLocaleString()}명</p><div class="bg-black/50 p-2 rounded-lg text-left"><p class="text-zinc-500 text-[10px] uppercase font-bold mb-1">🔥 Top Tracks</p><p id="top-tracks-${artist.id}" class="text-zinc-300 text-xs leading-relaxed h-10 overflow-hidden line-clamp-2">스캔 중...</p></div></div>`;
-                selGrid.appendChild(btn);
-                window[`handleTopTracks_${artist.id}`] = function(topData) { const trackBox = document.getElementById(`top-tracks-${artist.id}`); if(topData && topData.data) { trackBox.textContent = topData.data.slice(0, 3).map(t => t.title).join(', '); } };
-                const scriptTop = document.createElement('script'); scriptTop.src = `https://api.deezer.com/artist/${artist.id}/top?limit=3&output=jsonp&callback=handleTopTracks_${artist.id}`; document.body.appendChild(scriptTop);
+        if (d.data?.length > 0) {
+            const container = document.getElementById('artist-selection-container'), grid = document.getElementById('artist-selection-grid');
+            document.getElementById('selection-title').textContent = "아티스트를 선택하세요"; container.classList.remove('hidden'); grid.innerHTML = '';
+            d.data.forEach(a => {
+                const btn = document.createElement('div'); btn.className = "flex flex-col items-center gap-3 bg-zinc-900 border border-zinc-700 p-5 rounded-2xl cursor-pointer hover:border-[#10b981] w-64";
+                btn.onclick = () => selectArtist(a.id, a.name);
+                btn.innerHTML = `<img src="${a.picture_medium}" class="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-zinc-700"><h4 class="text-white font-extrabold text-lg truncate">${a.name}</h4>`;
+                grid.appendChild(btn);
             });
         }
     };
@@ -317,102 +298,61 @@
     window.handleAllAlbumsPage = function(d) { if(d.data) window.allFetchedAlbums.push(...d.data); if(d.next) { const s = document.createElement('script'); s.src = d.next + '&output=jsonp&callback=handleAllAlbumsPage'; document.body.appendChild(s); } else { fetchState.albumsDone = true; tryRenderAll(); } };
     window.handleFeaturedTracks = function(d) { if(d.data) albumsData.features = d.data.filter(t => t.artist.id !== currentArtistId); fetchState.featuresDone = true; tryRenderAll(); };
 
-    function sortItems(arr, order, isTrack=false) { return arr.sort((a,b) => { const da = new Date(isTrack ? (a.album?.release_date || 0) : (a.release_date || 0)); const db = new Date(isTrack ? (b.album?.release_date || 0) : (b.release_date || 0)); return order === 'desc' ? db - da : da - db; }); }
-    window.applyAlbumSort = function() { albumSortOrder = document.getElementById('album-sort-select').value; renderAllSections(); }
-    window.applyTrackSort = function() { trackSortOrder = document.getElementById('track-sort-select').value; renderAllSections(); }
-
     function tryRenderAll() {
         if (!fetchState.albumsDone || !fetchState.featuresDone) return;
         document.getElementById('status-message').classList.add('hidden');
-        const sT = new Set(); window.allFetchedAlbums.forEach(a => { const tl = a.title.toLowerCase(); if(!sT.has(tl)) { sT.add(tl); if (a.record_type === 'compile' || tl.includes('compilation') || tl.includes('best of')) albumsData.compilation.push(a); else if (tl.includes('live')) albumsData.live.push(a); else if (a.record_type === 'ep' || a.record_type === 'single') albumsData.ep.push(a); else albumsData.regular.push(a); } });
+        const sT = new Set(); window.allFetchedAlbums.forEach(a => { const tl = a.title.toLowerCase(); if(!sT.has(tl)) { sT.add(tl); if (a.record_type === 'compile' || tl.includes('best of')) albumsData.compilation.push(a); else if (tl.includes('live')) albumsData.live.push(a); else if (a.record_type === 'ep' || a.record_type === 'single') albumsData.ep.push(a); else albumsData.regular.push(a); } });
         document.getElementById('results-controls').classList.remove('hidden'); renderAllSections();
-    }
-
-    window.handleLocalSearch = function() { if(isFavoritesTab) renderFavorites(); else renderAllSections(); }
-
-    function switchTab(t) {
-        const ts = document.getElementById('tab-search'), tf = document.getElementById('tab-fav'), s = document.getElementById('search-section');
-        document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('local-search-input').value = ''; 
-        if (t === 'search') { 
-            isFavoritesTab = false; s.classList.remove('hidden'); ts.className = "flex-1 py-2.5 text-sm font-bold bg-zinc-800 text-white rounded-lg shadow transition-all"; tf.className = "flex-1 py-2.5 text-sm font-bold text-zinc-500 hover:text-white rounded-lg transition-all"; 
-            if(albumsData.regular.length > 0 || albumsData.features.length > 0) document.getElementById('results-controls').classList.remove('hidden'); renderAllSections(); 
-        } else { 
-            if(!currentUser) return alert("로그인이 필요합니다!"); isFavoritesTab = true; s.classList.add('hidden'); tf.className = "flex-1 py-2.5 text-sm font-bold bg-zinc-800 text-white rounded-lg shadow transition-all"; ts.className = "flex-1 py-2.5 text-sm font-bold text-zinc-500 hover:text-white rounded-lg transition-all"; document.getElementById('results-controls').classList.remove('hidden'); renderFavorites(); 
-        }
-    }
-
-    function renderFavorites() { 
-        const c = document.getElementById('sections-container'); c.innerHTML = ''; 
-        if (favorites.length === 0) { document.getElementById('results-controls').classList.add('hidden'); return c.innerHTML = `<div class="text-center py-20 text-zinc-500">☁️ 보관함이 비어있습니다.</div>`; }
-        const query = document.getElementById('local-search-input').value.toLowerCase().trim();
-        const filteredFavs = favorites.filter(it => { if(!query) return true; const t = it.title.toLowerCase(); const a = (it.artistNameCache || it.artist?.name || '').toLowerCase(); return t.includes(query) || a.includes(query); });
-        if(filteredFavs.length === 0) { c.innerHTML = `<div class="text-center py-20 text-zinc-500">검색 결과가 없습니다.</div>`; } else { renderSection('☁️ 클라우드 보관함', filteredFavs, 'mixed', 'mixed', true, query); }
     }
 
     function renderAllSections() {
         const c = document.getElementById('sections-container'); c.innerHTML = '';
-        if (isFavoritesTab) { renderFavorites(); return; }
-        const query = document.getElementById('local-search-input').value.toLowerCase().trim();
-        const filterFn = (it) => { if(!query) return true; const t = it.title.toLowerCase(); const a = (it.artistNameCache || it.artist?.name || '').toLowerCase(); return t.includes(query) || a.includes(query); };
-        let fReg = albumsData.regular.filter(filterFn), fEp = albumsData.ep.filter(filterFn), fComp = albumsData.compilation.filter(filterFn), fLive = albumsData.live.filter(filterFn), fFeat = albumsData.features.filter(filterFn);
-        sortItems(fReg, albumSortOrder); sortItems(fEp, albumSortOrder); sortItems(fComp, albumSortOrder); sortItems(fLive, albumSortOrder); sortItems(fFeat, trackSortOrder, true);
-        if(fReg.length === 0 && fEp.length === 0 && fComp.length === 0 && fLive.length === 0 && fFeat.length === 0) { c.innerHTML = `<div class="text-center py-20 text-zinc-500">일치하는 결과가 없습니다.</div>`; return; }
-        renderSection('💿 정규 앨범', fReg, 'album', 'regular', false, query); renderSection('📀 EP & 싱글', fEp, 'album', 'ep', false, query); renderSection('💽 컴필레이션', fComp, 'album', 'compilation', false, query); renderSection('🎤 라이브', fLive, 'album', 'live', false, query); 
-        if (fFeat.length > 0) { const cDivider = document.createElement('hr'); cDivider.className = "border-zinc-800 my-8"; c.appendChild(cDivider); renderSection('🤝 피처링 참여곡', fFeat, 'track', 'features', false, query); }
+        const f = (it) => { const q = document.getElementById('local-search-input').value.toLowerCase(); return !q || it.title.toLowerCase().includes(q); };
+        const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date) - new Date(a.release_date) : new Date(a.release_date) - new Date(b.release_date));
+        
+        renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album', 'regular');
+        renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album', 'ep');
+        renderSection('🤝 피처링', albumsData.features.filter(f), 'track', 'features');
     }
 
-    function renderSection(title, items, type, sectionKey, isFav = false, currentQuery = '') {
-        if (items.length === 0) return; 
-        const isExpanded = isFav || currentQuery !== '' || expandedSections[sectionKey]; const displayItems = isExpanded ? items : items.slice(0, 10);
+    function renderSection(t, items, type, key) {
+        if (items.length === 0) return;
         const c = document.getElementById('sections-container'), sh = document.createElement('div');
-        sh.innerHTML = `<h3 class="text-2xl font-bold mb-4 border-l-4 ${isFav ? 'border-pink-500' : 'border-[#10b981]'} pl-3">${title} <span class="text-zinc-500 text-sm font-normal">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-5 gap-5"></div>`; c.appendChild(sh); const g = sh.querySelector('div');
-        displayItems.forEach(it => {
-            const iType = isFav ? it.itemType : type; const isF = favorites.some(f => f.id === it.id && f.itemType === iType);
-            const cU = iType === 'album' ? it.cover_medium : it.album?.cover_medium;
-            const release = iType === 'album' ? (it.release_date ? it.release_date.split('-')[0] : '') : 'Feat. '+it.artist.name;
-            
-            // ⭐️ [버그픽스] 앨범 제목 안전하게 치환
-            const safeTitle = it.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-            const safeArtist = (iType==='album'?(it.artistNameCache||currentArtist):it.artist.name).replace(/'/g, "\\'").replace(/"/g, "&quot;");
-            
-            const card = document.createElement('div'); card.className = "group bg-zinc-900 rounded-xl overflow-hidden relative border border-zinc-800 cursor-pointer hover:border-[#10b981] hover:-translate-y-1 transition-all duration-300 shadow-md";
-            card.setAttribute('onclick', `playMedia('${iType}', ${it.id}, '${cU}', '${safeTitle}', '${safeArtist}')`);
-            
-            card.innerHTML = `<div class="relative w-full aspect-square overflow-hidden bg-zinc-800"><img src="${cU}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"><div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"><div class="w-12 h-12 rounded-full ${isFav ? 'bg-pink-500' : 'bg-[#10b981]'} text-black flex items-center justify-center transform scale-90 group-hover:scale-100 transition-transform"><svg class="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div></div><button onclick="toggleFavorite(event, ${it.id}, '${iType}')" class="absolute top-2 right-2 p-2 bg-black/60 backdrop-blur-sm rounded-full z-20"><svg class="w-5 h-5 ${isF?'text-pink-500 fill-current':'text-white stroke-current'}" viewBox="0 0 24 24" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button><div class="p-3 bg-zinc-900"><h4 class="font-bold text-sm truncate">${it.title}</h4><p class="text-zinc-500 text-[11px] mt-0.5">${release}</p></div>`; g.appendChild(card);
+        sh.innerHTML = `<h3 class="text-2xl font-bold mb-4 border-l-4 border-[#10b981] pl-3">${t} <span class="text-zinc-500 text-sm">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-5 gap-5"></div>`; c.appendChild(sh); const g = sh.querySelector('div');
+        items.slice(0, expandedSections[key] ? 100 : 10).forEach(it => {
+            const cover = type === 'album' ? it.cover_medium : it.album.cover_medium;
+            const card = document.createElement('div'); card.className = "group bg-zinc-900 rounded-xl overflow-hidden relative border border-zinc-800 cursor-pointer hover:border-[#10b981] transition-all";
+            card.setAttribute('onclick', `playMedia('${type}', ${it.id}, '${cover}', '${it.title.replace(/'/g, "\\'")}', '${(type==='album'?currentArtist:it.artist.name).replace(/'/g, "\\'")}')`);
+            card.innerHTML = `<img src="${cover}" class="w-full aspect-square object-cover"><div class="p-3"><h4 class="font-bold text-sm truncate">${it.title}</h4><p class="text-zinc-500 text-[10px] mt-0.5">${type==='album'?(it.release_date?it.release_date.split('-')[0]:''):'Feat.'}</p></div>`;
+            g.appendChild(card);
         });
-        if (!isExpanded && items.length > 10) { const mb = document.createElement('div'); mb.className = "col-span-full flex justify-center mt-4"; mb.innerHTML = `<button onclick="expandSection('${sectionKey}')" class="px-6 py-2 rounded-full border border-zinc-700 text-xs font-bold hover:border-[#10b981]">나머지 더보기</button>`; g.appendChild(mb); }
     }
-    window.expandSection = function(key) { expandedSections[key] = true; renderAllSections(); }
 
+    // 스튜디오 뷰 로직
     window.openStudioView = function() { const sv = document.getElementById('studio-view'); sv.classList.remove('studio-view-exit'); sv.classList.add('studio-view-enter'); }
     window.closeStudioView = function() { const sv = document.getElementById('studio-view'); sv.classList.remove('studio-view-enter'); sv.classList.add('studio-view-exit'); }
 
-    // ⭐️ [핵심 픽스] playMedia 내부 충돌 코드 완전히 제거
     window.playMedia = function(type, id, cover, title, artist) {
         currentAlbumCover = cover; currentDiscogsReleaseData = null;
-        
         document.getElementById('studio-cover').src = cover;
         document.getElementById('studio-title').textContent = title;
         document.getElementById('studio-artist').textContent = artist;
-        document.getElementById('wiki-credit-text').textContent = "데이터를 수집 중입니다...";
-        document.getElementById('discogs-credit-text').textContent = "세션 정보를 검색 중...";
+        document.getElementById('wiki-credit-text').textContent = "수집 중...";
+        document.getElementById('discogs-credit-text').textContent = "호출 중...";
         document.getElementById('discogs-track-credits-container').classList.add('hidden');
         
         fetchAlbumWikiStory(title, artist); 
         fetchDiscogsCreditsFromServer(title, artist);
 
-        if (type === 'album') { 
+        if (type === 'album') {
             document.getElementById('studio-loading').classList.remove('hidden');
             document.getElementById('studio-track-list').classList.add('hidden');
-            window.allFetchedTracks = []; 
-            const s = document.createElement('script'); s.src = `https://api.deezer.com/album/${id}/tracks?limit=100&output=jsonp&callback=handleAllTracksPage`; document.body.appendChild(s); 
+            window.allFetchedTracks = [];
+            const s = document.createElement('script'); s.src = `https://api.deezer.com/album/${id}/tracks?limit=100&output=jsonp&callback=handleAllTracksPage`; document.body.appendChild(s);
             openStudioView();
-        } else { 
-            const s = document.createElement('script'); s.src = `https://api.deezer.com/track/${id}?output=jsonp&callback=handleSingleTrack`; document.body.appendChild(s); 
+        } else {
+            const s = document.createElement('script'); s.src = `https://api.deezer.com/track/${id}?output=jsonp&callback=handleSingleTrack`; document.body.appendChild(s);
             document.getElementById('global-player').classList.remove('translate-y-full');
-            document.getElementById('studio-loading').classList.add('hidden');
-            document.getElementById('studio-track-list').classList.add('hidden');
-            document.getElementById('studio-track-count').textContent = "1 곡";
             openStudioView();
         }
     }
@@ -426,185 +366,95 @@
     function renderTracklistStudio() {
         document.getElementById('studio-loading').classList.add('hidden');
         const list = document.getElementById('studio-track-list'); list.classList.remove('hidden');
-        
         currentAlbumTracks = window.allFetchedTracks;
-        const playableCount = currentAlbumTracks.filter(t => t.preview).length;
-        document.getElementById('studio-track-count').textContent = `총 ${currentAlbumTracks.length} 곡 (재생 가능 ${playableCount}곡)`;
-
+        document.getElementById('studio-track-count').textContent = `${currentAlbumTracks.length} 곡`;
         let html = '';
-        currentAlbumTracks.forEach((track, idx) => {
-            const hasPreview = !!track.preview;
-            const titleColor = hasPreview ? 'text-white' : 'text-zinc-600';
-            const cursorClass = hasPreview ? 'cursor-pointer hover:bg-zinc-800/50' : 'cursor-not-allowed opacity-50';
-            const clickAction = hasPreview ? `playSpecificTrack(${idx})` : `showToast('미리듣기 음원이 제공되지 않는 곡입니다.', 'info')`;
-
-            html += `<div id="track-row-${idx}" onclick="${clickAction}" class="flex items-center justify-between p-3 border-b border-zinc-800/30 ${cursorClass} transition-colors group rounded-lg">
-                <div class="flex items-center gap-4 flex-1 min-w-0">
-                    <span class="text-zinc-600 font-mono text-sm w-4 text-center group-hover:hidden">${idx + 1}</span>
-                    ${hasPreview ? `<svg class="w-4 h-4 fill-[#10b981] hidden group-hover:block shrink-0" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>` : `<span class="w-4 h-4 text-zinc-600 text-xs hidden group-hover:block text-center">🚫</span>`}
-                    <div class="min-w-0">
-                        <h4 class="${titleColor} font-bold text-sm truncate">${track.title}</h4>
-                        <p class="text-zinc-500 text-[11px] truncate">${track.artist.name}</p>
-                    </div>
-                </div>
+        currentAlbumTracks.forEach((t, i) => {
+            const hasP = !!t.preview;
+            html += `<div id="track-row-${i}" onclick="${hasP ? `playSpecificTrack(${i})` : `showToast('미리듣기 없음', 'info')`}" class="flex items-center justify-between p-3 border-b border-zinc-800/30 ${hasP ? 'cursor-pointer hover:bg-zinc-800/50' : 'opacity-30'} rounded-lg">
+                <div class="flex items-center gap-4 min-w-0 flex-1"><span class="text-zinc-600 text-sm w-4">${i+1}</span><div class="min-w-0"><h4 class="text-white font-bold text-sm truncate">${t.title}</h4><p class="text-zinc-500 text-[11px]">${t.artist.name}</p></div></div>
             </div>`;
         });
         list.innerHTML = html;
-
         if (targetTrackIdAfterLoad) {
-            const targetIdx = currentAlbumTracks.findIndex(t => t.id == targetTrackIdAfterLoad);
-            if (targetIdx !== -1) {
-                if(currentAlbumTracks[targetIdx].preview) playSpecificTrack(targetIdx);
-                else showToast('선택하신 곡은 미리듣기가 없습니다.', 'info');
-            }
-            targetTrackIdAfterLoad = null; 
+            const idx = currentAlbumTracks.findIndex(t => t.id == targetTrackIdAfterLoad);
+            if (idx !== -1 && currentAlbumTracks[idx].preview) playSpecificTrack(idx);
+            targetTrackIdAfterLoad = null;
         }
     }
 
-    window.playSpecificTrack = function(i) { 
-        currentTrackIndex = i; 
-        document.getElementById('global-player').classList.remove('translate-y-full'); 
-        loadTrack(); 
-    }
-    
-    window.playAllTracks = function() { 
-        const firstPlayable = currentAlbumTracks.findIndex(t => t.preview);
-        if(firstPlayable !== -1) playSpecificTrack(firstPlayable); 
-        else showToast('재생 가능한 곡이 없습니다.', 'info');
-    }
-
+    // ⭐️ [Vercel 백엔드 연동] 크레딧 로직
     async function fetchDiscogsCreditsFromServer(t, a) {
         try {
+            // 🚨 핵심 수정: Vercel용 /api 경로로 호출
             const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(t)}&artistName=${encodeURIComponent(a)}`);
             const d = await r.json(); currentDiscogsReleaseData = d;
-            
             if (d.extraartists?.length) {
                 let h = ""; d.extraartists.slice(0, 40).forEach(ar => {
                     let cn = ar.name.replace(/\s\(\d+\)$/, '');
-                    h += `<span class="role-badge">${ar.role}</span> <button onclick="searchSessionMusician('${cn.replace(/'/g, "\\'")}')" class="mr-4 text-white hover:text-[#10b981] font-bold border-b border-zinc-700 hover:border-[#10b981] mb-2">${cn}</button>`;
+                    h += `<span class="role-badge">${ar.role}</span> <button onclick="searchSessionMusician('${cn.replace(/'/g, "\\'")}')" class="mr-3 text-white hover:text-[#10b981] font-bold border-b border-zinc-700 hover:border-[#10b981] mb-2">${cn}</button>`;
                 }); document.getElementById('discogs-credit-text').innerHTML = h;
-            } else { document.getElementById('discogs-credit-text').innerHTML = "해당 앨범의 공통 세션 정보가 없습니다."; }
-            
-            if (currentAlbumTracks.length > 0 && currentAlbumTracks[currentTrackIndex]) { 
-                updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); 
-            }
-        } catch (e) { document.getElementById('discogs-credit-text').innerHTML = "크레딧 로딩 실패 (서버 연결 확인)"; }
+            } else { document.getElementById('discogs-credit-text').innerHTML = "정보 없음"; }
+            if (currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title);
+        } catch (e) { document.getElementById('discogs-credit-text').innerHTML = "에러 발생"; }
     }
 
-    function updateTrackSpecificCredits(playingTrackTitle) {
+    function updateTrackSpecificCredits(title) {
         const container = document.getElementById('discogs-track-credits-container'), trackTitleUI = document.getElementById('discogs-track-title'), trackDataUI = document.getElementById('discogs-track-data-ui');
-        if (!currentDiscogsReleaseData || !currentDiscogsReleaseData.tracklist) { container.classList.add('hidden'); return; }
-        const matchTrack = currentDiscogsReleaseData.tracklist.find(tr => tr.title.toLowerCase().includes(playingTrackTitle.toLowerCase()) || playingTrackTitle.toLowerCase().includes(tr.title.toLowerCase()));
-        if (matchTrack && matchTrack.extraartists && matchTrack.extraartists.length > 0) {
-            trackTitleUI.innerHTML = `🎵 [${matchTrack.title}] 전용 참여진`;
-            let h = ""; matchTrack.extraartists.slice(0, 20).forEach(ar => {
+        if (!currentDiscogsReleaseData?.tracklist) return container.classList.add('hidden');
+        const match = currentDiscogsReleaseData.tracklist.find(tr => tr.title.toLowerCase().includes(title.toLowerCase()) || title.toLowerCase().includes(tr.title.toLowerCase()));
+        if (match?.extraartists?.length) {
+            trackTitleUI.innerHTML = `🎵 ${match.title}`;
+            let h = ""; match.extraartists.slice(0, 20).forEach(ar => {
                 let cn = ar.name.replace(/\s\(\d+\)$/, '');
-                h += `<span class="role-badge border-[#10b981] text-[#10b981]">${ar.role}</span> <button onclick="searchSessionMusician('${cn.replace(/'/g, "\\'")}')" class="mr-3 text-white hover:text-[#10b981] font-bold border-b border-zinc-700 hover:border-[#10b981] mb-2">${cn}</button>`;
+                h += `<span class="role-badge border-[#10b981] text-[#10b981]">${ar.role}</span> <button onclick="searchSessionMusician('${cn.replace(/'/g, "\\'")}')" class="mr-2 text-white hover:text-[#10b981] font-bold border-b border-zinc-700 hover:border-[#10b981] mb-2">${cn}</button>`;
             }); trackDataUI.innerHTML = h; container.classList.remove('hidden');
-        } else { container.classList.add('hidden'); }
+        } else container.classList.add('hidden');
     }
 
-    async function fetchAlbumWikiStory(t, a) { 
-        try { 
-            const r = await fetch(`https://ko.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=5&explaintext=true&origin=*&titles=${encodeURIComponent(t)}`); 
-            const d = await r.json(); const id = Object.keys(d.query.pages)[0]; 
-            document.getElementById('wiki-credit-text').innerHTML = d.query.pages[id].extract || "위키백과에 등록된 정보가 없습니다."; 
-        } catch(e){} 
+    async function fetchAlbumWikiStory(t, a) {
+        try {
+            const r = await fetch(`https://ko.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=5&explaintext=true&origin=*&titles=${encodeURIComponent(t)}`);
+            const d = await r.json(); const id = Object.keys(d.query.pages)[0];
+            document.getElementById('wiki-credit-text').innerHTML = d.query.pages[id].extract || "정보 없음";
+        } catch(e){}
     }
-    
-    const audio = document.getElementById('audio-element'), playIcon = document.getElementById('play-icon'), pauseIcon = document.getElementById('pause-icon');
-    window.handleSingleTrack = function(d) { if (d) { currentAlbumTracks = [d]; if(d.preview) { currentTrackIndex = 0; document.getElementById('global-player').classList.remove('translate-y-full'); loadTrack(); } else { showToast("해당 곡은 미리듣기가 없습니다.", "info"); } } };
-    
-    function loadTrack() { 
-        const t = currentAlbumTracks[currentTrackIndex]; 
-        if(!t || !t.preview) { playNextTrack(); return; }
 
-        document.getElementById('player-title').textContent = t.title; 
-        document.getElementById('player-artist').textContent = t.artist.name; 
-        document.getElementById('player-cover').src = currentAlbumCover; 
-        
-        const rows = document.querySelectorAll('[id^="track-row-"]');
-        rows.forEach(r => r.classList.remove('bg-zinc-800/80', 'border-l-4', 'border-l-[#10b981]'));
-        const activeRow = document.getElementById(`track-row-${currentTrackIndex}`);
-        if(activeRow) activeRow.classList.add('bg-zinc-800/80', 'border-l-4', 'border-l-[#10b981]');
-
+    // 플레이어 컨트롤
+    const audio = document.getElementById('audio-element'), pI = document.getElementById('play-icon'), psI = document.getElementById('pause-icon');
+    window.handleSingleTrack = function(d) { if (d?.preview) { currentAlbumTracks = [d]; currentTrackIndex = 0; loadTrack(); } };
+    window.playSpecificTrack = function(i) { currentTrackIndex = i; document.getElementById('global-player').classList.remove('translate-y-full'); loadTrack(); }
+    
+    function loadTrack() {
+        const t = currentAlbumTracks[currentTrackIndex]; if(!t?.preview) return;
+        document.getElementById('player-title').textContent = t.title;
+        document.getElementById('player-artist').textContent = t.artist.name;
+        document.getElementById('player-cover').src = currentAlbumCover;
+        const rows = document.querySelectorAll('[id^="track-row-"]'); rows.forEach(r => r.classList.remove('bg-zinc-800/80', 'border-l-4', 'border-l-[#10b981]'));
+        const active = document.getElementById(`track-row-${currentTrackIndex}`); if(active) active.classList.add('bg-zinc-800/80', 'border-l-4', 'border-l-[#10b981]');
         updateTrackSpecificCredits(t.title);
-
         const player = document.getElementById('global-player');
-        const badge = document.getElementById('aura-badge');
-        
-        player.classList.remove('aura-chill', 'aura-groove', 'aura-hype'); 
-        badge.classList.add('hidden');
-
-        window[`handleBpm_${t.id}`] = function(trackData) {
-            if(trackData && trackData.bpm) {
-                const bpm = trackData.bpm; badge.textContent = `${bpm} BPM`; badge.classList.remove('hidden');
-                if(bpm < 90) player.classList.add('aura-chill'); 
-                else if(bpm >= 90 && bpm <= 120) player.classList.add('aura-groove'); 
-                else if(bpm > 120) player.classList.add('aura-hype');
+        player.classList.remove('aura-chill', 'aura-groove', 'aura-hype');
+        window[`handleBpm_${t.id}`] = function(d) {
+            if(d.bpm) {
+                document.getElementById('aura-badge').textContent = `${d.bpm} BPM`; document.getElementById('aura-badge').classList.remove('hidden');
+                if(d.bpm < 90) player.classList.add('aura-chill'); else if(d.bpm <= 120) player.classList.add('aura-groove'); else player.classList.add('aura-hype');
             }
         };
         const s = document.createElement('script'); s.src = `https://api.deezer.com/track/${t.id}?output=jsonp&callback=handleBpm_${t.id}`; document.body.appendChild(s);
+        audio.src = t.preview.replace(/^http:\/\//i, 'https://'); audio.load(); audio.play().then(() => { pI.classList.add('hidden'); psI.classList.remove('hidden'); }).catch(() => showToast('재생 버튼을 누르세요', 'info'));
+    }
 
-        const securePreviewUrl = t.preview.replace(/^http:\/\//i, 'https://');
-        audio.src = securePreviewUrl; 
-        audio.load();
-        
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                playIcon.classList.add('hidden'); pauseIcon.classList.remove('hidden');
-            }).catch(error => {
-                console.warn("오디오 자동 재생이 차단되었습니다.", error);
-                playIcon.classList.remove('hidden'); pauseIcon.classList.add('hidden');
-                showToast("하단의 재생(▶) 버튼을 직접 눌러주세요.", "info");
-            });
-        }
-    }
-    
-    function togglePlay() { 
-        if (audio.paused) { 
-            const playPromise = audio.play(); 
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    playIcon.classList.add('hidden'); pauseIcon.classList.remove('hidden');
-                }).catch(e => console.error("Toggle play error", e));
-            }
-        } else { 
-            audio.pause(); 
-            playIcon.classList.remove('hidden'); pauseIcon.classList.add('hidden'); 
-        } 
-    }
-    
-    function playNextTrack() { 
-        if(currentAlbumTracks.length <= 1) return; 
-        let nextIndex = (currentTrackIndex + 1) % currentAlbumTracks.length;
-        let loopCount = 0;
-        while(!currentAlbumTracks[nextIndex].preview && loopCount < currentAlbumTracks.length) {
-            nextIndex = (nextIndex + 1) % currentAlbumTracks.length; loopCount++;
-        }
-        if(currentAlbumTracks[nextIndex].preview) { currentTrackIndex = nextIndex; loadTrack(); }
-    }
-    
-    function playPrevTrack() { 
-        if(currentAlbumTracks.length <= 1) return; 
-        let prevIndex = (currentTrackIndex - 1 + currentAlbumTracks.length) % currentAlbumTracks.length;
-        let loopCount = 0;
-        while(!currentAlbumTracks[prevIndex].preview && loopCount < currentAlbumTracks.length) {
-            prevIndex = (prevIndex - 1 + currentAlbumTracks.length) % currentAlbumTracks.length; loopCount++;
-        }
-        if(currentAlbumTracks[prevIndex].preview) { currentTrackIndex = prevIndex; loadTrack(); }
-    }
-    
+    function togglePlay() { if (audio.paused) { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); } else { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); } }
+    function playNextTrack() { if(currentAlbumTracks.length > 1) { currentTrackIndex = (currentTrackIndex + 1) % currentAlbumTracks.length; loadTrack(); } }
+    function playPrevTrack() { if(currentAlbumTracks.length > 1) { currentTrackIndex = (currentTrackIndex - 1 + currentAlbumTracks.length) % currentAlbumTracks.length; loadTrack(); } }
     audio.addEventListener('ended', playNextTrack);
-    const progressBar = document.getElementById('progress-bar'); audio.addEventListener('timeupdate', () => { if (audio.duration) progressBar.value = (audio.currentTime / audio.duration) * 100; });
-    progressBar.addEventListener('input', (e) => { if (audio.duration) audio.currentTime = (e.target.value / 100) * audio.duration; });
-    
-    window.closePlayerEntirely = function() { 
-        audio.pause(); 
-        document.getElementById('global-player').classList.add('translate-y-full'); 
-        closeStudioView();
-    }
+    audio.addEventListener('timeupdate', () => { if (audio.duration) document.getElementById('progress-bar').value = (audio.currentTime / audio.duration) * 100; });
+    document.getElementById('progress-bar').addEventListener('input', (e) => { if (audio.duration) audio.currentTime = (e.target.value / 100) * audio.duration; });
+    window.closePlayerEntirely = function() { audio.pause(); document.getElementById('global-player').classList.add('translate-y-full'); closeStudioView(); }
+    window.handleLocalSearch = function() { renderAllSections(); }
+    window.switchTab = function(t) { isFavoritesTab = (t === 'fav'); renderAllSections(); }
+    window.applyAlbumSort = function() { albumSortOrder = document.getElementById('album-sort-select').value; renderAllSections(); }
 </script>
 </body>
 </html>
