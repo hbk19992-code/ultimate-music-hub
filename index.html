@@ -2,18 +2,18 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Music Hub V21 (Cloud Library & Auth)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Music Hub V21.1 (Mobile Optimized)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        body { font-family: 'Pretendard Variable', sans-serif; background-color: #050505; color: #fff; overflow: hidden; height: 100vh; }
+        body { font-family: 'Pretendard Variable', sans-serif; background-color: #050505; color: #fff; overflow: hidden; height: 100vh; -webkit-tap-highlight-color: transparent; }
         .text-gradient { background: linear-gradient(135deg, #a238ff 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .bg-gradient-btn { background: linear-gradient(135deg, #a238ff 0%, #10b981 100%); }
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #0a0a0a; }
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
         .role-badge { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; margin-right: 6px; pointer-events: none; }
@@ -23,18 +23,429 @@
         .aura-chill { background: linear-gradient(to right, #0f172a, #1e1b4b, #000000) !important; }
         .aura-groove { background: linear-gradient(to right, #064e3b, #065f46, #000000) !important; }
         .aura-hype { background: linear-gradient(to right, #7f1d1d, #991b1b, #000000) !important; }
-        #main-scroll-area { overflow-y: auto; flex-grow: 1; height: 100%; padding-bottom: 100px; }
+        #main-scroll-area { overflow-y: auto; flex-grow: 1; height: 100%; padding-bottom: 120px; }
         .studio-view-enter { transform: translateY(0); opacity: 1; pointer-events: auto; visibility: visible; }
         .studio-view-exit { transform: translateY(100%); opacity: 0; pointer-events: none; visibility: hidden; }
         .card-fav-active { color: #f43f5e !important; fill: #f43f5e !important; }
+        
+        /* 모달 스크롤 방지용 */
+        .no-scroll { overflow: hidden; }
     </style>
 </head>
 <body class="flex flex-col relative h-screen">
 
-    <div id="toast-container" class="fixed bottom-[110px] left-1/2 z-[150] flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toast-container" class="fixed bottom-[110px] left-1/2 z-[200] flex flex-col gap-2 pointer-events-none w-full max-w-xs md:max-w-md"></div>
 
     <div class="absolute top-4 right-4 md:top-6 md:right-8 z-50">
-        <button id="login-btn" onclick="signInWithGoogle()" class="flex items-center gap-2 bg-white text-black px-5 py-2 rounded-full font-bold text-sm hover:scale-105 transition-transform shadow-xl hidden">
+        <button id="login-btn" onclick="signInWithGoogle()" class="flex items-center gap-2 bg-white text-black px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold text-xs md:text-sm hover:scale-105 transition-transform shadow-xl hidden">
+             구글 로그인
+        </button>
+        <div id="user-profile" class="flex items-center gap-2 md:gap-3 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 px-2 py-1 md:px-3 md:py-1.5 rounded-full shadow-2xl hidden">
+            <img id="user-photo" src="" class="w-6 h-6 md:w-7 md:h-7 rounded-full border border-zinc-700">
+            <span id="user-name" class="text-[10px] md:text-xs font-bold text-white max-w-[70px] md:max-w-[100px] truncate">사용자</span>
+            <button onclick="signOut()" class="text-[9px] md:text-[10px] text-zinc-500 hover:text-white px-1.5 py-1 border-l border-zinc-700 ml-1">로그아웃</button>
+        </div>
+    </div>
+
+<div id="main-scroll-area">
+    <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-6xl font-black mb-2 tracking-tighter"><span class="text-gradient">Ultimate Music Hub</span></h1>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Cloud Archive & Session Explorer</p>
+        </header>
+
+        <div id="search-section" class="max-w-3xl mx-auto mb-8">
+            <div class="relative flex flex-col md:flex-row items-stretch md:items-center gap-2 bg-zinc-900 p-2 rounded-2xl md:rounded-3xl border border-zinc-800 shadow-2xl">
+                <div class="flex flex-1 gap-2">
+                    <select id="search-mode" class="bg-zinc-800 text-white px-3 md:px-5 py-3 rounded-xl md:rounded-2xl focus:outline-none border border-zinc-700 text-xs md:text-sm font-bold cursor-pointer">
+                        <option value="artist">👤 아티스트</option>
+                        <option value="track">🎵 곡명(Track)</option>
+                    </select>
+                    <input type="text" id="search-input" onkeypress="if(event.key === 'Enter') initSearch()" placeholder="검색어를 입력하세요..." class="flex-1 bg-transparent text-white px-2 py-3 focus:outline-none text-base md:text-lg">
+                </div>
+                <button onclick="initSearch()" class="bg-gradient-btn text-white py-3 md:py-3 md:px-10 rounded-xl md:rounded-2xl font-bold hover:opacity-90">검색</button>
+            </div>
+        </div>
+
+        <div class="flex justify-center mb-8">
+            <div class="bg-zinc-900/50 p-1 rounded-xl flex border border-zinc-800 w-full max-w-sm">
+                <button id="tab-search" onclick="switchTab('search')" class="flex-1 py-2.5 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-all">전체 디스코그래피</button>
+                <button id="tab-fav" onclick="switchTab('fav')" class="flex-1 py-2.5 text-xs md:text-sm font-bold text-zinc-500 hover:text-white rounded-lg transition-all">☁️ 보관함</button>
+            </div>
+        </div>
+
+        <div id="status-message" class="text-center text-zinc-400 mb-8 hidden"><span id="loading-text" class="animate-pulse font-mono text-xs">ANALYZING...</span></div>
+
+        <div id="artist-selection-container" class="max-w-6xl mx-auto mb-10 hidden">
+            <div id="artist-selection-grid" class="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap justify-center gap-4 md:gap-6"></div>
+        </div>
+
+        <div id="results-controls" class="hidden flex flex-col md:flex-row justify-between items-center gap-3 mb-10 bg-zinc-900/30 p-3 md:p-4 rounded-2xl border border-zinc-800">
+            <input type="text" id="local-search-input" oninput="handleLocalSearch()" placeholder="리스트 내 필터링..." class="w-full md:w-80 bg-zinc-950 border border-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm focus:border-[#10b981] outline-none">
+            <select id="album-sort-select" onchange="applyAlbumSort()" class="w-full md:w-auto bg-zinc-900 text-white px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold cursor-pointer border border-zinc-800">
+                <option value="desc">📅 최신순</option>
+                <option value="asc">⏳ 과거순</option>
+            </select>
+        </div>
+
+        <div id="sections-container" class="space-y-12 md:space-y-16"></div>
+    </div>
+</div>
+
+<div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950 transition-all duration-500 studio-view-exit flex flex-col">
+    <button onclick="closeStudioView()" class="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-zinc-800/80 backdrop-blur-md text-white rounded-full z-[160] shadow-2xl">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
+    </button>
+    
+    <div class="w-full h-full p-4 md:p-10 flex flex-col lg:flex-row gap-6 lg:gap-10 overflow-y-auto lg:overflow-hidden">
+        <div class="w-full lg:flex-1 flex flex-col lg:h-full shrink-0">
+            <div class="flex items-center lg:items-end gap-4 md:gap-6 mb-6 md:mb-8 shrink-0">
+                <img id="studio-cover" src="" class="w-24 h-24 md:w-56 md:h-56 rounded-xl shadow-2xl object-cover border border-zinc-800">
+                <div class="flex-1 min-w-0">
+                    <h2 id="studio-title" class="text-xl md:text-5xl font-black text-white truncate mb-1 leading-tight tracking-tighter">앨범 제목</h2>
+                    <p id="studio-artist" class="text-sm md:text-2xl text-[#10b981] font-bold truncate opacity-80">아티스트</p>
+                    <button onclick="playAllTracks()" class="mt-2 bg-[#10b981] text-black px-4 py-1.5 rounded-full font-bold text-[10px] md:text-sm flex items-center gap-1 shadow-lg">
+                        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> 전체재생
+                    </button>
+                </div>
+            </div>
+            <div id="studio-track-list" class="flex-1 lg:overflow-y-auto space-y-1 lg:pr-2 lg:scrollbar-thin"></div>
+        </div>
+        
+        <div class="w-full lg:flex-1 flex flex-col lg:h-full border-t lg:border-t-0 lg:border-l border-zinc-800 pt-6 lg:pt-0 lg:pl-10">
+            <h3 class="text-xl md:text-2xl font-black text-white mb-6 shrink-0 flex items-center gap-2">📓 Digging Notes</h3>
+            <div class="flex-1 lg:overflow-y-auto space-y-8 lg:pr-3 lg:scrollbar-thin pb-20 md:pb-0">
+                <section id="discogs-track-credits-container" class="hidden bg-[#10b981]/10 p-5 md:p-6 rounded-2xl md:rounded-3xl border border-[#10b981]/20 shadow-inner">
+                    <h5 id="discogs-track-title" class="text-white font-bold text-base md:text-lg mb-4 truncate border-b border-[#10b981]/20 pb-2">🎵 트랙 정보</h5>
+                    <div id="discogs-track-data-ui" class="text-xs md:text-sm font-mono space-y-4"></div>
+                </section>
+                <section>
+                    <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-3 tracking-widest">Album Encyclopedia</h4>
+                    <p id="wiki-credit-text" class="text-xs md:text-sm text-zinc-300 leading-relaxed font-medium"></p>
+                </section>
+                <section>
+                    <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-3 tracking-widest">Full Session Credits</h4>
+                    <div id="discogs-credit-text" class="text-xs md:text-sm text-zinc-300 font-mono space-y-4"></div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="global-player" class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl z-[180] transition-transform duration-500 translate-y-full border-t border-zinc-900 shadow-2xl">
+    <audio id="audio-element" src="" crossorigin="anonymous"></audio>
+    <div class="absolute top-0 left-0 right-0 -mt-[1px]">
+        <input type="range" id="progress-bar" value="0" min="0" max="100" class="w-full bg-zinc-800 h-1 appearance-none cursor-pointer accent-[#10b981]">
+    </div>
+    <div class="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between gap-3 md:gap-6">
+        <div class="flex items-center gap-3 flex-1 min-w-0 md:w-1/3 cursor-pointer" onclick="openStudioView()">
+            <img id="player-cover" src="" class="w-10 h-10 md:w-14 md:h-14 object-cover rounded shadow-lg">
+            <div class="min-w-0">
+                <h4 id="player-title" class="text-white font-bold truncate text-[11px] md:text-sm tracking-tight">곡 제목</h4>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <p id="player-artist" class="text-[#10b981] text-[10px] md:text-xs font-bold truncate">아티스트</p>
+                    <span id="aura-badge" class="hidden text-[8px] font-black px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">BPM</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 md:gap-8 shrink-0">
+            <button onclick="playPrevTrack()" class="hidden md:block"><svg class="w-6 h-6 fill-zinc-500" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+            <button onclick="togglePlay()" class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white flex items-center justify-center shadow-xl transition-all active:scale-90">
+                <svg id="play-icon" class="w-5 h-5 md:w-7 md:h-7 fill-black ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="pause-icon" class="w-5 h-5 md:w-7 md:h-7 hidden fill-black" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <button onclick="playNextTrack()"><svg class="w-6 h-6 fill-zinc-500 active:fill-white" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+        </div>
+        <div class="hidden md:flex flex-1 justify-end items-center w-1/3">
+            <button onclick="closePlayerEntirely()" class="p-3 text-zinc-600 hover:text-white"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // [JS 기능 로직 - V21.0에서 변경 없음, 동일하게 복사됨]
+    const firebaseConfig = { apiKey: "AIzaSyAhqMdOeEw8Z5lwuVebUkMeMsAzEWT2DDQ", authDomain: "owb-digging.firebaseapp.com", databaseURL: "https://owb-digging-default-rtdb.firebaseio.com", projectId: "owb-digging", storageBucket: "owb-digging.firebasestorage.app", messagingSenderId: "96150663418", appId: "1:96150663418:web:c17b3b61e18c670fa31943", measurementId: "G-NGH9PQSPRD" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(), db = firebase.firestore();
+
+    let currentUser = null, favorites = [];
+    let currentArtist = null, currentArtistId = null, isFavoritesTab = false;
+    let albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
+    let fetchState = { albumsDone: false, featuresDone: false };
+    let currentAlbumTracks = [], currentTrackIndex = 0, currentAlbumCover = "", currentDiscogsReleaseData = null;
+    let albumSortOrder = 'desc';
+
+    function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    function signOut() { auth.signOut(); }
+    auth.onAuthStateChanged(u => {
+        const lb = document.getElementById('login-btn'), up = document.getElementById('user-profile');
+        if (u) { currentUser = u; lb.classList.add('hidden'); up.classList.remove('hidden'); document.getElementById('user-photo').src = u.photoURL; document.getElementById('user-name').textContent = u.displayName; loadFavoritesFromCloud(); } 
+        else { currentUser = null; favorites = []; lb.classList.remove('hidden'); up.classList.add('hidden'); }
+    });
+
+    async function loadFavoritesFromCloud() { if (!currentUser) return; const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); favorites = []; snap.forEach(d => favorites.push(d.data())); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
+
+    async function toggleFavorite(e, item, type) {
+        e.stopPropagation(); if (!currentUser) return showToast("로그인 후 하트를 눌러보세요!", "error");
+        const itemId = `${type}_${item.id}`, ref = db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId), idx = favorites.findIndex(f => f.dbId === itemId);
+        if (idx > -1) { favorites.splice(idx, 1); await ref.delete(); showToast("보관함 삭제", "info"); } 
+        else { const newItem = { ...item, dbId: itemId, itemType: type, artistNameCache: currentArtist || item.artist?.name }; favorites.push(newItem); await ref.set(JSON.parse(JSON.stringify(newItem))); showToast("보관함 저장 ❤️", "success"); }
+        if (isFavoritesTab) renderFavorites(); else renderAllSections();
+    }
+
+    function initSearch() {
+        const q = document.getElementById('search-input').value.trim(); if (!q) return;
+        const mode = document.getElementById('search-mode').value;
+        document.getElementById('sections-container').innerHTML = ''; document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden');
+        albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false };
+        const s = document.createElement('script');
+        s.src = `https://api.deezer.com/search/${mode === 'artist' ? 'artist' : ''}?q=${encodeURIComponent(q)}&limit=12&output=jsonp&callback=${mode === 'artist' ? 'handleArtistSearch' : 'handleTrackGlobalSearch'}`;
+        document.body.appendChild(s);
+    }
+
+    window.handleArtistSearch = function(d) {
+        document.getElementById('status-message').classList.add('hidden');
+        const grid = document.getElementById('artist-selection-grid'); grid.innerHTML = '';
+        document.getElementById('artist-selection-container').classList.remove('hidden');
+        d.data.forEach(a => {
+            const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer border border-transparent hover:border-[#10b981] transition-all";
+            div.onclick = () => selectArtist(a.id, a.name);
+            div.innerHTML = `<img src="${a.picture_medium}" class="w-20 h-20 md:w-28 md:h-28 rounded-full mb-3 md:mb-4 shadow-xl border-2 border-zinc-800"><h4 class="text-white text-center font-bold text-xs md:text-sm truncate w-full">${a.name}</h4>`;
+            grid.appendChild(div);
+        });
+    };
+
+    window.handleTrackGlobalSearch = function(d) {
+        document.getElementById('status-message').classList.add('hidden');
+        const grid = document.getElementById('artist-selection-grid'); grid.innerHTML = '';
+        document.getElementById('artist-selection-container').classList.remove('hidden');
+        d.data.forEach(t => {
+            const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer border border-transparent hover:border-[#10b981] transition-all";
+            div.onclick = () => playMedia('album', t.album.id, t.album.cover_medium, t.album.title.replace(/'/g,"\\'"), t.artist.name.replace(/'/g,"\\'"));
+            div.innerHTML = `<img src="${t.album.cover_medium}" class="w-20 h-20 md:w-28 md:h-28 rounded-2xl mb-3 md:mb-4 shadow-xl border-2 border-zinc-800"><h4 class="text-white text-center text-[10px] md:text-sm font-bold truncate w-full">${t.title}</h4>`;
+            grid.appendChild(div);
+        });
+    };
+
+    window.selectArtist = function(id, name) {
+        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = [];
+        document.getElementById('artist-selection-container').classList.add('hidden');
+        document.getElementById('status-message').classList.remove('hidden');
+        const s1 = document.createElement('script'); s1.src = `https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=handleAllAlbumsPage`;
+        const s2 = document.createElement('script'); s2.src = `https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=handleFeaturedTracks`;
+        document.body.appendChild(s1); document.body.appendChild(s2);
+    };
+
+    window.handleAllAlbumsPage = function(d) {
+        if(d.data) window.allFetchedAlbums.push(...d.data);
+        if(d.next) { const s = document.createElement('script'); s.src = d.next + '&output=jsonp&callback=handleAllAlbumsPage'; document.body.appendChild(s); }
+        else { fetchState.albumsDone = true; tryRenderAll(); }
+    };
+
+    window.handleFeaturedTracks = function(d) { if(d.data) albumsData.features = d.data.filter(t => t.artist.id !== currentArtistId); fetchState.featuresDone = true; tryRenderAll(); };
+
+    function tryRenderAll() {
+        if (!fetchState.albumsDone || !fetchState.featuresDone) return;
+        document.getElementById('status-message').classList.add('hidden');
+        document.getElementById('results-controls').classList.remove('hidden');
+        const seen = new Set();
+        window.allFetchedAlbums.forEach(a => {
+            const tl = a.title.toLowerCase();
+            if(!seen.has(tl)) {
+                seen.add(tl);
+                if (a.record_type === 'compile' || tl.includes('best of')) albumsData.compilation.push(a);
+                else if (tl.includes('live')) albumsData.live.push(a);
+                else if (a.record_type === 'ep' || a.record_type === 'single') albumsData.ep.push(a);
+                else albumsData.regular.push(a);
+            }
+        });
+        renderAllSections();
+    }
+
+    function renderAllSections() {
+        const c = document.getElementById('sections-container'); c.innerHTML = '';
+        if (isFavoritesTab) { renderFavorites(); return; }
+        const f = (it) => { const q = document.getElementById('local-search-input').value.toLowerCase(); return !q || it.title.toLowerCase().includes(q); };
+        const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date || 0) - new Date(a.release_date || 0) : new Date(a.release_date || 0) - new Date(b.release_date || 0));
+        renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album');
+        renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album');
+        renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album');
+        renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album');
+        renderSection('🤝 피처링', albumsData.features.filter(f), 'track');
+    }
+
+    function renderFavorites() {
+        const c = document.getElementById('sections-container'); c.innerHTML = '';
+        const q = document.getElementById('local-search-input').value.toLowerCase();
+        const fItems = favorites.filter(it => !q || it.title.toLowerCase().includes(q));
+        if(!fItems.length) { c.innerHTML = "<div class='text-center py-20 text-zinc-600 font-bold'>보관함이 비어있습니다 ☁️</div>"; return; }
+        renderSection('☁️ 클라우드 보관함', fItems, 'mixed');
+    }
+
+    function renderSection(title, items, sectionType) {
+        if (!items.length) return;
+        const c = document.getElementById('sections-container'), sh = document.createElement('div');
+        sh.innerHTML = `<h3 class="text-xl md:text-2xl font-black mb-6 border-l-4 border-[#10b981] pl-4 md:pl-5">${title} <span class="text-zinc-600 text-xs md:text-sm font-medium ml-2">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-8"></div>`;
+        c.appendChild(sh); const g = sh.querySelector('div');
+        
+        items.forEach(it => {
+            const type = sectionType === 'mixed' ? it.itemType : sectionType;
+            const cover = type === 'album' ? it.cover_medium : it.album.cover_medium;
+            const year = it.release_date ? it.release_date.split('-')[0] : (type === 'track' ? 'Song' : '');
+            const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
+            const card = document.createElement('div'); 
+            card.className = "group bg-zinc-900/40 rounded-2xl overflow-hidden relative border border-zinc-800/50 cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg";
+            const safeT = it.title.replace(/'/g,"\\'"), safeA = (type==='album'?(it.artistNameCache||currentArtist):it.artist.name).replace(/'/g,"\\'");
+            card.setAttribute('onclick', `playMedia('${type}', ${it.id}, '${cover}', '${safeT}', '${safeA}')`);
+            
+            card.innerHTML = `
+                <div class="relative aspect-square overflow-hidden bg-zinc-800">
+                    <img src="${cover}" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
+                    <button onclick="toggleFavorite(event, ${JSON.stringify(it).replace(/"/g, '&quot;')}, '${type}')" class="absolute top-2 right-2 md:top-3 md:right-3 p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20 transition-all active:scale-125">
+                        <svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-rose-500 fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    </button>
+                </div>
+                <div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`;
+            g.appendChild(card);
+        });
+    }
+
+    // ⭐️ 세션 연주자 디깅 (Event Delegation)
+    window.searchSessionMusician = function(name) {
+        if (!name) return;
+        closeStudioView();
+        const searchInput = document.getElementById('search-input'), searchMode = document.getElementById('search-mode');
+        if (searchInput && searchMode) {
+            searchMode.value = 'artist'; searchInput.value = name;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { initSearch(); showToast(`${name} 디깅 시작!`, 'success'); }, 400);
+        }
+    };
+
+    function createSessionElement(role, name) {
+        const cleanName = name.replace(/\s\(\d+\)$/, '');
+        return `<div class="mb-3 flex items-start gap-3"><span class="role-badge shrink-0 mt-0.5">${role}</span><button class="session-trigger text-left text-white hover:text-[#10b981] font-black border-b-2 border-zinc-900 transition-all" data-name="${cleanName.replace(/"/g, '&quot;')}">${cleanName}</button></div>`;
+    }
+
+    document.getElementById('studio-view').addEventListener('click', function(e) {
+        const trigger = e.target.closest('.session-trigger');
+        if (trigger) window.searchSessionMusician(trigger.getAttribute('data-name'));
+    });
+
+    // Vercel API 연동
+    async function fetchDiscogsCreditsFromServer(title, artist) {
+        const out = document.getElementById('discogs-credit-text'); out.innerHTML = "SEARCHING DATABASE...";
+        try {
+            const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`);
+            const d = await r.json(); currentDiscogsReleaseData = d;
+            if (d.extraartists?.length) { let h = ""; d.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); out.innerHTML = h; } 
+            else out.innerHTML = "NO SESSION DATA";
+            if (currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title);
+        } catch (e) { out.innerHTML = "CONNECTION ERROR"; }
+    }
+
+    function updateTrackSpecificCredits(title) {
+        const cont = document.getElementById('discogs-track-credits-container'), dataUi = document.getElementById('discogs-track-data-ui');
+        if (!currentDiscogsReleaseData?.tracklist) return cont.classList.add('hidden');
+        const track = currentDiscogsReleaseData.tracklist.find(tr => tr.title.toLowerCase().includes(title.toLowerCase()));
+        if (track?.extraartists?.length) {
+            document.getElementById('discogs-track-title').textContent = `TRACK: ${track.title}`;
+            let h = ""; track.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name));
+            dataUi.innerHTML = h; cont.classList.remove('hidden');
+        } else cont.classList.add('hidden');
+    }
+
+    // 스튜디오 뷰 열기/닫기
+    window.openStudioView = function() {
+        document.body.classList.add('no-scroll');
+        const sv = document.getElementById('studio-view');
+        sv.classList.remove('studio-view-exit'); sv.classList.add('studio-view-enter');
+    }
+    window.closeStudioView = function() {
+        document.body.classList.remove('no-scroll');
+        const sv = document.getElementById('studio-view');
+        sv.classList.remove('studio-view-enter'); sv.classList.add('studio-view-exit');
+    }
+
+    window.playMedia = function(type, id, cover, title, artist) {
+        currentAlbumCover = cover; currentDiscogsReleaseData = null;
+        document.getElementById('studio-cover').src = cover;
+        document.getElementById('studio-title').textContent = title;
+        document.getElementById('studio-artist').textContent = artist;
+        openStudioView();
+        const s = document.createElement('script'); 
+        s.src = `https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`;
+        document.body.appendChild(s);
+        fetchAlbumWikiStory(title); fetchDiscogsCreditsFromServer(title, artist);
+    };
+
+    window.handleTracks = function(d) {
+        currentAlbumTracks = d.data || [d];
+        const list = document.getElementById('studio-track-list'); list.innerHTML = '';
+        currentAlbumTracks.forEach((t, i) => {
+            const hasP = !!t.preview;
+            const div = document.createElement('div'); div.className = `p-4 hover:bg-white/5 cursor-pointer rounded-xl text-sm border-b border-zinc-900/50 flex items-center gap-4 ${!hasP?'opacity-20':''}`;
+            div.onclick = () => hasP ? playSpecificTrack(i) : null;
+            div.innerHTML = `<span class="text-zinc-600 font-mono w-6 text-center text-xs">${i+1}</span> <span class="font-bold flex-1 truncate text-xs md:text-sm">${t.title}</span>`;
+            list.appendChild(div);
+        });
+    };
+
+    function playSpecificTrack(i) { currentTrackIndex = i; loadTrack(); }
+    function loadTrack() {
+        const t = currentAlbumTracks[currentTrackIndex]; if(!t?.preview) return;
+        document.getElementById('global-player').classList.remove('translate-y-full');
+        document.getElementById('player-title').textContent = t.title;
+        document.getElementById('player-artist').textContent = t.artist.name;
+        document.getElementById('player-cover').src = currentAlbumCover;
+        audio.src = t.preview.replace(/^http:\/\//i, 'https://'); audio.play();
+        pI.classList.add('hidden'); psI.classList.remove('hidden');
+        updateTrackSpecificCredits(t.title); fetchBpm(t.id);
+    }
+
+    function fetchBpm(id) {
+        window[`handleBpm_${id}`] = (d) => {
+            const b = document.getElementById('aura-badge'), p = document.getElementById('global-player');
+            if(d.bpm) { b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden'); p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[180] transition-all duration-500 border-t border-zinc-900 shadow-2xl ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`; }
+            else b.classList.add('hidden');
+        };
+        const s = document.createElement('script'); s.src = `https://api.deezer.com/track/${id}?output=jsonp&callback=handleBpm_${id}`; document.body.appendChild(s);
+    }
+
+    async function fetchAlbumWikiStory(title) {
+        try {
+            const r = await fetch(`https://ko.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=5&explaintext=true&origin=*&titles=${encodeURIComponent(title)}`);
+            const d = await r.json(); const id = Object.keys(d.query.pages)[0];
+            document.getElementById('wiki-credit-text').innerHTML = d.query.pages[id].extract || "NO WIKI DATA AVAILABLE";
+        } catch(e){}
+    }
+
+    const audio = document.getElementById('audio-element'), pI = document.getElementById('play-icon'), psI = document.getElementById('pause-icon');
+    function togglePlay() { if(audio.paused) { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); } else { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); } }
+    function playNextTrack() { currentTrackIndex = (currentTrackIndex+1)%currentAlbumTracks.length; loadTrack(); }
+    function playPrevTrack() { currentTrackIndex = (currentTrackIndex-1+currentAlbumTracks.length)%currentAlbumTracks.length; loadTrack(); }
+    function closePlayerEntirely() { audio.pause(); document.getElementById('global-player').classList.add('translate-y-full'); closeStudioView(); }
+    function handleLocalSearch() { if(isFavoritesTab) renderFavorites(); else renderAllSections(); }
+    function applyAlbumSort() { albumSortOrder = document.getElementById('album-sort-select').value; renderAllSections(); }
+    function switchTab(t) { 
+        isFavoritesTab = (t === 'fav'); 
+        const ts = document.getElementById('tab-search'), tf = document.getElementById('tab-fav');
+        if(isFavoritesTab && !currentUser) return showToast("로그인이 필요한 기능입니다!", "error");
+        ts.className = isFavoritesTab ? "flex-1 py-2.5 text-xs md:text-sm font-bold text-zinc-500 transition-all" : "flex-1 py-2.5 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-all";
+        tf.className = isFavoritesTab ? "flex-1 py-2.5 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-all" : "flex-1 py-2.5 text-xs md:text-sm font-bold text-zinc-500 transition-all";
+        renderAllSections(); 
+    }
+    function showToast(m, t) {
+        const c = document.getElementById('toast-container'); const toast = document.createElement('div');
+        toast.className = `toast-animate bg-zinc-900 border ${t === 'success' ? 'border-[#10b981]' : 'border-zinc-500'} text-white px-6 py-3 rounded-full shadow-2xl font-bold text-xs md:text-sm flex items-center gap-2 mb-2`;
+        toast.innerHTML = `<span>${t==='success'?'✅':'ℹ️'}</span> <span>${m}</span>`;
+        c.appendChild(toast); setTimeout(() => toast.remove(), 3000);
+    }
+    audio.addEventListener('timeupdate', () => { if (audio.duration) document.getElementById('progress-bar').value = (audio.currentTime / audio.duration) * 100; });
+    document.getElementById('progress-bar').addEventListener('input', (e) => { if (audio.duration) audio.currentTime = (e.target.value / 100) * audio.duration; });
+</script>
+</body>
+</html>        <button id="login-btn" onclick="signInWithGoogle()" class="flex items-center gap-2 bg-white text-black px-5 py-2 rounded-full font-bold text-sm hover:scale-105 transition-transform shadow-xl hidden">
             <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" class="w-4 h-4"> 구글 로그인
         </button>
         <div id="user-profile" class="flex items-center gap-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 px-3 py-1.5 rounded-full shadow-2xl hidden">
