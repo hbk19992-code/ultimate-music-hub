@@ -6,6 +6,9 @@
     <title>Can you dig it?</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
+    
+    <link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -24,6 +27,48 @@
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
         .toast-animate { animation: slideUpFade 3s ease-in-out forwards; }
+
+        /* 👾===========================================
+           8-BIT PIXEL THEME CSS (기능은 전혀 건드리지 않음)
+           =============================================👾 */
+        body.pixel-theme {
+            font-family: 'Galmuri11', 'Galmuri9', sans-serif !important;
+            background-color: #000 !important;
+        }
+        body.pixel-theme * {
+            border-radius: 0 !important; /* 모든 둥근 모서리 파괴 */
+            transition: none !important; /* 부드러운 애니메이션 차단 (뚝뚝 끊기는 느낌) */
+        }
+        body.pixel-theme img {
+            image-rendering: pixelated !important; /* 이미지 강제 도트화 */
+            border: 2px solid #333 !important;
+        }
+        body.pixel-theme .text-gradient {
+            background: none !important;
+            -webkit-text-fill-color: #10b981 !important;
+            text-shadow: 4px 4px 0px #a238ff !important; /* 딱딱한 2D 그림자 */
+        }
+        body.pixel-theme .bg-zinc-900, 
+        body.pixel-theme .bg-zinc-800 {
+            background-color: #111 !important;
+            border: 2px solid #10b981 !important;
+        }
+        body.pixel-theme .shadow-lg, 
+        body.pixel-theme .shadow-2xl,
+        body.pixel-theme .group:hover {
+            box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important;
+            transform: translate(-2px, -2px) !important;
+        }
+        body.pixel-theme input, 
+        body.pixel-theme select, 
+        body.pixel-theme button {
+            border: 2px solid #444 !important;
+            text-transform: uppercase;
+        }
+        body.pixel-theme input:focus, 
+        body.pixel-theme select:focus {
+            border-color: #a238ff !important;
+        }
     </style>
 </head>
 <body class="relative">
@@ -43,7 +88,9 @@
         </div>
     </div>
 
-    <div class="absolute top-4 right-4 md:top-6 md:right-8 z-50">
+    <div class="absolute top-4 right-4 md:top-6 md:right-8 z-50 flex items-center gap-2 md:gap-3">
+        <button onclick="togglePixelTheme()" id="pixel-toggle-btn" class="bg-zinc-900 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold hover:text-[#10b981] transition-colors border border-zinc-700 shadow-lg">👾 8-BIT</button>
+        
         <button id="login-btn" onclick="signInWithGoogle()" class="bg-white text-black px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold text-xs md:text-sm shadow-xl hidden">구글 로그인</button>
         <div id="user-profile" class="flex items-center gap-2 md:gap-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 px-2 py-1 md:px-3 md:py-1.5 rounded-full hidden">
             <img id="user-photo" src="" onerror="this.src='https://placehold.co/100x100/18181b/10b981?text=U'" class="w-6 h-6 md:w-7 md:h-7 rounded-full border border-zinc-700">
@@ -56,7 +103,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Deezer Cross-Reference V24.0</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Cross-Reference Engine V24.1</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -154,6 +201,7 @@
 </div>
 
 <script>
+    // Firebase Setup
     const firebaseConfig = { apiKey: "AIzaSyAhqMdOeEw8Z5lwuVebUkMeMsAzEWT2DDQ", authDomain: "owb-digging.firebaseapp.com", databaseURL: "https://owb-digging-default-rtdb.firebaseio.com", projectId: "owb-digging", storageBucket: "owb-digging.firebasestorage.app", messagingSenderId: "96150663418", appId: "1:96150663418:web:c17b3b61e18c670fa31943", measurementId: "G-NGH9PQSPRD" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(), db = firebase.firestore();
@@ -167,6 +215,21 @@
     let playingQueue = [], playingIndex = 0, playingCover = "";
     let albumSortOrder = 'desc', currentFavFolder = '전체 보관함';
     let allFetchedFeatures = [], featureFetchCount = 0;
+
+    // 👾 8-Bit Pixel Theme Toggle Function
+    window.togglePixelTheme = function() {
+        document.body.classList.toggle('pixel-theme');
+        const btn = document.getElementById('pixel-toggle-btn');
+        if (document.body.classList.contains('pixel-theme')) {
+            btn.innerHTML = '🎨 HD MODE';
+            btn.classList.add('border-[#10b981]', 'text-[#10b981]');
+            btn.classList.remove('text-white');
+        } else {
+            btn.innerHTML = '👾 8-BIT';
+            btn.classList.remove('border-[#10b981]', 'text-[#10b981]');
+            btn.classList.add('text-white');
+        }
+    };
 
     function cleanTitleForSearch(title) {
         if (!title) return "";
@@ -279,22 +342,17 @@
         } 
     };
 
-    // ⭐️ V24.0: Deezer Cross-Reference 엔진 적용
     function tryRenderAll() {
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return; 
         document.getElementById('status-message').classList.add('hidden'); document.getElementById('results-controls').classList.remove('hidden'); 
         const seenTitles = new Set(); albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; 
         
-        // 1. 디저(Deezer)의 타입 족보 만들기
         const deezerTypeMap = new Map();
         window.allFetchedAlbums.forEach(a => {
             const tl = cleanTitleForSearch(a.title).toLowerCase();
-            if(!deezerTypeMap.has(tl)) {
-                deezerTypeMap.set(tl, a.record_type);
-            }
+            if(!deezerTypeMap.has(tl)) deezerTypeMap.set(tl, a.record_type);
         });
 
-        // 2. 애플 뮤직 처리 (족보 참고)
         if (window.itunesAlbums) {
             window.itunesAlbums.forEach(a => {
                 const tl = cleanTitleForSearch(a.collectionName).toLowerCase();
@@ -310,29 +368,18 @@
                     else if (tl.includes('live')) albumsData.live.push(itunesAlbum);
                     else if (tl.includes('best of') || tl.includes('greatest hits') || tl.includes('anthology')) albumsData.compilation.push(itunesAlbum);
                     else {
-                        // ⭐️ 핵심: 디저 족보 확인!
                         const deezerType = deezerTypeMap.get(tl);
-                        
-                        if (deezerType === 'ep' || deezerType === 'single') {
-                            albumsData.ep.push(itunesAlbum);
-                        } 
-                        else if (deezerType === 'album') {
-                            albumsData.regular.push(itunesAlbum);
-                        } 
-                        // 족보에 없는 로컬 앨범이라면 예외 처리 로직 (Fallback)
+                        if (deezerType === 'ep' || deezerType === 'single') albumsData.ep.push(itunesAlbum);
+                        else if (deezerType === 'album') albumsData.regular.push(itunesAlbum);
                         else {
-                            if (tl.match(/\b(ep|single|album - ep|album - single)\b/) || a.trackCount <= 1) {
-                                albumsData.ep.push(itunesAlbum);
-                            } else {
-                                albumsData.regular.push(itunesAlbum);
-                            }
+                            if (tl.match(/\b(ep|single|album - ep|album - single)\b/) || a.trackCount <= 1) albumsData.ep.push(itunesAlbum);
+                            else albumsData.regular.push(itunesAlbum);
                         }
                     }
                 }
             });
         }
 
-        // 3. 디저(Deezer) 전용 앨범 덧붙이기
         window.allFetchedAlbums.forEach(a => { 
             const tl = cleanTitleForSearch(a.title).toLowerCase(); 
             if (!seenTitles.has(tl)) { 
@@ -344,7 +391,6 @@
             }
         });
 
-        // 4. 피처링
         if (window.deezerUniqueFeatures) {
             window.deezerUniqueFeatures.forEach(t => {
                 const tl = cleanTitleForSearch(t.album.title).toLowerCase();
