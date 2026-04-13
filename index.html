@@ -6,9 +6,7 @@
     <title>Can you dig it?</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
-    
     <link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -26,48 +24,56 @@
         .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
-        .toast-animate { animation: slideUpFade 3s ease-in-out forwards; }
+        .toast-animate { animation: slideUpFade 4s ease-in-out forwards; }
 
         /* 👾===========================================
-           8-BIT PIXEL THEME CSS (기능은 전혀 건드리지 않음)
+           ULTIMATE 8-BIT RETRO THEME
            =============================================👾 */
+        
+        /* 1. CRT 모니터 깜빡임 효과 */
+        @keyframes crt-flicker {
+            0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; }
+        }
+
         body.pixel-theme {
             font-family: 'Galmuri11', 'Galmuri9', sans-serif !important;
             background-color: #000 !important;
+            animation: crt-flicker 0.15s infinite;
+            /* 2. 도트 마우스 커서 적용 */
+            cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important;
         }
-        body.pixel-theme * {
-            border-radius: 0 !important; /* 모든 둥근 모서리 파괴 */
-            transition: none !important; /* 부드러운 애니메이션 차단 (뚝뚝 끊기는 느낌) */
+
+        /* 1. CRT 스캔라인 및 비네팅 필터 오버레이 */
+        body.pixel-theme::after {
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 9999; background-size: 100% 3px, 3px 100%; pointer-events: none;
         }
-        body.pixel-theme img {
-            image-rendering: pixelated !important; /* 이미지 강제 도트화 */
-            border: 2px solid #333 !important;
+        body.pixel-theme::before {
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%);
+            z-index: 9998; pointer-events: none;
         }
-        body.pixel-theme .text-gradient {
-            background: none !important;
-            -webkit-text-fill-color: #10b981 !important;
-            text-shadow: 4px 4px 0px #a238ff !important; /* 딱딱한 2D 그림자 */
+
+        body.pixel-theme a, body.pixel-theme button, body.pixel-theme .cursor-pointer, body.pixel-theme select, body.pixel-theme input {
+            cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer !important;
         }
-        body.pixel-theme .bg-zinc-900, 
-        body.pixel-theme .bg-zinc-800 {
-            background-color: #111 !important;
-            border: 2px solid #10b981 !important;
+
+        body.pixel-theme * { border-radius: 0 !important; transition: none !important; }
+        body.pixel-theme img { image-rendering: pixelated !important; border: 2px solid #333 !important; }
+        body.pixel-theme .text-gradient { background: none !important; -webkit-text-fill-color: #10b981 !important; text-shadow: 3px 3px 0px #a238ff !important; }
+        body.pixel-theme .bg-zinc-900, body.pixel-theme .bg-zinc-800 { background-color: #111 !important; border: 2px solid #10b981 !important; }
+        body.pixel-theme .shadow-lg, body.pixel-theme .shadow-2xl, body.pixel-theme .group:hover {
+            box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important; transform: translate(-2px, -2px) !important;
         }
-        body.pixel-theme .shadow-lg, 
-        body.pixel-theme .shadow-2xl,
-        body.pixel-theme .group:hover {
-            box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important;
-            transform: translate(-2px, -2px) !important;
-        }
-        body.pixel-theme input, 
-        body.pixel-theme select, 
-        body.pixel-theme button {
-            border: 2px solid #444 !important;
-            text-transform: uppercase;
-        }
-        body.pixel-theme input:focus, 
-        body.pixel-theme select:focus {
-            border-color: #a238ff !important;
+        body.pixel-theme input, body.pixel-theme select, body.pixel-theme button { border: 2px solid #444 !important; text-transform: uppercase; }
+        body.pixel-theme input:focus, body.pixel-theme select:focus { border-color: #a238ff !important; }
+
+        /* 3. RPG 고전 게임 대화창 스타일 (Toast) */
+        body.pixel-theme .toast-animate {
+            border: 4px solid #fff !important; background: #000 !important; color: #fff !important;
+            font-family: 'Galmuri11', sans-serif !important; box-shadow: 6px 6px 0px rgba(0,0,0,0.8) !important;
+            border-radius: 0 !important; padding: 16px 24px !important; letter-spacing: 1px;
         }
     </style>
 </head>
@@ -103,7 +109,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Cross-Reference Engine V24.1</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Ultimate Retro Machine V24.2</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -210,20 +216,66 @@
     let currentArtist = null, currentArtistId = null, isFavoritesTab = false;
     let albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
     let fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
-    
     let currentAlbumTracks = [], currentTrackIndex = 0, currentAlbumCover = "", currentDiscogsReleaseData = null;
     let playingQueue = [], playingIndex = 0, playingCover = "";
     let albumSortOrder = 'desc', currentFavFolder = '전체 보관함';
     let allFetchedFeatures = [], featureFetchCount = 0;
 
+    // 🎵 4. 8비트 주파수 효과음 합성기 (Web Audio API)
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    function playRetroSound(type) {
+        if (!document.body.classList.contains('pixel-theme')) return;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        
+        if (type === 'toggle') { // 파워 온 (삐로로롱~)
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'coin') { // 하트 저장 (띠링!)
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5
+            osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.1); // E6
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'click') { // 일반 클릭 (띡!)
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        }
+    }
+
+    // 전역 클릭 감지기 (버튼 누를 때마다 효과음)
+    document.addEventListener('click', (e) => {
+        if (document.body.classList.contains('pixel-theme')) {
+            if (e.target.closest('button') || e.target.closest('.cursor-pointer') || e.target.closest('select') || e.target.closest('.group')) {
+                if (e.target.closest('#pixel-toggle-btn')) return; // 토글 버튼은 따로 처리
+                playRetroSound('click');
+            }
+        }
+    });
+
     // 👾 8-Bit Pixel Theme Toggle Function
     window.togglePixelTheme = function() {
         document.body.classList.toggle('pixel-theme');
         const btn = document.getElementById('pixel-toggle-btn');
+        playRetroSound('toggle'); // 전원 켜는 소리
         if (document.body.classList.contains('pixel-theme')) {
             btn.innerHTML = '🎨 HD MODE';
             btn.classList.add('border-[#10b981]', 'text-[#10b981]');
             btn.classList.remove('text-white');
+            showToast("8-BIT 모드 가동됨!", "success");
         } else {
             btn.innerHTML = '👾 8-BIT';
             btn.classList.remove('border-[#10b981]', 'text-[#10b981]');
@@ -555,7 +607,32 @@
         tf.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg" : "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500";
         renderAllSections(); 
     }
-    function showToast(m, t) { const c = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = `toast-animate bg-zinc-900 border ${t === 'success' ? 'border-[#10b981]' : 'border-zinc-500'} text-white px-6 py-3 rounded-full shadow-2xl font-bold text-xs md:text-sm flex items-center gap-2 mb-2`; toast.innerHTML = `<span>${t==='success'?'✅':'✨'}</span> <span>${m}</span>`; c.appendChild(toast); setTimeout(() => toast.remove(), 3000); }
+    
+    // 💬 3. RPG 대화창 (타자기 효과) 기능 추가
+    function showToast(m, t) { 
+        const c = document.getElementById('toast-container'); 
+        const toast = document.createElement('div'); 
+        toast.className = `toast-animate bg-zinc-900 border ${t === 'success' ? 'border-[#10b981]' : 'border-zinc-500'} text-white px-6 py-3 rounded-full shadow-2xl font-bold text-xs md:text-sm flex items-center gap-2 mb-2`; 
+        
+        if (document.body.classList.contains('pixel-theme')) {
+            toast.innerHTML = `<span>${t==='success'?'▶':'▷'}</span> <span class="typing-text"></span>`;
+            c.appendChild(toast); 
+            if (t === 'success') playRetroSound('coin');
+            
+            const textSpan = toast.querySelector('.typing-text');
+            let i = 0;
+            const typing = setInterval(() => {
+                textSpan.textContent += m.charAt(i);
+                i++;
+                if (i >= m.length) clearInterval(typing);
+            }, 50); // 타자기 속도
+        } else {
+            toast.innerHTML = `<span>${t==='success'?'✅':'✨'}</span> <span>${m}</span>`; 
+            c.appendChild(toast); 
+        }
+        setTimeout(() => toast.remove(), 4000); 
+    }
+
     audio.addEventListener('timeupdate', () => { if (audio.duration) document.getElementById('progress-bar').value = (audio.currentTime / audio.duration) * 100; });
     document.getElementById('progress-bar').addEventListener('input', (e) => { if (audio.duration) audio.currentTime = (e.target.value / 100) * audio.duration; });
     document.getElementById('search-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') initSearch(); });
