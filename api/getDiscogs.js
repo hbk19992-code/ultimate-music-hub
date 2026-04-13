@@ -21,7 +21,6 @@ export default async function handler(req, res) {
         }
 
         // 🚀 3순위: ManiaDB (한국 음악 전용 스크래핑 엔진)
-        // API가 주지 않는 작사/작곡 정보를 웹페이지에서 직접 추출합니다.
         const maniaData = await searchManiaDB(albumTitle, artistName);
         if (maniaData && (maniaData.extraartists.length > 0 || maniaData.tracklist.length > 0)) {
             maniaData.extraartists.unshift({ role: '🇰🇷 Data Source', name: 'ManiaDB (Scraping Mode)' });
@@ -30,7 +29,7 @@ export default async function handler(req, res) {
 
         // 모든 소스 실패 시
         return res.status(200).json({ 
-            extraartists: [{ role: 'System', name: '검색된 모든 DB에 세션 정보가 없습니다.' }], 
+            extraartists: [{ role: 'System', name: '검색된 모든 DB에 세션 정보가 없습니다 🥲' }], 
             tracklist: [] 
         });
 
@@ -58,14 +57,16 @@ async function searchDiscogs(title, artist) {
     const detailRes = await fetch(`https://api.discogs.com/releases/${releaseId}`, { 
         headers: { 'User-Agent': 'MusicHubEngine/1.0' } 
     });
-    return detailRes.ok ? await detailRes.ok.json() : null;
+    
+    // 🔥 서버를 죽였던 치명적 오타 수정 완료
+    return detailRes.ok ? await detailRes.json() : null; 
 }
 
 // ==========================================
 // 🛠 2. MusicBrainz 검색 엔진
 // ==========================================
 async function searchMusicBrainz(title, artist) {
-    const headers = { 'User-Agent': 'MusicHubEngine/1.0 ( contact@example.com )', 'Accept': 'application/json' };
+    const headers = { 'User-Agent': 'MusicHubEngine/1.0', 'Accept': 'application/json' };
     const q = encodeURIComponent(`release:"${title}" AND artist:"${artist}"`);
     const searchRes = await fetch(`https://musicbrainz.org/ws/2/release/?query=${q}&fmt=json&limit=1`, { headers });
     
@@ -90,7 +91,7 @@ async function searchMusicBrainz(title, artist) {
 }
 
 // ==========================================
-// 🛠 3. ManiaDB 스크래핑 엔진 (가장 강력함)
+// 🛠 3. ManiaDB 스크래핑 엔진 (하이퍼링크 제거 기능 탑재)
 // ==========================================
 async function searchManiaDB(title, artist) {
     try {
@@ -99,14 +100,20 @@ async function searchManiaDB(title, artist) {
         if (!apiRes.ok) return null;
         
         const xml = await apiRes.text();
-        const linkMatch = xml.match(/<link>(http:\/\/www\.maniadb\.com\/album\/\d+)<\/link>/);
-        if (!linkMatch) return null;
         
-        const albumUrl = linkMatch[1];
+        // 정규식 개선: URL을 더 안전하게 추출
+        const idMatch = xml.match(/id="(\d+)"/);
+        if (!idMatch) return null;
+        
+        const albumUrl = `http://www.maniadb.com/album/${idMatch[1]}`;
         const htmlRes = await fetch(albumUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         if (!htmlRes.ok) return null;
         
         const html = await htmlRes.text();
+        
+        // 🔥 하이퍼링크 <a> 태그 껍데기만 싹 제거해서 순수 텍스트(이름) 추출을 용이하게 함
+        const cleanHtml = html.replace(/<a[^>]*>/gi, '').replace(/<\/a>/gi, '');
+
         let extraartists = [];
         let tracklist = [];
         let seen = new Set();
@@ -120,18 +127,19 @@ async function searchManiaDB(title, artist) {
             });
         }
 
-        // 🔥 웹페이지 텍스트에서 작사/작곡/편곡 데이터 강제 추출
+        // 웹페이지 텍스트에서 작사/작곡/편곡 데이터 강제 추출
         const patterns = [
-            { regex: /작사\s*:\s*([^<&\n]+)/g, label: '작사 (Lyricist)' },
-            { regex: /작곡\s*:\s*([^<&\n]+)/g, label: '작곡 (Composer)' },
-            { regex: /편곡\s*:\s*([^<&\n]+)/g, label: '편곡 (Arranger)' }
+            { regex: /작사\s*:\s*([^<&\n\t]+)/g, label: '작사 (Lyricist)' },
+            { regex: /작곡\s*:\s*([^<&\n\t]+)/g, label: '작곡 (Composer)' },
+            { regex: /편곡\s*:\s*([^<&\n\t]+)/g, label: '편곡 (Arranger)' }
         ];
 
         patterns.forEach(p => {
             let m;
-            while ((m = p.regex.exec(html)) !== null) {
-                let name = m[1].trim().replace(/<\/?[^>]+(>|$)/g, "").split(',')[0].trim(); 
-                if (name && name.length < 30 && !seen.has(p.label + name)) {
+            while ((m = p.regex.exec(cleanHtml)) !== null) {
+                let name = m[1].trim(); 
+                // 이름이 너무 길면 쓰레기 데이터로 간주하고 무시
+                if (name && name.length > 0 && name.length < 30 && !seen.has(p.label + name)) {
                     seen.add(p.label + name);
                     extraartists.push({ role: p.label, name: name });
                 }
@@ -139,5 +147,7 @@ async function searchManiaDB(title, artist) {
         });
 
         return { extraartists, tracklist };
-    } catch (e) { return null; }
+    } catch (e) { 
+        return null; 
+    }
 }
