@@ -1,23 +1,26 @@
 export default async function handler(req, res) {
     const { albumTitle, artistName, sessionName, deepSearch } = req.query;
 
-    // 🔥 [V24.5 추가] 딥서치 스나이퍼 모드 (단 1번의 호출로 타겟 타이틀만 싹쓸이)
+    // 🔥 [V25.0] 스나이퍼 모드 고급 검색 (artist와 credit 파라미터 분리 적용)
     if (deepSearch === 'true' && artistName && sessionName) {
         try {
             const token = process.env.DISCOGS_TOKEN;
             if (!token) throw new Error("DISCOGS_TOKEN 누락");
             
-            // 아티스트와 세션 이름으로 마스터 앨범 통합 검색
-            const q = encodeURIComponent(`${artistName} ${sessionName}`);
-            const searchUrl = `https://api.discogs.com/database/search?q=${q}&type=master&token=${token}&per_page=50`;
-            const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'MusicHubEngine/1.5' } });
+            const art = encodeURIComponent(artistName);
+            const cred = encodeURIComponent(sessionName);
+            
+            // 단순 통검색(q)이 아닌, artist 필드와 credit(세션) 필드를 명시해서 정확도 100배 상승
+            const searchUrl = `https://api.discogs.com/database/search?artist=${art}&credit=${cred}&token=${token}&per_page=100`;
+            
+            const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'MusicHubEngine/2.0' } });
             const searchJson = searchRes.ok ? await searchRes.json() : { results: [] };
             
-            // "Miles Davis - Bitches Brew" 같은 결과에서 "Bitches Brew"만 예쁘게 발라냄
-            const titles = searchJson.results.map(r => {
+            // Miles Davis - Bitches Brew 같은 형태에서 "Bitches Brew"만 빼내고 중복은 날려버림
+            const titles = [...new Set(searchJson.results.map(r => {
                 let t = r.title.split(' - ');
                 return t.length > 1 ? t[1].trim() : r.title;
-            });
+            }))];
             
             return res.status(200).json({ matchedTitles: titles });
         } catch (e) {
@@ -25,7 +28,7 @@ export default async function handler(req, res) {
         }
     }
 
-    // --- 아래는 기존의 개별 앨범 크레딧 검색 로직 (그대로 유지) ---
+    // --- 개별 앨범 디테일 검색 (기존 로직 유지) ---
     if (!albumTitle || !artistName) return res.status(400).json({ error: "앨범 이름과 아티스트 이름이 필요합니다." });
 
     try {
@@ -53,9 +56,6 @@ export default async function handler(req, res) {
     }
 }
 
-// ==========================================
-// 🛠 1. Discogs 개별 검색 엔진
-// ==========================================
 async function searchDiscogs(title, artist) {
     const token = process.env.DISCOGS_TOKEN;
     if (!token) return null;
@@ -81,9 +81,6 @@ async function searchDiscogs(title, artist) {
     return detailRes.ok ? await detailRes.json() : null; 
 }
 
-// ==========================================
-// 🛠 2. MusicBrainz 개별 검색 엔진
-// ==========================================
 async function searchMusicBrainz(title, artist) {
     const headers = { 'User-Agent': 'MusicHubEngine/1.1', 'Accept': 'application/json' };
     const query = encodeURIComponent(`${title} ${artist}`);
@@ -106,9 +103,6 @@ async function searchMusicBrainz(title, artist) {
     return { extraartists, tracklist: [] };
 }
 
-// ==========================================
-// 🛠 3. ManiaDB 아티스트 페이지 딥 스크래핑 엔진
-// ==========================================
 async function searchManiaDB(title, artist) {
     try {
         let targetUrl = null;
