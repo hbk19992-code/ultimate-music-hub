@@ -6,21 +6,21 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 🚀 1순위: Discogs API
+        // 🚀 1순위: Discogs API (마스터 릴리즈 딥 서치 적용)
         const discogsData = await searchDiscogs(albumTitle, artistName);
         if (discogsData && discogsData.extraartists && discogsData.extraartists.length > 0) {
             discogsData.extraartists.unshift({ role: '💿 Data Source', name: 'Discogs Official' });
             return res.status(200).json(discogsData);
         }
 
-        // 🚀 2순위: MusicBrainz
+        // 🚀 2순위: MusicBrainz (유연한 통합 검색 적용)
         const mbData = await searchMusicBrainz(albumTitle, artistName);
         if (mbData && mbData.extraartists && mbData.extraartists.length > 0) {
             mbData.extraartists.unshift({ role: '🧠 Data Source', name: 'MusicBrainz Open DB' });
             return res.status(200).json(mbData);
         }
 
-        // 🚀 3순위: ManiaDB (아티스트 페이지 타겟팅 + EUC-KR 디코더 탑재)
+        // 🚀 3순위: ManiaDB (한국 음악 전용 봇)
         const maniaData = await searchManiaDB(albumTitle, artistName);
         if (maniaData && maniaData.extraartists.length > 0) {
             maniaData.extraartists.unshift({ role: '🇰🇷 Data Source', name: 'ManiaDB (Artist Page Bot)' });
@@ -39,31 +39,58 @@ export default async function handler(req, res) {
 }
 
 // ==========================================
-// 🛠 1. Discogs 검색
+// 🛠 1. Discogs 검색 (마스터 릴리즈 역추적 엔진)
 // ==========================================
 async function searchDiscogs(title, artist) {
     const token = process.env.DISCOGS_TOKEN;
     if (!token) return null;
     
-    const searchUrl = `https://api.discogs.com/database/search?release_title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&type=release&token=${token}`;
-    const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'MusicHubEngine/1.0' } });
-    if (!searchRes.ok) return null;
+    // 💡 깐깐한 필드 매칭 대신, 사람이 구글에 검색하듯 유연한 'q' (통합 검색) 사용
+    const query = encodeURIComponent(`${title} ${artist}`);
     
-    const searchJson = await searchRes.json();
-    if (!searchJson.results || searchJson.results.length === 0) return null;
+    // 1단계: 수백 개의 판본을 묶어주는 'Master' 앨범을 먼저 찾습니다.
+    let searchUrl = `https://api.discogs.com/database/search?q=${query}&type=master&token=${token}`;
+    let searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'MusicHubEngine/1.1' } });
+    let searchJson = searchRes.ok ? await searchRes.json() : { results: [] };
 
-    const detailRes = await fetch(`https://api.discogs.com/releases/${searchJson.results[0].id}`, { 
-        headers: { 'User-Agent': 'MusicHubEngine/1.0' } 
+    let releaseId = null;
+
+    if (searchJson.results && searchJson.results.length > 0) {
+        // 마스터 앨범을 찾았다면, 그 마스터의 대표격인 'main_release' 번호를 알아냅니다.
+        const masterId = searchJson.results[0].id;
+        const masterRes = await fetch(`https://api.discogs.com/masters/${masterId}`, { headers: { 'User-Agent': 'MusicHubEngine/1.1' } });
+        if (masterRes.ok) {
+            const masterData = await masterRes.json();
+            releaseId = masterData.main_release; 
+        }
+    } else {
+        // 마스터가 없는 앨범이라면 일반 'Release'로 재검색 (Fallback)
+        searchUrl = `https://api.discogs.com/database/search?q=${query}&type=release&token=${token}`;
+        searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'MusicHubEngine/1.1' } });
+        searchJson = searchRes.ok ? await searchRes.json() : { results: [] };
+        if (searchJson.results && searchJson.results.length > 0) {
+            releaseId = searchJson.results[0].id;
+        }
+    }
+
+    if (!releaseId) return null;
+
+    // 2단계: 알아낸 최종 Release ID로 꽉 찬 크레딧 정보를 가져옵니다.
+    const detailRes = await fetch(`https://api.discogs.com/releases/${releaseId}`, { 
+        headers: { 'User-Agent': 'MusicHubEngine/1.1' } 
     });
     return detailRes.ok ? await detailRes.json() : null; 
 }
 
 // ==========================================
-// 🛠 2. MusicBrainz 검색
+// 🛠 2. MusicBrainz 검색 (유연한 검색 쿼리로 수정)
 // ==========================================
 async function searchMusicBrainz(title, artist) {
-    const headers = { 'User-Agent': 'MusicHubEngine/1.0', 'Accept': 'application/json' };
-    const searchRes = await fetch(`https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(`release:"${title}" AND artist:"${artist}"`)}&fmt=json&limit=1`, { headers });
+    const headers = { 'User-Agent': 'MusicHubEngine/1.1', 'Accept': 'application/json' };
+    
+    // 💡 MusicBrainz 역시 깐깐한 조건 검색 대신, 통검색으로 이름 불일치 문제 해결
+    const query = encodeURIComponent(`${title} ${artist}`);
+    const searchRes = await fetch(`https://musicbrainz.org/ws/2/release/?query=${query}&fmt=json&limit=1`, { headers });
     
     if (!searchRes.ok) return null;
     const searchJson = await searchRes.json();
@@ -91,8 +118,6 @@ async function searchMusicBrainz(title, artist) {
 async function searchManiaDB(title, artist) {
     try {
         let targetUrl = null;
-
-        // [1단계] 앨범 이름 대신 "아티스트 이름"으로 먼저 검색하여 아티스트 페이지를 찾습니다!
         const artApiUrl = `http://www.maniadb.com/api/search/${encodeURIComponent(artist)}/?sr=artist&display=1&key=example&v=0.5`;
         const artRes = await fetch(artApiUrl);
         
@@ -102,7 +127,6 @@ async function searchManiaDB(title, artist) {
             if (linkMatch) targetUrl = linkMatch[1]; 
         }
 
-        // 아티스트 페이지를 못 찾았다면, 앨범 이름으로 백업 검색
         if (!targetUrl) {
             const cleanTitle = title.replace(/\[.*?\]|\(.*?\)/g, '').trim();
             const albApiUrl = `http://www.maniadb.com/api/search/${encodeURIComponent(cleanTitle)}/?sr=album&display=5&key=example&v=0.5`;
@@ -116,7 +140,6 @@ async function searchManiaDB(title, artist) {
 
         if (!targetUrl) return null;
 
-        // [2단계] 타겟 페이지 접속 후 EUC-KR 해독
         const htmlRes = await fetch(targetUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         if (!htmlRes.ok) return null;
         
@@ -127,7 +150,6 @@ async function searchManiaDB(title, artist) {
         let extraartists = [];
         let seen = new Set();
         
-        // 🔥 [3단계] 무적의 정규식: "작사/작곡/편곡 :" 뒤에 나오는 한글, 영어, 숫자를 태그가 나오기 전까지만 포획!
         const regex = /(작사|작곡|편곡)\s*:\s*([a-zA-Z가-힣0-9\s,&/().]+)/g; 
         let m;
         
@@ -138,7 +160,6 @@ async function searchManiaDB(title, artist) {
             let label = roleType === '작사' ? '작사 (Lyricist)' : 
                         roleType === '작곡' ? '작곡 (Composer)' : '편곡 (Arranger)';
             
-            // 이름 분리 작업
             let names = rawNames.split(/[,&/]/).map(n => n.trim()).filter(n => n);
             
             names.forEach(name => {
