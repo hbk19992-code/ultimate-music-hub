@@ -75,7 +75,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Universal Link Engine V24.9</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Apple Music App Routing Fixed V24.9.1</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -204,7 +204,7 @@
     let isDeepSearching = false;
 
     // ==========================================
-    // 2. 오디오 합성기 (8-Bit 테마용 Web Audio API)
+    // 2. 오디오 합성기 (8-Bit 테마용)
     // ==========================================
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
@@ -288,21 +288,26 @@
         navigator.clipboard.writeText(window.location.href).then(() => showToast("앨범 링크가 복사되었습니다! 🔗", "success")); 
     };
 
-    // 🔥 V24.9: 애플 뮤직 딥링크 (유니버셜 링크 적용)
+    // 🔥 V24.9.1: 애플 뮤직 딥링크 (검색 오류 완벽 수정)
     window.openInAppleMusic = function(albumId) {
         if (!albumId) return;
+        // 앨범 다이렉트 접근은 유니버셜 링크가 최고
         window.open(`https://music.apple.com/kr/album/${albumId}`, '_blank');
     };
 
     window.openInAppleMusicSearch = function(title, artist) {
         const query = encodeURIComponent(`${artist} ${title}`);
-        window.open(`https://music.apple.com/kr/search?term=${query}`, '_blank');
+        // 검색은 애플 뮤직 앱 전용 스킴(music://)을 써야 키워드가 안 증발함
+        const appUrl = `music://search?term=${query}`;
+        const webUrl = `https://music.apple.com/kr/search?term=${query}`;
+        
+        window.location.href = appUrl;
+        setTimeout(() => { if (document.hasFocus()) window.open(webUrl, '_blank'); }, 500);
     };
 
-    // 🔥 V24.9: 스포티파이 딥링크 (오타 수정 및 유니버셜 링크 적용)
+    // 스포티파이 딥링크
     window.openInSpotify = function(title, artist) {
         const query = encodeURIComponent(`${artist} ${title}`);
-        // 모바일 환경에서 앱이 깔려있으면 앱으로, 없으면 브라우저로 자동 연결되는 공식 유니버셜 링크
         window.open(`https://open.spotify.com/search/${query}`, '_blank');
     };
 
@@ -596,6 +601,7 @@
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); }
     window.closeStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); window.history.pushState({}, '', window.location.pathname); }
 
+    // 🔥 V24.9.1: 애플 뮤직 및 스포티파이 버튼 클릭 이벤트 (검색 스킴 복구 반영)
     window.playMedia = function(type, id, cover, title, artist, updateUrl = true, source = 'deezer') {
         if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); url.searchParams.set('source', source); window.history.pushState({}, '', url); }
         
@@ -604,7 +610,7 @@
         document.getElementById('studio-title').textContent = title; 
         document.getElementById('studio-artist').textContent = artist; 
         
-        // 🍎 애플 뮤직 연동
+        // 🍎 애플 뮤직 연동 (직접 연결 vs 검색 연결)
         document.getElementById('open-apple-music-btn').onclick = () => {
             if (source === 'itunes') openInAppleMusic(id);
             else openInAppleMusicSearch(title, artist);
