@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Music Hub V23.7 (Apple Engine Priority)</title>
+    <title>Ultimate Music Hub V23.8 (Auto-Routing)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -58,7 +58,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Ultimate Music Hub</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Apple Music Primary Engine V23.7</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Auto-Routing Smart Engine V23.8</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -260,13 +260,16 @@
         });
     };
 
-    // ⭐️ V23.7: Apple Music 검색 제한을 200개로 대폭 상향 (주 엔진 역할 수행)
+    // ⭐️ V23.8: 스마트 언어 감지기 (Auto-Routing)
     window.selectArtist = function(id, name) { 
         currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = [];
         allFetchedFeatures = []; featureFetchCount = 0;   
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); 
         
-        loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&callback=handleItunesAlbums`);
+        // 아티스트 이름에 한글이 있으면 'KR', 없으면 'US' 스토어 사용
+        const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) ? 'KR' : 'US';
+        
+        loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&country=${countryCode}&callback=handleItunesAlbums`);
         loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=handleAllAlbumsPage`); 
         loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=handleFeaturedTracks`); 
     };
@@ -302,7 +305,6 @@
         } 
     };
 
-    // ⭐️ V23.7: 렌더링 우선순위 완전 뒤집기 (Apple Music 1순위, Deezer 2순위 보완)
     function tryRenderAll() {
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return; 
         document.getElementById('status-message').classList.add('hidden'); 
@@ -311,7 +313,6 @@
         const seenTitles = new Set();
         albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; 
         
-        // [1순위] Apple Music (iTunes) 데이터를 먼저 싹 훑어서 메인으로 깔아줍니다!
         if (window.itunesAlbums) {
             window.itunesAlbums.forEach(a => {
                 const tl = cleanTitleForSearch(a.collectionName).toLowerCase();
@@ -347,7 +348,6 @@
             });
         }
 
-        // [2순위 보완] Apple Music에 없었던 앨범(로컬, 특정 인디)만 Deezer가 채워줍니다.
         window.allFetchedAlbums.forEach(a => { 
             const tl = cleanTitleForSearch(a.title).toLowerCase(); 
             if (!seenTitles.has(tl)) { 
@@ -361,7 +361,6 @@
             }
         });
 
-        // [3순위 보완] 딥서치로 건져올린 Deezer 피처링 중 겹치지 않는 것만 정규화해서 병합
         if (window.deezerUniqueFeatures) {
             window.deezerUniqueFeatures.forEach(t => {
                 const tl = cleanTitleForSearch(t.album.title).toLowerCase();
@@ -373,7 +372,7 @@
                         cover_medium: t.album.cover_medium,
                         release_date: t.album.release_date || '',
                         record_type: 'deezer',
-                        artist: { name: t.artist.name }, // 피처링 주인이 아닌, 이 앨범의 원래 아티스트 이름
+                        artist: { name: t.artist.name }, 
                         source: 'deezer'
                     };
                     albumsData.features.push(featureAlbum);
@@ -387,7 +386,6 @@
     function renderAllSections() {
         const c = document.getElementById('sections-container'); c.innerHTML = ''; if (isFavoritesTab) { renderFavorites(); return; }
         const f = (it) => { const q = document.getElementById('local-search-input').value.toLowerCase(); return !q || it.title.toLowerCase().includes(q); }; const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date || 0) - new Date(a.release_date || 0) : new Date(a.release_date || 0) - new Date(b.release_date || 0));
-        // 모든 섹션이 'album' 구조로 완전히 정규화되었습니다.
         renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album'); renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album'); renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album'); renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album'); renderSection('🤝 피처링 참여곡', albumsData.features.filter(f), 'album');
     }
 
@@ -510,6 +508,7 @@
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); }
     window.closeStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); window.history.pushState({}, '', window.location.pathname); }
 
+    // ⭐️ V23.8: 트랙 요청 시에도 스마트 언어 감지기 적용
     window.playMedia = function(type, id, cover, title, artist, updateUrl = true, source = 'deezer') {
         if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); url.searchParams.set('source', source); window.history.pushState({}, '', url); }
         
@@ -518,7 +517,8 @@
         openStudioView();
         
         if (source === 'itunes') {
-            loadJSONP(`https://itunes.apple.com/lookup?id=${id}&entity=song&callback=handleItunesTracks`);
+            const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(artist) ? 'KR' : 'US';
+            loadJSONP(`https://itunes.apple.com/lookup?id=${id}&entity=song&country=${countryCode}&callback=handleItunesTracks`);
         } else {
             loadJSONP(`https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`);
         }
