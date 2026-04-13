@@ -29,21 +29,13 @@
         /* 👾===========================================
            ULTIMATE 8-BIT RETRO THEME
            =============================================👾 */
-        
-        /* 1. CRT 모니터 깜빡임 효과 */
-        @keyframes crt-flicker {
-            0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; }
-        }
+        @keyframes crt-flicker { 0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; } }
 
         body.pixel-theme {
-            font-family: 'Galmuri11', 'Galmuri9', sans-serif !important;
-            background-color: #000 !important;
-            animation: crt-flicker 0.15s infinite;
-            /* 2. 도트 마우스 커서 적용 */
+            font-family: 'Galmuri11', 'Galmuri9', sans-serif !important; background-color: #000 !important; animation: crt-flicker 0.15s infinite;
             cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important;
         }
 
-        /* 1. CRT 스캔라인 및 비네팅 필터 오버레이 */
         body.pixel-theme::after {
             content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
@@ -51,8 +43,7 @@
         }
         body.pixel-theme::before {
             content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
-            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%);
-            z-index: 9998; pointer-events: none;
+            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%); z-index: 9998; pointer-events: none;
         }
 
         body.pixel-theme a, body.pixel-theme button, body.pixel-theme .cursor-pointer, body.pixel-theme select, body.pixel-theme input {
@@ -66,10 +57,20 @@
         body.pixel-theme .shadow-lg, body.pixel-theme .shadow-2xl, body.pixel-theme .group:hover {
             box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important; transform: translate(-2px, -2px) !important;
         }
-        body.pixel-theme input, body.pixel-theme select, body.pixel-theme button { border: 2px solid #444 !important; text-transform: uppercase; }
-        body.pixel-theme input:focus, body.pixel-theme select:focus { border-color: #a238ff !important; }
+        
+        /* 🔥 재생바를 제외한 input에만 테두리 적용 (재생바 버그 픽스) */
+        body.pixel-theme input:not([type="range"]), body.pixel-theme select, body.pixel-theme button { border: 2px solid #444 !important; text-transform: uppercase; }
+        body.pixel-theme input:focus:not([type="range"]), body.pixel-theme select:focus { border-color: #a238ff !important; }
 
-        /* 3. RPG 고전 게임 대화창 스타일 (Toast) */
+        /* 🔥 8-bit 전용 재생바 디자인 */
+        body.pixel-theme input[type="range"] {
+            border: none !important; height: 6px !important; background: #333 !important; padding: 0 !important;
+        }
+        body.pixel-theme input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 12px; height: 16px; background: #10b981; border: 2px solid #fff;
+            border-radius: 0; cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer;
+        }
+
         body.pixel-theme .toast-animate {
             border: 4px solid #fff !important; background: #000 !important; color: #fff !important;
             font-family: 'Galmuri11', sans-serif !important; box-shadow: 6px 6px 0px rgba(0,0,0,0.8) !important;
@@ -109,7 +110,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Ultimate Retro Machine V24.2</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Player Alignment Fixed V24.3</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -189,10 +190,12 @@
     </div>
 </div>
 
-<div id="global-player" class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl z-[120] transition-transform duration-500 translate-y-full border-t border-zinc-900 shadow-2xl">
+<div id="global-player" class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl z-[120] transition-transform duration-500 translate-y-full flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
     <audio id="audio-element" src="" crossorigin="anonymous"></audio>
-    <div class="absolute top-0 left-0 right-0 -mt-[1px]"><input type="range" id="progress-bar" value="0" min="0" max="100" class="w-full bg-zinc-800 h-1 appearance-none cursor-pointer accent-[#10b981]"></div>
-    <div class="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between gap-4 md:gap-6">
+    
+    <input type="range" id="progress-bar" value="0" min="0" max="100" class="w-full bg-zinc-800 h-1 md:h-1.5 appearance-none cursor-pointer accent-[#10b981] outline-none m-0 border-none transition-none">
+    
+    <div class="max-w-7xl mx-auto w-full px-4 py-3 md:py-4 flex items-center justify-between gap-4 md:gap-6">
         <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0 md:w-1/3 cursor-pointer group" onclick="openStudioView()">
             <img id="player-cover" src="" onerror="this.src='https://placehold.co/100x100/18181b/10b981?text=No+Cover'" class="w-10 h-10 md:w-14 md:h-14 object-cover rounded shadow-lg border border-zinc-800">
             <div class="min-w-0"><h4 id="player-title" class="text-white font-bold truncate text-[11px] md:text-sm">곡 제목</h4><p id="player-artist" class="text-[#10b981] text-[10px] md:text-xs font-bold truncate">아티스트 <span id="aura-badge" class="hidden ml-2 bg-black/50 px-1.5 py-0.5 rounded text-[8px] border border-zinc-700"></span></p></div>
@@ -233,21 +236,21 @@
         const gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
         
-        if (type === 'toggle') { // 파워 온 (삐로로롱~)
+        if (type === 'toggle') { 
             osc.type = 'square';
             osc.frequency.setValueAtTime(150, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
             osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-        } else if (type === 'coin') { // 하트 저장 (띠링!)
+        } else if (type === 'coin') { 
             osc.type = 'square';
-            osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5
-            osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.1); // E6
+            osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); 
+            osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.1); 
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
             osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-        } else if (type === 'click') { // 일반 클릭 (띡!)
+        } else if (type === 'click') { 
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(800, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
@@ -256,11 +259,10 @@
         }
     }
 
-    // 전역 클릭 감지기 (버튼 누를 때마다 효과음)
     document.addEventListener('click', (e) => {
         if (document.body.classList.contains('pixel-theme')) {
-            if (e.target.closest('button') || e.target.closest('.cursor-pointer') || e.target.closest('select') || e.target.closest('.group')) {
-                if (e.target.closest('#pixel-toggle-btn')) return; // 토글 버튼은 따로 처리
+            if (e.target.closest('button') || e.target.closest('.cursor-pointer') || e.target.closest('select') || e.target.closest('.group') || e.target.id === 'progress-bar') {
+                if (e.target.closest('#pixel-toggle-btn')) return; 
                 playRetroSound('click');
             }
         }
@@ -270,7 +272,7 @@
     window.togglePixelTheme = function() {
         document.body.classList.toggle('pixel-theme');
         const btn = document.getElementById('pixel-toggle-btn');
-        playRetroSound('toggle'); // 전원 켜는 소리
+        playRetroSound('toggle'); 
         if (document.body.classList.contains('pixel-theme')) {
             btn.innerHTML = '🎨 HD MODE';
             btn.classList.add('border-[#10b981]', 'text-[#10b981]');
@@ -578,7 +580,7 @@
         updateTrackSpecificCredits(t.title); fetchBpm(t.id); 
     }
 
-    function fetchBpm(id) { window[`handleBpm_${id}`] = (d) => { const b = document.getElementById('aura-badge'), p = document.getElementById('global-player'); if(d.bpm) { b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden'); p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[120] transition-all duration-500 border-t border-zinc-900 shadow-2xl ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`; } else b.classList.add('hidden'); }; loadJSONP(`https://api.deezer.com/track/${id}?output=jsonp&callback=handleBpm_${id}`); }
+    function fetchBpm(id) { window[`handleBpm_${id}`] = (d) => { const b = document.getElementById('aura-badge'), p = document.getElementById('global-player'); if(d.bpm) { b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden'); p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[120] transition-all duration-500 border-t border-zinc-900 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`; } else b.classList.add('hidden'); }; loadJSONP(`https://api.deezer.com/track/${id}?output=jsonp&callback=handleBpm_${id}`); }
 
     async function fetchAlbumWikiStory(title, artist) {
         const wikiUI = document.getElementById('wiki-credit-text'); wikiUI.innerHTML = "<span class='animate-pulse text-zinc-500'>데이터베이스 검색 중... 🔍</span>";
@@ -608,7 +610,6 @@
         renderAllSections(); 
     }
     
-    // 💬 3. RPG 대화창 (타자기 효과) 기능 추가
     function showToast(m, t) { 
         const c = document.getElementById('toast-container'); 
         const toast = document.createElement('div'); 
@@ -625,7 +626,7 @@
                 textSpan.textContent += m.charAt(i);
                 i++;
                 if (i >= m.length) clearInterval(typing);
-            }, 50); // 타자기 속도
+            }, 50); 
         } else {
             toast.innerHTML = `<span>${t==='success'?'✅':'✨'}</span> <span>${m}</span>`; 
             c.appendChild(toast); 
