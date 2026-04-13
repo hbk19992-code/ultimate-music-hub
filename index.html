@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Music Hub V22.1 (Advanced Digging & Trivia)</title>
+    <title>Ultimate Music Hub V22.2 (UX/UI Optimized)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -19,7 +19,10 @@
         .studio-view-enter { transform: translateY(0); opacity: 1; pointer-events: auto; visibility: visible; }
         .studio-view-exit { transform: translateY(100%); opacity: 0; pointer-events: none; visibility: hidden; }
         #studio-view { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .card-fav-active { color: #10b981 !important; fill: #10b981 !important; }
+        
+        /* ⭐️ 개선된 하트 버튼 효과 */
+        .card-fav-active { color: #10b981 !important; fill: #10b981 !important; filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8)); }
+        
         .aura-chill { background: linear-gradient(to right, #0f172a, #1e1b4b, #000000) !important; } .aura-groove { background: linear-gradient(to right, #064e3b, #065f46, #000000) !important; } .aura-hype { background: linear-gradient(to right, #7f1d1d, #991b1b, #000000) !important; }
         
         .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
@@ -37,10 +40,10 @@
             <h3 class="text-xl font-bold text-white mb-2">보관함 저장</h3>
             <p class="text-zinc-400 text-xs mb-5">어떤 폴더에 저장할까요?</p>
             <div id="folder-list" class="space-y-2 mb-5 max-h-40 overflow-y-auto scrollbar-thin border-b border-zinc-800 pb-4"></div>
-            <input type="text" id="new-folder-input" placeholder="또는 새 폴더 이름 입력..." class="w-full bg-zinc-950 border border-zinc-800 focus:border-[#10b981] text-white px-4 py-3 rounded-xl text-sm mb-5 outline-none transition-colors">
+            <input type="text" id="new-folder-input" onkeypress="if(event.key === 'Enter') saveToFolder()" placeholder="또는 새 폴더 이름 입력..." class="w-full bg-zinc-950 border border-zinc-800 focus:border-[#10b981] text-white px-4 py-3 rounded-xl text-sm mb-5 outline-none transition-colors">
             <div class="flex gap-3">
-                <button onclick="closeFolderModal()" class="flex-1 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700">취소</button>
-                <button onclick="saveToFolder()" class="flex-1 py-3 bg-[#10b981] text-black font-extrabold rounded-xl hover:scale-105 transition-transform">저장하기</button>
+                <button onclick="closeFolderModal()" class="flex-1 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 active:scale-95 transition-transform">취소</button>
+                <button id="save-folder-btn" onclick="saveToFolder()" class="flex-1 py-3 bg-[#10b981] text-black font-extrabold rounded-xl hover:scale-105 active:scale-95 transition-transform">저장하기</button>
             </div>
         </div>
     </div>
@@ -58,7 +61,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Ultimate Music Hub</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Advanced Digging Engine V22.1</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Advanced Digging Engine V22.2</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -125,14 +128,8 @@
                     <h5 id="discogs-track-title" class="text-white font-bold text-base md:text-lg mb-4 truncate border-b border-zinc-800 pb-2">🎵 트랙 제목</h5>
                     <div id="discogs-track-data-ui" class="text-sm font-mono space-y-4"></div>
                 </section>
-                <section>
-                    <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Encyclopedia & Trivia</h4>
-                    <p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium"></p>
-                </section>
-                <section>
-                    <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Full Session Credits</h4>
-                    <div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-4"></div>
-                </section>
+                <section><h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Encyclopedia & Trivia</h4><p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium"></p></section>
+                <section><h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Full Session Credits</h4><div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-4"></div></section>
             </div>
         </div>
     </div>
@@ -178,11 +175,26 @@
 
     async function loadFavoritesFromCloud() { if (!currentUser) return; const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); favorites = []; snap.forEach(d => favorites.push(d.data())); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
 
-    async function toggleFavorite(e, item, type) {
-        e.stopPropagation(); if (!currentUser) return showToast("로그인 후 이용 가능합니다!", "error");
-        const itemId = `${type}_${item.id}`, idx = favorites.findIndex(f => f.dbId === itemId);
-        if (idx > -1) { favorites.splice(idx, 1); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).delete(); showToast("보관함에서 삭제됨", "info"); if (isFavoritesTab) renderFavorites(); else renderAllSections(); } 
-        else { pendingFavItem = item; pendingFavType = type; openFolderModal(); }
+    // ⭐️ [개선1] 즉각적인 하트 피드백 (Optimistic UI) & 동기화
+    function toggleFavorite(e, item, type) {
+        e.stopPropagation(); 
+        if (!currentUser) return showToast("로그인 후 이용 가능합니다!", "error");
+        
+        const itemId = `${type}_${item.id}`;
+        const idx = favorites.findIndex(f => f.dbId === itemId);
+        
+        if (idx > -1) { 
+            // 삭제 시 UI 즉시 반영
+            favorites.splice(idx, 1); 
+            if (isFavoritesTab) renderFavorites(); else renderAllSections();
+            showToast("보관함에서 삭제됨", "info");
+            
+            // 백그라운드 DB 삭제 (화면 안 멈춤)
+            db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).delete(); 
+        } else { 
+            // 추가 시 모달 호출
+            pendingFavItem = item; pendingFavType = type; openFolderModal(); 
+        }
     }
 
     function openFolderModal() {
@@ -191,16 +203,39 @@
         list.innerHTML = existingFolders.map(f => `<button onclick="document.getElementById('new-folder-input').value='${f}'" class="block w-full text-left px-4 py-2.5 hover:bg-zinc-800 rounded-lg text-sm text-zinc-300 font-bold transition-colors">${f}</button>`).join('');
         m.classList.remove('hidden'); document.getElementById('new-folder-input').focus();
     }
-    function closeFolderModal() { document.getElementById('folder-modal').classList.add('hidden'); document.getElementById('new-folder-input').value = ''; pendingFavItem = null; }
+    
+    function closeFolderModal() { 
+        document.getElementById('folder-modal').classList.add('hidden'); 
+        document.getElementById('new-folder-input').value = ''; 
+        pendingFavItem = null; 
+    }
 
-    async function saveToFolder() {
+    // ⭐️ [개선2] 중복 클릭 방지 (Deduplication) 및 UI 즉시 반영
+    function saveToFolder() {
         if(!pendingFavItem) return;
+        
+        const btn = document.getElementById('save-folder-btn');
+        if(btn.disabled) return; // 중복 실행 방지
+        btn.disabled = true;
+
         let folderName = document.getElementById('new-folder-input').value.trim() || '기본 보관함';
         const itemId = `${pendingFavType}_${pendingFavItem.id}`;
         const newItem = { ...pendingFavItem, dbId: itemId, itemType: pendingFavType, artistNameCache: currentArtist || pendingFavItem.artist?.name, folderName: folderName };
-        favorites.push(newItem);
-        await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).set(JSON.parse(JSON.stringify(newItem)));
-        showToast(`[${folderName}] 에 저장됨 📁`, "success"); closeFolderModal(); if (isFavoritesTab) renderFavorites(); else renderAllSections();
+        
+        // 브라우저 로컬 배열에 중복 방지하여 푸시
+        if (favorites.findIndex(f => f.dbId === itemId) === -1) {
+            favorites.push(newItem);
+        }
+        
+        // UI 즉시 반영 및 모달 닫기
+        closeFolderModal(); 
+        showToast(`[${folderName}] 에 저장됨 ❤️`, "success"); 
+        if (isFavoritesTab) renderFavorites(); else renderAllSections();
+
+        // 백그라운드 DB 저장 (화면 안 멈춤)
+        db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId)
+          .set(JSON.parse(JSON.stringify(newItem)))
+          .finally(() => { btn.disabled = false; });
     }
 
     let searchDebounceTimeout;
@@ -219,7 +254,7 @@
 
     window.handleArtistSearch = function(d) {
         document.getElementById('status-message').classList.add('hidden'); const grid = document.getElementById('artist-selection-grid'); grid.innerHTML = ''; document.getElementById('artist-selection-container').classList.remove('hidden');
-        if(!d.data || d.data.length === 0) return;
+        if(!d.data || d.data.length === 0) { grid.innerHTML = "<p class='text-zinc-600 text-sm'>검색 결과가 없습니다.</p>"; return; }
         d.data.forEach(a => { const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; div.onclick = () => selectArtist(a.id, a.name); div.innerHTML = `<img src="${a.picture_medium}" class="w-20 h-20 md:w-28 md:h-28 rounded-full mb-3 shadow-lg border border-zinc-700"><h4 class="text-white text-center font-bold text-xs md:text-sm truncate w-full">${a.name}</h4>`; grid.appendChild(div); });
     };
 
@@ -247,12 +282,14 @@
     function renderFavorites() {
         const c = document.getElementById('sections-container'); c.innerHTML = '';
         const allFolders = ['전체 보관함', ...new Set(favorites.map(f => f.folderName || '기본 보관함'))];
+        
         let tabsHtml = `<div class="flex flex-wrap gap-2 mb-8 px-4 md:px-0">`;
         allFolders.forEach(f => {
             const active = currentFavFolder === f;
             tabsHtml += `<button onclick="setFavFolder('${f}')" class="px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${f}</button>`;
         });
-        tabsHtml += `</div>`; c.innerHTML = tabsHtml;
+        tabsHtml += `</div>`;
+        c.innerHTML = tabsHtml;
 
         const q = document.getElementById('local-search-input').value.toLowerCase();
         const fItems = favorites.filter(it => (!q || it.title.toLowerCase().includes(q)) && (currentFavFolder === '전체 보관함' || (it.folderName || '기본 보관함') === currentFavFolder));
@@ -266,13 +303,23 @@
         if (!items.length) return; const c = document.getElementById('sections-container'), sh = document.createElement('div');
         sh.innerHTML = `<h3 class="text-xl md:text-2xl font-black mb-6 border-l-4 border-[#10b981] pl-4 md:pl-5">${title} <span class="text-zinc-600 text-xs md:text-sm ml-2">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-8 px-4 md:px-0"></div>`; c.appendChild(sh); const g = sh.querySelector('div');
         items.forEach(it => {
-            const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = type === 'album' ? it.cover_medium : it.album.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : (type === 'track' ? 'Song' : ''); const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
+            const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = type === 'album' ? it.cover_medium : it.album.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : (type === 'track' ? 'Song' : ''); 
+            const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
+            
             const card = document.createElement('div'); card.className = "group bg-zinc-900/40 rounded-2xl overflow-hidden relative border border-zinc-800/50 cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg"; const safeT = it.title.replace(/'/g,"\\'"), safeA = (type==='album'?(it.artistNameCache||currentArtist):it.artist.name).replace(/'/g,"\\'"); card.setAttribute('onclick', `playMedia('${type}', ${it.id}, '${cover}', '${safeT}', '${safeA}')`);
-            card.innerHTML = `<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700"><button onclick="toggleFavorite(event, ${JSON.stringify(it).replace(/"/g, '&quot;')}, '${type}')" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`; g.appendChild(card);
+            
+            // ⭐️ 개선된 하트 버튼: active 상태 애니메이션 추가
+            card.innerHTML = `
+                <div class="relative aspect-square overflow-hidden bg-zinc-800">
+                    <img src="${cover}" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
+                    <button onclick="toggleFavorite(event, ${JSON.stringify(it).replace(/"/g, '&quot;')}, '${type}')" class="absolute top-2 right-2 md:top-3 md:right-3 p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20 hover:scale-110 active:scale-75 transition-all duration-300">
+                        <svg class="w-4 h-4 md:w-5 md:h-5 transition-colors duration-300 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    </button>
+                </div>
+                <div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`; g.appendChild(card);
         });
     }
 
-    // URL 딥링킹 
     window.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search);
         const type = params.get('type'), id = params.get('id');
@@ -285,20 +332,19 @@
     function createSessionElement(role, name) { const cleanName = name.replace(/\s\(\d+\)$/, ''); return `<div class="mb-3 flex items-start gap-3"><span class="role-badge shrink-0 mt-0.5">${role}</span><button class="session-trigger text-left text-white hover:text-[#10b981] font-black border-b-2 border-zinc-900 transition-all" data-name="${cleanName.replace(/"/g, '&quot;')}">${cleanName}</button></div>`; }
     document.getElementById('studio-view').addEventListener('click', function(e) { const trigger = e.target.closest('.session-trigger'); if (trigger) window.searchSessionMusician(trigger.getAttribute('data-name')); });
 
-    // Vercel Discogs
     async function fetchDiscogsCreditsFromServer(title, artist) { const out = document.getElementById('discogs-credit-text'); out.innerHTML = "SEARCHING..."; try { const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`); const d = await r.json(); currentDiscogsReleaseData = d; if (d.extraartists?.length) { let h = ""; d.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); out.innerHTML = h; } else out.innerHTML = "NO DATA"; if (currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); } catch (e) { out.innerHTML = "ERROR"; } }
+
     function updateTrackSpecificCredits(title) { const cont = document.getElementById('discogs-track-credits-container'), dataUi = document.getElementById('discogs-track-data-ui'); if (!currentDiscogsReleaseData?.tracklist) return cont.classList.add('hidden'); const track = currentDiscogsReleaseData.tracklist.find(tr => tr.title.toLowerCase().includes(title.toLowerCase())); if (track?.extraartists?.length) { document.getElementById('discogs-track-title').textContent = `TRACK: ${track.title}`; let h = ""; track.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); dataUi.innerHTML = h; cont.classList.remove('hidden'); } else cont.classList.add('hidden'); }
 
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); }
     window.closeStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); window.history.pushState({}, '', window.location.pathname); }
 
-    // ⭐️ 아티스트 정보를 넘기며 딥링크 지원 및 Last.fm 호출
     window.playMedia = function(type, id, cover, title, artist, updateUrl = true) {
         if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); window.history.pushState({}, '', url); }
         currentAlbumCover = cover; currentDiscogsReleaseData = null; document.getElementById('studio-cover').src = cover; document.getElementById('studio-title').textContent = title; document.getElementById('studio-artist').textContent = artist; openStudioView();
         const s = document.createElement('script'); s.src = `https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`; document.body.appendChild(s);
         
-        fetchAlbumWikiStory(title, artist); // 👈 Lastfm/위키 연동 호출
+        fetchAlbumWikiStory(title, artist);
         fetchDiscogsCreditsFromServer(title, artist);
     };
 
@@ -308,40 +354,22 @@
 
     function fetchBpm(id) { window[`handleBpm_${id}`] = (d) => { const b = document.getElementById('aura-badge'), p = document.getElementById('global-player'); if(d.bpm) { b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden'); p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[120] transition-all duration-500 border-t border-zinc-900 shadow-2xl ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`; } else b.classList.add('hidden'); }; const s = document.createElement('script'); s.src = `https://api.deezer.com/track/${id}?output=jsonp&callback=handleBpm_${id}`; document.body.appendChild(s); }
 
-    // ⭐️ [신규 통합] 하이브리드 백과/트리비아 엔진 (위키백과 -> Last.fm)
     async function fetchAlbumWikiStory(title, artist) {
         const wikiUI = document.getElementById('wiki-credit-text');
         wikiUI.innerHTML = "<span class='animate-pulse text-zinc-500'>데이터베이스 검색 중... 🔍</span>";
-        
         try {
-            // 1차 시도: 한국어 위키백과
             const wikiRes = await fetch(`https://ko.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=4&explaintext=true&origin=*&titles=${encodeURIComponent(title)}`);
-            const wikiData = await wikiRes.json();
-            const pageId = Object.keys(wikiData.query.pages)[0];
-            const extract = wikiData.query.pages[pageId].extract;
-
-            if (extract && extract.length > 20) {
-                wikiUI.innerHTML = extract;
-                return; // 위키에 내용이 충분하면 조기 종료
-            }
-
-            // 2차 시도: Last.fm API
+            const wikiData = await wikiRes.json(); const pageId = Object.keys(wikiData.query.pages)[0]; const extract = wikiData.query.pages[pageId].extract;
+            if (extract && extract.length > 20) { wikiUI.innerHTML = extract; return; }
             wikiUI.innerHTML = "<span class='animate-pulse text-[#10b981]'>위키 정보 없음. Last.fm 글로벌 DB 검색 중... 🌐</span>";
             const LAST_FM_API_KEY = "bc6dfd44dfc503c39ec41ade07e02778";
             const lastFmUrl = `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LAST_FM_API_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`;
-            
-            const lastFmRes = await fetch(lastFmUrl);
-            const lastFmData = await lastFmRes.json();
-
+            const lastFmRes = await fetch(lastFmUrl); const lastFmData = await lastFmRes.json();
             if (lastFmData.album && lastFmData.album.wiki && lastFmData.album.wiki.summary) {
                 let cleanSummary = lastFmData.album.wiki.summary.replace(/<a href=.*<\/a>/, '').trim();
                 wikiUI.innerHTML = `<span class="text-[#10b981] font-bold text-[10px] bg-[#10b981]/20 px-2 py-1 rounded mb-2 inline-block">Last.fm Trivia</span><br>${cleanSummary}`;
-            } else {
-                wikiUI.innerHTML = "이 앨범에 대한 공식 배경 설명이나 트리비아가 글로벌 DB에도 아직 없습니다 💿";
-            }
-        } catch(e) {
-            wikiUI.innerHTML = "정보를 불러오는 데 실패했습니다.";
-        }
+            } else { wikiUI.innerHTML = "이 앨범에 대한 공식 배경 설명이나 트리비아가 글로벌 DB에도 아직 없습니다 💿"; }
+        } catch(e) { wikiUI.innerHTML = "정보를 불러오는 데 실패했습니다."; }
     }
 
     const audio = document.getElementById('audio-element'), pI = document.getElementById('play-icon'), psI = document.getElementById('pause-icon');
