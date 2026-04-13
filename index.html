@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Music Hub V23 (Engine Optimized)</title>
+    <title>Ultimate Music Hub V23.1 (Unfiltered & Washed)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -58,7 +58,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Ultimate Music Hub</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Engine Optimized V23</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Unfiltered & Smart Matching Engine</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -160,19 +160,25 @@
     let albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
     let fetchState = { albumsDone: false, featuresDone: false };
     
-    // ⭐️ V23 패치: 스튜디오 뷰어(current)와 실제 재생 큐(playing) 완벽 분리
     let currentAlbumTracks = [], currentAlbumCover = "", currentDiscogsReleaseData = null;
     let playingQueue = [], playingIndex = 0, playingCover = "";
     
     let albumSortOrder = 'desc';
     let pendingFavItem = null, pendingFavType = null, currentFavFolder = '전체 보관함';
 
-    // ⭐️ V23 패치: JSONP 메모리 누수 방지 헬퍼 함수
+    // ⭐️ [신규] 마법의 제목 세탁기 함수
+    function cleanTitleForSearch(title) {
+        if (!title) return "";
+        return title
+            .replace(/\s*[\(\[].*?(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*?[\)\]]/gi, '')
+            .replace(/\s*-\s*(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*$/gi, '')
+            .trim();
+    }
+
     function loadJSONP(url) {
         const scriptId = 'jsonp-' + Math.random().toString(36).substr(2, 9);
         const s = document.createElement('script');
-        s.id = scriptId;
-        s.src = url;
+        s.id = scriptId; s.src = url;
         s.onload = () => { const el = document.getElementById(scriptId); if(el) el.remove(); };
         s.onerror = () => { const el = document.getElementById(scriptId); if(el) el.remove(); };
         document.body.appendChild(s);
@@ -232,7 +238,7 @@
         if(!d.data || d.data.length === 0) return;
         d.data.forEach(a => { 
             const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; 
-            div.onclick = () => selectArtist(a.id, a.name); // ⭐️ V23 패치: XSS 100% 안전한 클로저
+            div.onclick = () => selectArtist(a.id, a.name);
             div.innerHTML = `<img src="${a.picture_medium}" onerror="this.src='https://placehold.co/200x200/18181b/10b981?text=No+Img'" class="w-20 h-20 md:w-28 md:h-28 rounded-full mb-3 shadow-lg border border-zinc-700 object-cover"><h4 class="text-white text-center font-bold text-xs md:text-sm truncate w-full">${a.name}</h4>`; 
             grid.appendChild(div); 
         });
@@ -252,9 +258,19 @@
     window.handleAllAlbumsPage = function(d) { if(d.data) window.allFetchedAlbums.push(...d.data); if(d.next) { loadJSONP(d.next + '&output=jsonp&callback=handleAllAlbumsPage'); } else { fetchState.albumsDone = true; tryRenderAll(); } };
     window.handleFeaturedTracks = function(d) { if(d.data) albumsData.features = d.data.filter(t => t.artist.id !== currentArtistId); fetchState.featuresDone = true; tryRenderAll(); };
 
+    // ⭐️ [수정] 중복 제거 필터(Set) 완전 삭제 - 모든 앨범을 다 보여줍니다.
     function tryRenderAll() {
-        if (!fetchState.albumsDone || !fetchState.featuresDone) return; document.getElementById('status-message').classList.add('hidden'); document.getElementById('results-controls').classList.remove('hidden'); const seen = new Set();
-        window.allFetchedAlbums.forEach(a => { const tl = a.title.toLowerCase(); if(!seen.has(tl)) { seen.add(tl); if (a.record_type === 'compile' || tl.includes('best of')) albumsData.compilation.push(a); else if (tl.includes('live')) albumsData.live.push(a); else if (a.record_type === 'ep' || a.record_type === 'single') albumsData.ep.push(a); else albumsData.regular.push(a); } });
+        if (!fetchState.albumsDone || !fetchState.featuresDone) return; 
+        document.getElementById('status-message').classList.add('hidden'); 
+        document.getElementById('results-controls').classList.remove('hidden'); 
+        
+        window.allFetchedAlbums.forEach(a => { 
+            const tl = a.title.toLowerCase(); 
+            if (a.record_type === 'compile' || tl.includes('best of')) albumsData.compilation.push(a); 
+            else if (tl.includes('live')) albumsData.live.push(a); 
+            else if (a.record_type === 'ep' || a.record_type === 'single') albumsData.ep.push(a); 
+            else albumsData.regular.push(a); 
+        });
         renderAllSections();
     }
 
@@ -289,7 +305,6 @@
             const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = type === 'album' ? it.cover_medium : it.album.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : (type === 'track' ? 'Song' : ''); const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
             const card = document.createElement('div'); card.className = "group bg-zinc-900/40 rounded-2xl overflow-hidden relative border border-zinc-800/50 cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg"; 
             
-            // ⭐️ V23 패치: onclick 문자열 치환 제거 (XSS 및 따옴표 버그 100% 차단)
             const resolvedArtist = type === 'album' ? (it.artistNameCache||currentArtist) : it.artist.name;
             card.onclick = () => playMedia(type, it.id, cover, it.title, resolvedArtist);
             
@@ -309,17 +324,39 @@
     function createSessionElement(role, name) { const cleanName = name.replace(/\s\(\d+\)$/, ''); return `<div class="mb-3 flex items-start gap-3"><span class="role-badge shrink-0 mt-0.5">${role}</span><button class="session-trigger text-left text-white hover:text-[#10b981] font-black border-b-2 border-zinc-900 transition-all" data-name="${cleanName.replace(/"/g, '&quot;')}">${cleanName}</button></div>`; }
     document.getElementById('studio-view').addEventListener('click', function(e) { const trigger = e.target.closest('.session-trigger'); if (trigger) window.searchSessionMusician(trigger.getAttribute('data-name')); });
 
-    async function fetchDiscogsCreditsFromServer(title, artist) { const out = document.getElementById('discogs-credit-text'); out.innerHTML = "SEARCHING..."; try { const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`); const d = await r.json(); currentDiscogsReleaseData = d; if (d.extraartists?.length) { let h = ""; d.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); out.innerHTML = h; } else out.innerHTML = "NO DATA"; if (currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); } catch (e) { out.innerHTML = "ERROR"; } }
-    function updateTrackSpecificCredits(title) { const cont = document.getElementById('discogs-track-credits-container'), dataUi = document.getElementById('discogs-track-data-ui'); if (!currentDiscogsReleaseData?.tracklist) return cont.classList.add('hidden'); const track = currentDiscogsReleaseData.tracklist.find(tr => tr.title.toLowerCase().includes(title.toLowerCase())); if (track?.extraartists?.length) { document.getElementById('discogs-track-title').textContent = `TRACK: ${track.title}`; let h = ""; track.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); dataUi.innerHTML = h; cont.classList.remove('hidden'); } else cont.classList.add('hidden'); }
+    async function fetchDiscogsCreditsFromServer(title, artist) { 
+        const out = document.getElementById('discogs-credit-text'); out.innerHTML = "SEARCHING..."; 
+        try { const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`); const d = await r.json(); currentDiscogsReleaseData = d; if (d.extraartists?.length) { let h = ""; d.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); out.innerHTML = h; } else out.innerHTML = "NO DATA"; if (currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); } catch (e) { out.innerHTML = "ERROR"; } 
+    }
+    
+    // ⭐️ [수정] 트랙 이름도 세탁해서 매칭합니다!
+    function updateTrackSpecificCredits(title) { 
+        const cont = document.getElementById('discogs-track-credits-container'), dataUi = document.getElementById('discogs-track-data-ui'); 
+        if (!currentDiscogsReleaseData?.tracklist) return cont.classList.add('hidden'); 
+        
+        const cleanTarget = cleanTitleForSearch(title).toLowerCase();
+        const track = currentDiscogsReleaseData.tracklist.find(tr => {
+            const cleanSource = cleanTitleForSearch(tr.title).toLowerCase();
+            return cleanSource.includes(cleanTarget) || cleanTarget.includes(cleanSource);
+        }); 
+        
+        if (track?.extraartists?.length) { document.getElementById('discogs-track-title').textContent = `TRACK: ${track.title}`; let h = ""; track.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); dataUi.innerHTML = h; cont.classList.remove('hidden'); } 
+        else cont.classList.add('hidden'); 
+    }
 
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); }
     window.closeStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); window.history.pushState({}, '', window.location.pathname); }
 
+    // ⭐️ [수정] 앨범 이름 세탁 후 API 전송
     window.playMedia = function(type, id, cover, title, artist, updateUrl = true) {
         if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); window.history.pushState({}, '', url); }
         currentAlbumCover = cover; currentDiscogsReleaseData = null; document.getElementById('studio-cover').src = cover; document.getElementById('studio-title').textContent = title; document.getElementById('studio-artist').textContent = artist; openStudioView();
         loadJSONP(`https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`);
-        fetchAlbumWikiStory(title, artist); fetchDiscogsCreditsFromServer(title, artist);
+        
+        // 검색용 깨끗한 타이틀 추출
+        const cleanTitle = cleanTitleForSearch(title);
+        fetchAlbumWikiStory(cleanTitle, artist); 
+        fetchDiscogsCreditsFromServer(cleanTitle, artist);
     };
 
     window.handleTracks = function(d) { 
@@ -327,21 +364,10 @@
         currentAlbumTracks.forEach((t, i) => { const hasP = !!t.preview; const div = document.createElement('div'); div.className = `p-3 md:p-4 hover:bg-white/5 cursor-pointer rounded-xl text-xs md:text-sm border-b border-zinc-900/50 flex items-center gap-4 ${!hasP?'opacity-20':''}`; div.onclick = () => hasP ? playSpecificTrack(i) : null; div.innerHTML = `<span class="text-zinc-600 font-mono w-6 text-center">${i+1}</span> <span class="font-bold flex-1 truncate">${t.title}</span>`; list.appendChild(div); }); 
     };
 
-    // ⭐️ V23 패치: 플레이어 큐 독립 (viewing 앨범과 playing 앨범 상태 분리)
-    function playSpecificTrack(i) { 
-        playingQueue = [...currentAlbumTracks]; // 뷰어의 목록을 재생 큐로 복사!
-        playingIndex = i; 
-        playingCover = currentAlbumCover;
-        loadTrack(); 
-    }
+    function playSpecificTrack(i) { playingQueue = [...currentAlbumTracks]; playingIndex = i; playingCover = currentAlbumCover; loadTrack(); }
     
     function loadTrack() { 
-        const t = playingQueue[playingIndex]; if(!t?.preview) return; 
-        document.getElementById('global-player').classList.remove('translate-y-full'); 
-        document.getElementById('player-title').textContent = t.title; 
-        document.getElementById('player-artist').textContent = t.artist.name; 
-        document.getElementById('player-cover').src = playingCover; 
-        audio.src = t.preview.replace(/^http:\/\//i, 'https://'); audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); 
+        const t = playingQueue[playingIndex]; if(!t?.preview) return; document.getElementById('global-player').classList.remove('translate-y-full'); document.getElementById('player-title').textContent = t.title; document.getElementById('player-artist').textContent = t.artist.name; document.getElementById('player-cover').src = playingCover; audio.src = t.preview.replace(/^http:\/\//i, 'https://'); audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); 
         updateTrackSpecificCredits(t.title); fetchBpm(t.id); 
     }
 
