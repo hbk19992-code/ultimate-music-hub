@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Music Hub V23.2 (Flawless Engine)</title>
+    <title>Ultimate Music Hub V23.3 (Debug Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -58,7 +58,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Ultimate Music Hub</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Flawless Digging Engine V23.2</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Flawless Digging Engine V23.3</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -167,7 +167,7 @@
     let albumSortOrder = 'desc';
     let pendingFavItem = null, pendingFavType = null, currentFavFolder = '전체 보관함';
 
-    // ⭐️ 마법의 제목 세탁기
+    // 마법의 제목 세탁기
     function cleanTitleForSearch(title) {
         if (!title) return "";
         return title.replace(/\s*[\(\[].*?(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*?[\)\]]/gi, '')
@@ -175,7 +175,7 @@
                     .trim();
     }
 
-    // ⭐️ 메모리 누수 방지 JSONP 헬퍼
+    // 메모리 누수 방지 JSONP 헬퍼
     function loadJSONP(url) {
         const scriptId = 'jsonp-' + Math.random().toString(36).substr(2, 9);
         const s = document.createElement('script');
@@ -328,29 +328,39 @@
     function createSessionElement(role, name) { const cleanName = name.replace(/\s\(\d+\)$/, ''); return `<div class="mb-3 flex items-start gap-3"><span class="role-badge shrink-0 mt-0.5">${role}</span><button class="session-trigger text-left text-white hover:text-[#10b981] font-black border-b-2 border-zinc-900 transition-all" data-name="${cleanName.replace(/"/g, '&quot;')}">${cleanName}</button></div>`; }
     document.getElementById('studio-view').addEventListener('click', function(e) { const trigger = e.target.closest('.session-trigger'); if (trigger) window.searchSessionMusician(trigger.getAttribute('data-name')); });
 
-    // ⭐️ V23.2 패치: Race Condition 100% 차단
+    // ⭐️ V23.3: Vercel 백엔드 에러 디버거 탑재
     async function fetchDiscogsCreditsFromServer(title, artist) { 
         const out = document.getElementById('discogs-credit-text'); 
-        out.innerHTML = "<span class='animate-pulse text-zinc-500'>SEARCHING DATABASE...</span>"; 
+        out.innerHTML = "<span class='animate-pulse text-zinc-500'>Vercel 서버와 통신 중... 🌐</span>"; 
+        
         try { 
             const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`); 
-            if (!r.ok) throw new Error("API 통신 에러");
+            
+            if (!r.ok) {
+                const errorDetail = await r.text(); 
+                throw new Error(`HTTP ${r.status} | ${errorDetail}`);
+            }
+            
             const d = await r.json(); 
             currentDiscogsReleaseData = d; 
             
             if (d.extraartists?.length) { 
                 let h = ""; d.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); out.innerHTML = h; 
             } else {
-                out.innerHTML = "<span class='text-zinc-500 font-bold'>NO SESSION DATA FOUND</span>"; 
+                out.innerHTML = "<span class='text-zinc-500 font-bold'>세션 데이터가 없습니다.</span>"; 
             }
             
-            // 트랙 데이터가 안전하게 도착했을 때만 실행
             if (currentAlbumTracks && currentAlbumTracks.length > 0 && currentAlbumTracks[currentTrackIndex]) { 
                 updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); 
             } 
         } catch (e) { 
-            console.error(e);
-            out.innerHTML = "<span class='text-rose-500 font-bold'>세션 정보를 불러오지 못했습니다.</span>"; 
+            console.error("Backend Error:", e);
+            out.innerHTML = `
+                <div class="bg-rose-500/10 p-3 rounded-lg border border-rose-500/30">
+                    <span class='text-rose-500 font-bold text-xs'>백엔드 에러 발생! 👇</span><br>
+                    <span class='text-zinc-300 text-[10px] break-all'>${e.message}</span>
+                </div>
+            `; 
         } 
     }
     
@@ -392,7 +402,6 @@
         currentAlbumTracks = d.data || [d]; const list = document.getElementById('studio-track-list'); list.innerHTML = ''; 
         currentAlbumTracks.forEach((t, i) => { const hasP = !!t.preview; const div = document.createElement('div'); div.className = `p-3 md:p-4 hover:bg-white/5 cursor-pointer rounded-xl text-xs md:text-sm border-b border-zinc-900/50 flex items-center gap-4 ${!hasP?'opacity-20':''}`; div.onclick = () => hasP ? playSpecificTrack(i) : null; div.innerHTML = `<span class="text-zinc-600 font-mono w-6 text-center">${i+1}</span> <span class="font-bold flex-1 truncate">${t.title}</span>`; list.appendChild(div); }); 
         
-        // ⭐️ 트랙 데이터 도착 보장 후 다시 한번 크레딧 매칭 시도
         if (currentDiscogsReleaseData && currentAlbumTracks.length > 0) {
             updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title);
         }
