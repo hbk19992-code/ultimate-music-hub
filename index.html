@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Music Hub V23.6.1 (Hybrid Sorter Edition)</title>
+    <title>Ultimate Music Hub V23.7 (Apple Engine Priority)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -58,7 +58,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Ultimate Music Hub</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Apple Music Smart Sorter V23.6.1</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Apple Music Primary Engine V23.7</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -235,6 +235,7 @@
         albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; 
         fetchState = { albumsDone: false, featuresDone: false, itunesDone: false }; 
         window.itunesAlbums = [];
+        window.deezerUniqueFeatures = [];
         loadJSONP(`https://api.deezer.com/search/${mode === 'artist' ? 'artist' : ''}?q=${encodeURIComponent(q)}&limit=12&output=jsonp&callback=${mode === 'artist' ? 'handleArtistSearch' : 'handleTrackGlobalSearch'}`);
     }
 
@@ -259,17 +260,15 @@
         });
     };
 
+    // ⭐️ V23.7: Apple Music 검색 제한을 200개로 대폭 상향 (주 엔진 역할 수행)
     window.selectArtist = function(id, name) { 
-        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = [];
-        
-        allFetchedFeatures = []; 
-        featureFetchCount = 0;   
-        
+        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = [];
+        allFetchedFeatures = []; featureFetchCount = 0;   
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); 
         
+        loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&callback=handleItunesAlbums`);
         loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=handleAllAlbumsPage`); 
         loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=handleFeaturedTracks`); 
-        loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=50&callback=handleItunesAlbums`);
     };
 
     window.handleItunesAlbums = function(d) {
@@ -285,54 +284,39 @@
             const features = d.data.filter(t => t.artist.id !== currentArtistId);
             allFetchedFeatures.push(...features);
         }
-        
         featureFetchCount++;
-        
         if(d.next && featureFetchCount < 4) { 
             loadJSONP(d.next + '&output=jsonp&callback=handleFeaturedTracks'); 
         } else { 
             const uniqueFeatures = [];
             const seenAlbums = new Set();
-            
             allFetchedFeatures.forEach(t => {
                 if(!seenAlbums.has(t.album.id)) {
                     seenAlbums.add(t.album.id);
                     uniqueFeatures.push(t);
                 }
             });
-            
-            albumsData.features = uniqueFeatures; 
+            window.deezerUniqueFeatures = uniqueFeatures; 
             fetchState.featuresDone = true; 
             tryRenderAll(); 
         } 
     };
 
-    // ⭐️ V23.6.1: Apple Music 스마트 분류기 도입
+    // ⭐️ V23.7: 렌더링 우선순위 완전 뒤집기 (Apple Music 1순위, Deezer 2순위 보완)
     function tryRenderAll() {
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return; 
         document.getElementById('status-message').classList.add('hidden'); 
         document.getElementById('results-controls').classList.remove('hidden'); 
         
         const seenTitles = new Set();
+        albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; 
         
-        // 1. Deezer 앨범 처리
-        window.allFetchedAlbums.forEach(a => { 
-            const tl = cleanTitleForSearch(a.title).toLowerCase(); 
-            seenTitles.add(tl); 
-            a.source = 'deezer';
-            
-            if (a.record_type === 'compile' || tl.includes('best of')) albumsData.compilation.push(a); 
-            else if (tl.includes('live')) albumsData.live.push(a); 
-            else if (a.record_type === 'ep' || a.record_type === 'single') albumsData.ep.push(a); 
-            else albumsData.regular.push(a); 
-        });
-
-        // 2. Apple Music 스마트 분류 및 병합
+        // [1순위] Apple Music (iTunes) 데이터를 먼저 싹 훑어서 메인으로 깔아줍니다!
         if (window.itunesAlbums) {
             window.itunesAlbums.forEach(a => {
                 const tl = cleanTitleForSearch(a.collectionName).toLowerCase();
                 
-                if (!seenTitles.has(tl)) { // 중복이 아닐 때만 처리
+                if (!seenTitles.has(tl)) { 
                     seenTitles.add(tl);
                     
                     const itunesAlbum = {
@@ -348,25 +332,51 @@
                     const artistNameLower = a.artistName.toLowerCase();
                     const searchArtistLower = currentArtist ? currentArtist.toLowerCase() : '';
 
-                    // [분류 1] 아티스트 이름이 검색한 사람과 다르면 -> 피처링(참여작)
                     if (searchArtistLower && !artistNameLower.includes(searchArtistLower) && !searchArtistLower.includes(artistNameLower)) {
                         albumsData.features.push(itunesAlbum);
-                    }
-                    // [분류 2] 라이브, 베스트, 컴필레이션 키워드 감지
-                    else if (tl.includes('live')) {
+                    } else if (tl.includes('live')) {
                         albumsData.live.push(itunesAlbum);
-                    }
-                    else if (tl.includes('best of') || tl.includes('greatest hits') || tl.includes('anthology')) {
+                    } else if (tl.includes('best of') || tl.includes('greatest hits') || tl.includes('anthology')) {
                         albumsData.compilation.push(itunesAlbum);
-                    }
-                    // [분류 3] 수록곡이 6곡 이하이거나 이름에 EP/Single이 들어간 경우 -> EP & 싱글
-                    else if (a.trackCount <= 6 || tl.includes('ep ') || tl.includes('single')) {
+                    } else if (a.trackCount <= 6 || tl.includes('ep ') || tl.includes('single')) {
                         albumsData.ep.push(itunesAlbum);
-                    }
-                    // [분류 4] 나머지는 전부 정규 앨범으로!
-                    else {
+                    } else {
                         albumsData.regular.push(itunesAlbum); 
                     }
+                }
+            });
+        }
+
+        // [2순위 보완] Apple Music에 없었던 앨범(로컬, 특정 인디)만 Deezer가 채워줍니다.
+        window.allFetchedAlbums.forEach(a => { 
+            const tl = cleanTitleForSearch(a.title).toLowerCase(); 
+            if (!seenTitles.has(tl)) { 
+                seenTitles.add(tl); 
+                a.source = 'deezer';
+                
+                if (a.record_type === 'compile' || tl.includes('best of')) albumsData.compilation.push(a); 
+                else if (tl.includes('live')) albumsData.live.push(a); 
+                else if (a.record_type === 'ep' || a.record_type === 'single') albumsData.ep.push(a); 
+                else albumsData.regular.push(a); 
+            }
+        });
+
+        // [3순위 보완] 딥서치로 건져올린 Deezer 피처링 중 겹치지 않는 것만 정규화해서 병합
+        if (window.deezerUniqueFeatures) {
+            window.deezerUniqueFeatures.forEach(t => {
+                const tl = cleanTitleForSearch(t.album.title).toLowerCase();
+                if (!seenTitles.has(tl)) {
+                    seenTitles.add(tl);
+                    const featureAlbum = {
+                        id: t.album.id,
+                        title: t.album.title,
+                        cover_medium: t.album.cover_medium,
+                        release_date: t.album.release_date || '',
+                        record_type: 'deezer',
+                        artist: { name: t.artist.name }, // 피처링 주인이 아닌, 이 앨범의 원래 아티스트 이름
+                        source: 'deezer'
+                    };
+                    albumsData.features.push(featureAlbum);
                 }
             });
         }
@@ -377,7 +387,8 @@
     function renderAllSections() {
         const c = document.getElementById('sections-container'); c.innerHTML = ''; if (isFavoritesTab) { renderFavorites(); return; }
         const f = (it) => { const q = document.getElementById('local-search-input').value.toLowerCase(); return !q || it.title.toLowerCase().includes(q); }; const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date || 0) - new Date(a.release_date || 0) : new Date(a.release_date || 0) - new Date(b.release_date || 0));
-        renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album'); renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album'); renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album'); renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album'); renderSection('🤝 피처링 참여곡', albumsData.features.filter(f), 'track');
+        // 모든 섹션이 'album' 구조로 완전히 정규화되었습니다.
+        renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album'); renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album'); renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album'); renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album'); renderSection('🤝 피처링 참여곡', albumsData.features.filter(f), 'album');
     }
 
     function renderFavorites() {
@@ -402,10 +413,10 @@
         if (!items.length) return; const c = document.getElementById('sections-container'), sh = document.createElement('div');
         sh.innerHTML = `<h3 class="text-xl md:text-2xl font-black mb-6 border-l-4 border-[#10b981] pl-4 md:pl-5">${title} <span class="text-zinc-600 text-xs md:text-sm ml-2">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-8 px-4 md:px-0"></div>`; c.appendChild(sh); const g = sh.querySelector('div');
         items.forEach(it => {
-            const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = type === 'album' ? it.cover_medium : it.album.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : (type === 'track' ? 'Song' : ''); const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
+            const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = it.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : ''; const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
             const card = document.createElement('div'); card.className = "group bg-zinc-900/40 rounded-2xl overflow-hidden relative border border-zinc-800/50 cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg"; 
             
-            const resolvedArtist = type === 'album' ? (it.artistNameCache||currentArtist) : it.artist.name;
+            const resolvedArtist = (it.artistNameCache||currentArtist) || it.artist.name;
             const source = it.source || 'deezer'; 
             
             card.onclick = () => playMedia(type, it.id, cover, it.title, resolvedArtist, true, source);
