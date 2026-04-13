@@ -20,10 +20,10 @@ export default async function handler(req, res) {
             return res.status(200).json(mbData);
         }
 
-        // 🚀 3순위: ManiaDB (🔥 EUC-KR 번역기 탑재 스크래핑 엔진 🔥)
+        // 🚀 3순위: ManiaDB (아티스트 페이지 타겟팅 + EUC-KR 디코더 탑재)
         const maniaData = await searchManiaDB(albumTitle, artistName);
         if (maniaData && maniaData.extraartists.length > 0) {
-            maniaData.extraartists.unshift({ role: '🇰🇷 Data Source', name: 'ManiaDB (EUC-KR Bot)' });
+            maniaData.extraartists.unshift({ role: '🇰🇷 Data Source', name: 'ManiaDB (Artist Page Bot)' });
             return res.status(200).json(maniaData);
         }
 
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
 }
 
 // ==========================================
-// 🛠 1. Discogs
+// 🛠 1. Discogs 검색
 // ==========================================
 async function searchDiscogs(title, artist) {
     const token = process.env.DISCOGS_TOKEN;
@@ -59,7 +59,7 @@ async function searchDiscogs(title, artist) {
 }
 
 // ==========================================
-// 🛠 2. MusicBrainz
+// 🛠 2. MusicBrainz 검색
 // ==========================================
 async function searchMusicBrainz(title, artist) {
     const headers = { 'User-Agent': 'MusicHubEngine/1.0', 'Accept': 'application/json' };
@@ -86,53 +86,60 @@ async function searchMusicBrainz(title, artist) {
 }
 
 // ==========================================
-// 🛠 3. ManiaDB (EUC-KR 디코더 + 딥 스크래핑)
+// 🛠 3. ManiaDB 아티스트 페이지 딥 스크래핑 엔진
 // ==========================================
 async function searchManiaDB(title, artist) {
     try {
-        // [1단계] ManiaDB 공식 API로 앨범 고유 링크를 먼저 알아냅니다. (API는 UTF-8 지원)
-        const query = encodeURIComponent(title + ' ' + artist);
-        const apiUrl = `http://www.maniadb.com/api/search/${query}/?sr=album&display=5&key=example&v=0.5`;
-        const apiRes = await fetch(apiUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (!apiRes.ok) return null;
+        let targetUrl = null;
+
+        // [1단계] 앨범 이름 대신 "아티스트 이름"으로 먼저 검색하여 아티스트 페이지를 찾습니다!
+        const artApiUrl = `http://www.maniadb.com/api/search/${encodeURIComponent(artist)}/?sr=artist&display=1&key=example&v=0.5`;
+        const artRes = await fetch(artApiUrl);
         
-        const xml = await apiRes.text();
-        
-        // 검색된 앨범 중 첫 번째 링크(URL) 획득
-        const linkMatch = xml.match(/<link>(http:\/\/www\.maniadb\.com\/album\/\d+)<\/link>/i);
-        if (!linkMatch) return null;
-        
-        const albumUrl = linkMatch[1];
-        
-        // [2단계] 알아낸 앨범 페이지로 직접 접속 (여기서부터 EUC-KR의 마수가 뻗칩니다)
-        const htmlRes = await fetch(albumUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (artRes.ok) {
+            const artXml = await artRes.text();
+            const linkMatch = artXml.match(/<link>(http:\/\/www\.maniadb\.com\/artist\/\d+)<\/link>/i);
+            if (linkMatch) targetUrl = linkMatch[1]; 
+        }
+
+        // 아티스트 페이지를 못 찾았다면, 앨범 이름으로 백업 검색
+        if (!targetUrl) {
+            const cleanTitle = title.replace(/\[.*?\]|\(.*?\)/g, '').trim();
+            const albApiUrl = `http://www.maniadb.com/api/search/${encodeURIComponent(cleanTitle)}/?sr=album&display=5&key=example&v=0.5`;
+            const albRes = await fetch(albApiUrl);
+            if (albRes.ok) {
+                const albXml = await albRes.text();
+                const albLinkMatch = albXml.match(/<link>(http:\/\/www\.maniadb\.com\/album\/\d+)<\/link>/i);
+                if (albLinkMatch) targetUrl = albLinkMatch[1];
+            }
+        }
+
+        if (!targetUrl) return null;
+
+        // [2단계] 타겟 페이지 접속 후 EUC-KR 해독
+        const htmlRes = await fetch(targetUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         if (!htmlRes.ok) return null;
         
-        // 🔥 [3단계 핵심] 텍스트가 아닌 '원시 데이터(Buffer)'로 받은 뒤 EUC-KR 번역기로 돌립니다!
         const arrayBuffer = await htmlRes.arrayBuffer();
         const decoder = new TextDecoder('euc-kr');
         const html = decoder.decode(arrayBuffer);
-        
-        // [4단계] 불순물 제거: &nbsp;와 HTML 태그를 두 칸 공백(  )으로 완전히 밀어버립니다.
-        let cleanHtml = html.replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ');
-        cleanHtml = cleanHtml.replace(/<[^>]+>/g, '  ');
 
         let extraartists = [];
         let seen = new Set();
-
-        // [5단계] 번역된 한글(작사/작곡/편곡)을 기준으로 이름만 쏙 빼옵니다.
-        const regex = /(작사|작곡|편곡)\s*:\s*([^\s][^:]+?)(?=\s{2,}|작사|작곡|편곡|$)/g;
+        
+        // 🔥 [3단계] 무적의 정규식: "작사/작곡/편곡 :" 뒤에 나오는 한글, 영어, 숫자를 태그가 나오기 전까지만 포획!
+        const regex = /(작사|작곡|편곡)\s*:\s*([a-zA-Z가-힣0-9\s,&/().]+)/g; 
         let m;
         
-        while ((m = regex.exec(cleanHtml)) !== null) {
+        while ((m = regex.exec(html)) !== null) {
             let roleType = m[1].trim();
-            let namesRaw = m[2].trim();
+            let rawNames = m[2].trim();
             
             let label = roleType === '작사' ? '작사 (Lyricist)' : 
                         roleType === '작곡' ? '작곡 (Composer)' : '편곡 (Arranger)';
             
-            // 쉼표(,), 앰퍼샌드(&), 슬래시(/)로 묶인 공동 작업자 분리
-            let names = namesRaw.split(/[,&/]/).map(n => n.trim()).filter(n => n);
+            // 이름 분리 작업
+            let names = rawNames.split(/[,&/]/).map(n => n.trim()).filter(n => n);
             
             names.forEach(name => {
                 if (name.length > 0 && name.length < 25 && !seen.has(label + name)) {
@@ -144,7 +151,7 @@ async function searchManiaDB(title, artist) {
 
         return { extraartists, tracklist: [] };
     } catch (e) {
-        console.error("ManiaDB EUC-KR Scraping Error:", e);
+        console.error("ManiaDB Scraping Error:", e);
         return null;
     }
 }
