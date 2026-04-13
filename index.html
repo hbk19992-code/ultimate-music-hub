@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Music Hub V23.6 (Apple Music Hybrid)</title>
+    <title>Ultimate Music Hub V23.6.1 (Hybrid Sorter Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -58,7 +58,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Ultimate Music Hub</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Apple Music Hybrid Fallback V23.6</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Apple Music Smart Sorter V23.6.1</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -159,7 +159,7 @@
     let currentArtist = null, currentArtistId = null, isFavoritesTab = false;
     let albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
     
-    // ⭐️ V23.6: Apple Music (iTunes) Fetch 상태 추가
+    // Fetch Status
     let fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
     
     let currentAlbumTracks = [], currentTrackIndex = 0, currentAlbumCover = "", currentDiscogsReleaseData = null;
@@ -259,7 +259,6 @@
         });
     };
 
-    // ⭐️ V23.6: Apple Music 백업 엔진 검색 동시 호출
     window.selectArtist = function(id, name) { 
         currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = [];
         
@@ -270,8 +269,6 @@
         
         loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=handleAllAlbumsPage`); 
         loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=handleFeaturedTracks`); 
-        
-        // 🍎 Apple Music API에 앨범 정보 요청 (CORS 회피용 JSONP)
         loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=50&callback=handleItunesAlbums`);
     };
 
@@ -310,7 +307,7 @@
         } 
     };
 
-    // ⭐️ V23.6: Deezer와 Apple Music 앨범 완벽 병합 (Deezer에 없는 것만 Apple Music에서 꺼내옴)
+    // ⭐️ V23.6.1: Apple Music 스마트 분류기 도입
     function tryRenderAll() {
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return; 
         document.getElementById('status-message').classList.add('hidden'); 
@@ -321,7 +318,7 @@
         // 1. Deezer 앨범 처리
         window.allFetchedAlbums.forEach(a => { 
             const tl = cleanTitleForSearch(a.title).toLowerCase(); 
-            seenTitles.add(tl); // 처리된 제목 기록
+            seenTitles.add(tl); 
             a.source = 'deezer';
             
             if (a.record_type === 'compile' || tl.includes('best of')) albumsData.compilation.push(a); 
@@ -330,22 +327,46 @@
             else albumsData.regular.push(a); 
         });
 
-        // 2. Apple Music (iTunes) 백업 앨범 병합 (누락된 명반 보충)
+        // 2. Apple Music 스마트 분류 및 병합
         if (window.itunesAlbums) {
             window.itunesAlbums.forEach(a => {
                 const tl = cleanTitleForSearch(a.collectionName).toLowerCase();
-                if (!seenTitles.has(tl)) { // Deezer에 없었던 앨범이면 추가!
+                
+                if (!seenTitles.has(tl)) { // 중복이 아닐 때만 처리
                     seenTitles.add(tl);
+                    
                     const itunesAlbum = {
                         id: a.collectionId,
                         title: a.collectionName,
-                        cover_medium: a.artworkUrl100 ? a.artworkUrl100.replace('100x100bb', '600x600bb') : '', // 고화질 커버 요청
+                        cover_medium: a.artworkUrl100 ? a.artworkUrl100.replace('100x100bb', '600x600bb') : '', 
                         release_date: a.releaseDate,
                         record_type: 'itunes',
                         artist: { name: a.artistName },
-                        source: 'itunes' // 출처 명시
+                        source: 'itunes' 
                     };
-                    albumsData.regular.push(itunesAlbum); 
+
+                    const artistNameLower = a.artistName.toLowerCase();
+                    const searchArtistLower = currentArtist ? currentArtist.toLowerCase() : '';
+
+                    // [분류 1] 아티스트 이름이 검색한 사람과 다르면 -> 피처링(참여작)
+                    if (searchArtistLower && !artistNameLower.includes(searchArtistLower) && !searchArtistLower.includes(artistNameLower)) {
+                        albumsData.features.push(itunesAlbum);
+                    }
+                    // [분류 2] 라이브, 베스트, 컴필레이션 키워드 감지
+                    else if (tl.includes('live')) {
+                        albumsData.live.push(itunesAlbum);
+                    }
+                    else if (tl.includes('best of') || tl.includes('greatest hits') || tl.includes('anthology')) {
+                        albumsData.compilation.push(itunesAlbum);
+                    }
+                    // [분류 3] 수록곡이 6곡 이하이거나 이름에 EP/Single이 들어간 경우 -> EP & 싱글
+                    else if (a.trackCount <= 6 || tl.includes('ep ') || tl.includes('single')) {
+                        albumsData.ep.push(itunesAlbum);
+                    }
+                    // [분류 4] 나머지는 전부 정규 앨범으로!
+                    else {
+                        albumsData.regular.push(itunesAlbum); 
+                    }
                 }
             });
         }
@@ -385,9 +406,8 @@
             const card = document.createElement('div'); card.className = "group bg-zinc-900/40 rounded-2xl overflow-hidden relative border border-zinc-800/50 cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg"; 
             
             const resolvedArtist = type === 'album' ? (it.artistNameCache||currentArtist) : it.artist.name;
-            const source = it.source || 'deezer'; // 데이터 출처 확인
+            const source = it.source || 'deezer'; 
             
-            // 클릭 시 출처 정보도 같이 전달
             card.onclick = () => playMedia(type, it.id, cover, it.title, resolvedArtist, true, source);
             
             card.innerHTML = `<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
@@ -396,7 +416,6 @@
         });
     }
 
-    // ⭐️ V23.6: 딥링크 출처 지원 추가
     window.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search);
         const type = params.get('type'), id = params.get('id'), source = params.get('source') || 'deezer';
@@ -480,7 +499,6 @@
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); }
     window.closeStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); window.history.pushState({}, '', window.location.pathname); }
 
-    // ⭐️ V23.6: 출처(source)에 따라 트랙 가져오는 방법 분기
     window.playMedia = function(type, id, cover, title, artist, updateUrl = true, source = 'deezer') {
         if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); url.searchParams.set('source', source); window.history.pushState({}, '', url); }
         
@@ -499,7 +517,6 @@
         fetchDiscogsCreditsFromServer(cleanTitle, artist);
     };
 
-    // ⭐️ V23.6: Apple Music 트랙 데이터 포맷 변환기
     window.handleItunesTracks = function(d) {
         if (!d.results) return;
         const tracks = d.results.filter(t => t.wrapperType === 'track').map(t => ({
