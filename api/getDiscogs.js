@@ -1,62 +1,151 @@
-// api/getDiscogs.js (Vercel ES Module 버전)
-
 export default async function handler(req, res) {
-  // 1. 응답 헤더 설정 (CORS 및 JSON 타입)
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'application/json');
+    const { albumTitle, artistName } = req.query;
 
-  // 2. 파라미터 및 토큰 확인
-  const { albumTitle, artistName } = req.query;
-  const token = process.env.DISCOGS_TOKEN;
-
-  if (!token) {
-    console.error("환경변수 DISCOGS_TOKEN이 설정되지 않았습니다.");
-    return res.status(500).json({ error: "Token missing", extraartists: [], tracklist: [] });
-  }
-
-  if (!albumTitle || !artistName) {
-    return res.status(400).json({ error: "Missing query parameters", extraartists: [], tracklist: [] });
-  }
-
-  try {
-    // 3. 검색어 정제 (괄호 안의 내용 제거 - 예: 'Album (Live)' -> 'Album')
-    const cleanAlbumTitle = albumTitle.replace(/\(.*\)/g, '').trim();
-    
-    // 4. 디스코그스 검색 (Release ID 찾기)
-    const searchUrl = `https://api.discogs.com/database/search?release_title=${encodeURIComponent(cleanAlbumTitle)}&artist=${encodeURIComponent(artistName)}&type=release&token=${token}`;
-    
-    // 디스코그스 API 필수 요구사항: User-Agent 헤더
-    const headers = { 'User-Agent': 'MusicHub-Vercel-Module/1.0' };
-
-    const searchRes = await fetch(searchUrl, { headers });
-    const searchData = await searchRes.json();
-
-    if (!searchData.results || searchData.results.length === 0) {
-      console.log(`검색 결과 없음: ${cleanAlbumTitle} - ${artistName}`);
-      return res.status(200).json({ extraartists: [], tracklist: [] });
+    if (!albumTitle || !artistName) {
+        return res.status(400).json({ error: "앨범 이름과 아티스트 이름이 필요합니다." });
     }
 
-    // 5. 첫 번째 결과의 상세 정보 요청 (Release ID 사용)
-    const releaseId = searchData.results[0].id;
-    const releaseUrl = `https://api.discogs.com/releases/${releaseId}?token=${token}`;
+    try {
+        // 🚀 1순위: Discogs API 검색
+        const discogsData = await searchDiscogs(albumTitle, artistName);
+        if (discogsData && discogsData.extraartists && discogsData.extraartists.length > 0) {
+            // 출처를 뱃지처럼 추가해서 프론트엔드로 보냄
+            discogsData.extraartists.unshift({ role: '💿 Data Source', name: 'Discogs Official' });
+            return res.status(200).json(discogsData);
+        }
+
+        // 🚀 2순위: MusicBrainz API 검색 (Discogs에 세션이 없을 때 발동!)
+        const mbData = await searchMusicBrainz(albumTitle, artistName);
+        if (mbData && mbData.extraartists && mbData.extraartists.length > 0) {
+            mbData.extraartists.unshift({ role: '🧠 Data Source', name: 'MusicBrainz Open DB' });
+            return res.status(200).json(mbData);
+        }
+
+        // 🚀 3순위: ManiaDB API 검색 (한국어가 포함된 경우 최후의 보루)
+        const hasKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(albumTitle + artistName);
+        if (hasKorean) {
+            const maniaData = await searchManiaDB(albumTitle, artistName);
+            if (maniaData && maniaData.tracklist && maniaData.tracklist.length > 0) {
+                maniaData.extraartists.unshift({ role: '🇰🇷 Data Source', name: 'ManiaDB (한국 DB)' });
+                return res.status(200).json(maniaData);
+            }
+        }
+
+        // 3곳을 다 뒤져도 없으면 깔끔하게 빈 배열 반환
+        return res.status(200).json({ 
+            extraartists: [{ role: 'System', name: '3개 글로벌 DB 모두 세션 정보 없음 🥲' }], 
+            tracklist: [] 
+        });
+
+    } catch (error) {
+        console.error("Backend DB Fetch Error:", error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+// ==========================================
+// 🛠 1. Discogs 헬퍼 함수
+// ==========================================
+async function searchDiscogs(title, artist) {
+    const token = process.env.DISCOGS_TOKEN;
+    if (!token) throw new Error("Vercel 환경변수에 DISCOGS_TOKEN이 없습니다.");
     
-    const releaseRes = await fetch(releaseUrl, { headers });
-    const releaseData = await releaseRes.json();
+    const searchUrl = `https://api.discogs.com/database/search?release_title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&type=release&token=${token}`;
+    const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'UltimateMusicHub/1.0' } });
+    if (!searchRes.ok) return null;
+    
+    const searchJson = await searchRes.json();
+    if (!searchJson.results || searchJson.results.length === 0) return null;
 
-    // 6. 성공 응답 (공통 세션 및 트랙리스트 포함)
-    return res.status(200).json({
-      extraartists: releaseData.extraartists || [],
-      tracklist: releaseData.tracklist || []
-    });
+    const releaseId = searchJson.results[0].id;
+    const detailUrl = `https://api.discogs.com/releases/${releaseId}`;
+    const detailRes = await fetch(detailUrl, { headers: { 'User-Agent': 'UltimateMusicHub/1.0' } });
+    if (!detailRes.ok) return null;
+    
+    return await detailRes.json();
+}
 
-  } catch (error) {
-    console.error("서버 내부 에러:", error);
-    // 에러 발생 시 프론트엔드 크래시 방지를 위해 빈 구조 반환
-    return res.status(500).json({ 
-      error: "Internal Server Error", 
-      message: error.message,
-      extraartists: [], 
-      tracklist: [] 
-    });
-  }
+// ==========================================
+// 🛠 2. MusicBrainz 헬퍼 함수 (강력한 2차 백업)
+// ==========================================
+async function searchMusicBrainz(title, artist) {
+    const headers = { 
+        'User-Agent': 'UltimateMusicHub/1.0 ( digging-engine@music.com )', 
+        'Accept': 'application/json' 
+    };
+    
+    const q = encodeURIComponent(`release:"${title}" AND artist:"${artist}"`);
+    const searchUrl = `https://musicbrainz.org/ws/2/release/?query=${q}&fmt=json&limit=1`;
+    const searchRes = await fetch(searchUrl, { headers });
+    if (!searchRes.ok) return null;
+    
+    const searchJson = await searchRes.json();
+    if (!searchJson.releases || searchJson.releases.length === 0) return null;
+
+    const releaseId = searchJson.releases[0].id;
+    
+    // 세션 크레딧(artist-rels)과 수록곡(recordings)을 한 번에 끌어옴
+    const detailUrl = `https://musicbrainz.org/ws/2/release/${releaseId}?inc=artist-rels+recordings&fmt=json`;
+    const detailRes = await fetch(detailUrl, { headers });
+    if (!detailRes.ok) return null;
+    
+    const detailJson = await detailRes.json();
+
+    // 프론트엔드가 이해할 수 있게 Discogs 포맷으로 변환 (Mapping)
+    let extraartists = [];
+    if (detailJson.relations) {
+        detailJson.relations.forEach(rel => {
+            if (rel['target-type'] === 'artist' && rel.artist) {
+                // 악기 이름이나 역할(Role) 추출
+                let role = rel.type;
+                if (rel.attributes && rel.attributes.length > 0) {
+                    role += ` (${rel.attributes.join(', ')})`;
+                }
+                extraartists.push({
+                    role: role.charAt(0).toUpperCase() + role.slice(1), // 앞글자 대문자화
+                    name: rel.artist.name
+                });
+            }
+        });
+    }
+
+    let tracklist = [];
+    if (detailJson.media && detailJson.media.length > 0) {
+        detailJson.media[0].tracks.forEach(tr => {
+            tracklist.push({ title: tr.title, extraartists: [] }); 
+        });
+    }
+
+    return { extraartists, tracklist };
+}
+
+// ==========================================
+// 🛠 3. ManiaDB 헬퍼 함수 (한국 음악 최후의 보루)
+// ==========================================
+async function searchManiaDB(title, artist) {
+    // ManiaDB는 XML로 데이터를 주므로 무식하지만 확실한 정규식 파싱(Regex Parsing) 사용
+    const url = `http://www.maniadb.com/api/search/${encodeURIComponent(title)}/?sr=album&display=1&key=example&v=0.5`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    
+    const xml = await res.text();
+
+    // 수록곡 이름 뜯어내기
+    const trackMatches = xml.match(/<maniadb:track[^>]*><title><!\[CDATA\[(.*?)\]\]><\/title>/g);
+    let tracklist = [];
+    if (trackMatches) {
+        trackMatches.forEach(m => {
+            const titleMatch = m.match(/<!\[CDATA\[(.*?)\]\]>/);
+            if (titleMatch && titleMatch[1]) {
+                tracklist.push({ title: titleMatch[1], extraartists: [] });
+            }
+        });
+    }
+
+    let extraartists = [];
+    if (tracklist.length > 0) {
+        extraartists.push({ role: 'Info', name: 'ManiaDB는 세션 크레딧 API를 미지원하여 수록곡 정보만 복구했습니다.' });
+    }
+
+    return { extraartists, tracklist };
 }
