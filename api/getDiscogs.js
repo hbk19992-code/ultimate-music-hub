@@ -21,14 +21,11 @@ export default async function handler(req, res) {
             return res.status(200).json(mbData);
         }
 
-        // 🚀 3순위: ManiaDB API 검색 (한국어가 포함된 경우 최후의 보루)
-        const hasKorean = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(albumTitle + artistName);
-        if (hasKorean) {
-            const maniaData = await searchManiaDB(albumTitle, artistName);
-            if (maniaData && maniaData.tracklist && maniaData.tracklist.length > 0) {
-                maniaData.extraartists.unshift({ role: '🇰🇷 Data Source', name: 'ManiaDB (한국 DB)' });
-                return res.status(200).json(maniaData);
-            }
+        // 🚀 3순위: ManiaDB API 검색 (한글 여부 상관없이 무조건 최후의 보루로 실행!)
+        const maniaData = await searchManiaDB(albumTitle, artistName);
+        if (maniaData && maniaData.tracklist && maniaData.tracklist.length > 0) {
+            maniaData.extraartists.unshift({ role: '🇰🇷 Data Source', name: 'ManiaDB (한국 DB)' });
+            return res.status(200).json(maniaData);
         }
 
         // 3곳을 다 뒤져도 없으면 깔끔하게 빈 배열 반환
