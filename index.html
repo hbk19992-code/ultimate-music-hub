@@ -26,56 +26,22 @@
         @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
         .toast-animate { animation: slideUpFade 4s ease-in-out forwards; }
 
-        /* 👾===========================================
-           ULTIMATE 8-BIT RETRO THEME
-           =============================================👾 */
+        /* 👾 8-BIT RETRO THEME */
         @keyframes crt-flicker { 0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; } }
-
-        body.pixel-theme {
-            font-family: 'Galmuri11', 'Galmuri9', sans-serif !important; background-color: #000 !important; animation: crt-flicker 0.15s infinite;
-            cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important;
-        }
-
-        body.pixel-theme::after {
-            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 9999; background-size: 100% 3px, 3px 100%; pointer-events: none;
-        }
-        body.pixel-theme::before {
-            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
-            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%); z-index: 9998; pointer-events: none;
-        }
-
-        body.pixel-theme a, body.pixel-theme button, body.pixel-theme .cursor-pointer, body.pixel-theme select, body.pixel-theme input {
-            cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer !important;
-        }
-
+        body.pixel-theme { font-family: 'Galmuri11', 'Galmuri9', sans-serif !important; background-color: #000 !important; animation: crt-flicker 0.15s infinite; cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important; }
+        body.pixel-theme::after { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 9999; background-size: 100% 3px, 3px 100%; pointer-events: none; }
+        body.pixel-theme::before { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%); z-index: 9998; pointer-events: none; }
+        body.pixel-theme a, body.pixel-theme button, body.pixel-theme .cursor-pointer, body.pixel-theme select, body.pixel-theme input { cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer !important; }
         body.pixel-theme * { border-radius: 0 !important; transition: none !important; }
         body.pixel-theme img { image-rendering: pixelated !important; border: 2px solid #333 !important; }
         body.pixel-theme .text-gradient { background: none !important; -webkit-text-fill-color: #10b981 !important; text-shadow: 3px 3px 0px #a238ff !important; }
         body.pixel-theme .bg-zinc-900, body.pixel-theme .bg-zinc-800 { background-color: #111 !important; border: 2px solid #10b981 !important; }
-        body.pixel-theme .shadow-lg, body.pixel-theme .shadow-2xl, body.pixel-theme .group:hover {
-            box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important; transform: translate(-2px, -2px) !important;
-        }
-        
-        /* 🔥 재생바를 제외한 input에만 테두리 적용 (재생바 버그 픽스) */
+        body.pixel-theme .shadow-lg, body.pixel-theme .shadow-2xl, body.pixel-theme .group:hover { box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important; transform: translate(-2px, -2px) !important; }
         body.pixel-theme input:not([type="range"]), body.pixel-theme select, body.pixel-theme button { border: 2px solid #444 !important; text-transform: uppercase; }
         body.pixel-theme input:focus:not([type="range"]), body.pixel-theme select:focus { border-color: #a238ff !important; }
-
-        /* 🔥 8-bit 전용 재생바 디자인 */
-        body.pixel-theme input[type="range"] {
-            border: none !important; height: 6px !important; background: #333 !important; padding: 0 !important;
-        }
-        body.pixel-theme input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 12px; height: 16px; background: #10b981; border: 2px solid #fff;
-            border-radius: 0; cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer;
-        }
-
-        body.pixel-theme .toast-animate {
-            border: 4px solid #fff !important; background: #000 !important; color: #fff !important;
-            font-family: 'Galmuri11', sans-serif !important; box-shadow: 6px 6px 0px rgba(0,0,0,0.8) !important;
-            border-radius: 0 !important; padding: 16px 24px !important; letter-spacing: 1px;
-        }
+        body.pixel-theme input[type="range"] { border: none !important; height: 6px !important; background: #333 !important; padding: 0 !important; }
+        body.pixel-theme input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; background: #10b981; border: 2px solid #fff; border-radius: 0; cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer; }
+        body.pixel-theme .toast-animate { border: 4px solid #fff !important; background: #000 !important; color: #fff !important; font-family: 'Galmuri11', sans-serif !important; box-shadow: 6px 6px 0px rgba(0,0,0,0.8) !important; border-radius: 0 !important; padding: 16px 24px !important; letter-spacing: 1px; }
     </style>
 </head>
 <body class="relative">
@@ -97,7 +63,6 @@
 
     <div class="absolute top-4 right-4 md:top-6 md:right-8 z-50 flex items-center gap-2 md:gap-3">
         <button onclick="togglePixelTheme()" id="pixel-toggle-btn" class="bg-zinc-900 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold hover:text-[#10b981] transition-colors border border-zinc-700 shadow-lg">👾 8-BIT</button>
-        
         <button id="login-btn" onclick="signInWithGoogle()" class="bg-white text-black px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold text-xs md:text-sm shadow-xl hidden">구글 로그인</button>
         <div id="user-profile" class="flex items-center gap-2 md:gap-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 px-2 py-1 md:px-3 md:py-1.5 rounded-full hidden">
             <img id="user-photo" src="" onerror="this.src='https://placehold.co/100x100/18181b/10b981?text=U'" class="w-6 h-6 md:w-7 md:h-7 rounded-full border border-zinc-700">
@@ -110,7 +75,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Player Alignment Fixed V24.3</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Deep Session Search Engine V24.4</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -132,14 +97,19 @@
             </div>
         </div>
 
-        <div id="status-message" class="text-center text-zinc-400 mb-8 hidden font-mono text-xs animate-pulse tracking-widest">ANALYZING DATABASE...</div>
+        <div id="status-message" class="text-center text-[#10b981] mb-8 hidden font-mono text-xs animate-pulse tracking-widest font-bold">ANALYZING DATABASE...</div>
 
         <div id="artist-selection-container" class="max-w-6xl mx-auto mb-10 hidden">
             <div id="artist-selection-grid" class="grid grid-cols-2 md:flex md:flex-wrap justify-center gap-4 md:gap-6"></div>
         </div>
 
         <div id="results-controls" class="hidden flex flex-col md:flex-row justify-between items-center gap-4 mb-10 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800">
-            <input type="text" id="local-search-input" oninput="handleLocalSearch()" placeholder="리스트 내 필터링..." class="w-full md:w-80 bg-zinc-950 border border-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#10b981]">
+            <div class="flex w-full md:w-auto gap-2 flex-1">
+                <input type="text" id="local-search-input" oninput="handleLocalSearch()" onkeypress="if(event.key==='Enter') startDeepSessionSearch()" placeholder="앨범 제목 또는 세션명 검색..." class="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#10b981]">
+                <button onclick="startDeepSessionSearch()" class="bg-[#10b981] text-black px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-transform hover:scale-105 shadow-lg active:scale-95 flex items-center gap-1 shrink-0">
+                    🧠 딥서치
+                </button>
+            </div>
             <select id="album-sort-select" onchange="applyAlbumSort()" class="w-full md:w-auto bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold border border-zinc-800 cursor-pointer">
                 <option value="desc">📅 발매일 최신순</option>
                 <option value="asc">⏳ 발매일 과거순</option>
@@ -192,9 +162,7 @@
 
 <div id="global-player" class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl z-[120] transition-transform duration-500 translate-y-full flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
     <audio id="audio-element" src="" crossorigin="anonymous"></audio>
-    
     <input type="range" id="progress-bar" value="0" min="0" max="100" class="w-full bg-zinc-800 h-1 md:h-1.5 appearance-none cursor-pointer accent-[#10b981] outline-none m-0 border-none transition-none">
-    
     <div class="max-w-7xl mx-auto w-full px-4 py-3 md:py-4 flex items-center justify-between gap-4 md:gap-6">
         <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0 md:w-1/3 cursor-pointer group" onclick="openStudioView()">
             <img id="player-cover" src="" onerror="this.src='https://placehold.co/100x100/18181b/10b981?text=No+Cover'" class="w-10 h-10 md:w-14 md:h-14 object-cover rounded shadow-lg border border-zinc-800">
@@ -224,78 +192,57 @@
     let albumSortOrder = 'desc', currentFavFolder = '전체 보관함';
     let allFetchedFeatures = [], featureFetchCount = 0;
 
-    // 🎵 4. 8비트 주파수 효과음 합성기 (Web Audio API)
+    // 🔥 V24.4: 딥서치 및 캐시 전역 변수
+    window.discogsCache = window.discogsCache || {};
+    let sessionSearchQuery = "";
+    let isDeepSearching = false;
+
+    // 🎵 Web Audio API
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx;
     function playRetroSound(type) {
         if (!document.body.classList.contains('pixel-theme')) return;
         if (!audioCtx) audioCtx = new AudioContext();
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination);
         
         if (type === 'toggle') { 
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
         } else if (type === 'coin') { 
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); 
-            osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.1); 
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            osc.type = 'square'; osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.1); 
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
         } else if (type === 'click') { 
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05); osc.start(); osc.stop(audioCtx.currentTime + 0.05);
         }
     }
 
     document.addEventListener('click', (e) => {
         if (document.body.classList.contains('pixel-theme')) {
             if (e.target.closest('button') || e.target.closest('.cursor-pointer') || e.target.closest('select') || e.target.closest('.group') || e.target.id === 'progress-bar') {
-                if (e.target.closest('#pixel-toggle-btn')) return; 
-                playRetroSound('click');
+                if (e.target.closest('#pixel-toggle-btn')) return; playRetroSound('click');
             }
         }
     });
 
-    // 👾 8-Bit Pixel Theme Toggle Function
     window.togglePixelTheme = function() {
         document.body.classList.toggle('pixel-theme');
         const btn = document.getElementById('pixel-toggle-btn');
         playRetroSound('toggle'); 
-        if (document.body.classList.contains('pixel-theme')) {
-            btn.innerHTML = '🎨 HD MODE';
-            btn.classList.add('border-[#10b981]', 'text-[#10b981]');
-            btn.classList.remove('text-white');
-            showToast("8-BIT 모드 가동됨!", "success");
-        } else {
-            btn.innerHTML = '👾 8-BIT';
-            btn.classList.remove('border-[#10b981]', 'text-[#10b981]');
-            btn.classList.add('text-white');
-        }
+        if (document.body.classList.contains('pixel-theme')) { btn.innerHTML = '🎨 HD MODE'; btn.classList.add('border-[#10b981]', 'text-[#10b981]'); btn.classList.remove('text-white'); showToast("8-BIT 모드 가동됨!", "success"); } 
+        else { btn.innerHTML = '👾 8-BIT'; btn.classList.remove('border-[#10b981]', 'text-[#10b981]'); btn.classList.add('text-white'); }
     };
 
     function cleanTitleForSearch(title) {
         if (!title) return "";
-        return title.replace(/\s*[\(\[].*?(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*?[\)\]]/gi, '')
-                    .replace(/\s*-\s*(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*$/gi, '')
-                    .trim();
+        return title.replace(/\s*[\(\[].*?(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*?[\)\]]/gi, '').replace(/\s*-\s*(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*$/gi, '').trim();
     }
 
     function loadJSONP(url) {
         const scriptId = 'jsonp-' + Math.random().toString(36).substr(2, 9);
-        const s = document.createElement('script');
-        s.id = scriptId; s.src = url;
+        const s = document.createElement('script'); s.id = scriptId; s.src = url;
         s.onload = () => { const el = document.getElementById(scriptId); if(el) el.remove(); };
         s.onerror = () => { const el = document.getElementById(scriptId); if(el) el.remove(); };
         document.body.appendChild(s);
@@ -346,9 +293,10 @@
         const q = document.getElementById('search-input').value.trim(); if (!q) return;
         const mode = document.getElementById('search-mode').value;
         document.getElementById('sections-container').innerHTML = ''; document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden');
-        albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; 
-        fetchState = { albumsDone: false, featuresDone: false, itunesDone: false }; 
+        albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false }; 
         window.itunesAlbums = []; window.deezerUniqueFeatures = [];
+        
+        sessionSearchQuery = ""; // 검색어 변경 시 딥서치 초기화
         loadJSONP(`https://api.deezer.com/search/${mode === 'artist' ? 'artist' : ''}?q=${encodeURIComponent(q)}&limit=12&output=jsonp&callback=${mode === 'artist' ? 'handleArtistSearch' : 'handleTrackGlobalSearch'}`);
     }
 
@@ -356,28 +304,22 @@
         document.getElementById('status-message').classList.add('hidden'); const grid = document.getElementById('artist-selection-grid'); grid.innerHTML = ''; document.getElementById('artist-selection-container').classList.remove('hidden');
         if(!d.data) return;
         d.data.forEach(a => { 
-            const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; 
-            div.onclick = () => selectArtist(a.id, a.name);
-            div.innerHTML = `<img src="${a.picture_medium}" onerror="this.src='https://placehold.co/200x200/18181b/10b981?text=No+Img'" class="w-20 h-20 md:w-28 md:h-28 rounded-full mb-3 shadow-lg border border-zinc-700 object-cover"><h4 class="text-white text-center font-bold text-xs md:text-sm truncate w-full">${a.name}</h4>`; 
-            grid.appendChild(div); 
+            const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; div.onclick = () => selectArtist(a.id, a.name);
+            div.innerHTML = `<img src="${a.picture_medium}" onerror="this.src='https://placehold.co/200x200/18181b/10b981?text=No+Img'" class="w-20 h-20 md:w-28 md:h-28 rounded-full mb-3 shadow-lg border border-zinc-700 object-cover"><h4 class="text-white text-center font-bold text-xs md:text-sm truncate w-full">${a.name}</h4>`; grid.appendChild(div); 
         });
     };
 
     window.handleTrackGlobalSearch = function(d) {
         document.getElementById('status-message').classList.add('hidden'); const grid = document.getElementById('artist-selection-grid'); grid.innerHTML = ''; document.getElementById('artist-selection-container').classList.remove('hidden');
         d.data.forEach(t => { 
-            const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; 
-            div.onclick = () => playMedia('album', t.album.id, t.album.cover_medium, t.album.title, t.artist.name, true, 'deezer'); 
-            div.innerHTML = `<img src="${t.album.cover_medium}" onerror="this.src='https://placehold.co/200x200/18181b/10b981?text=No+Img'" class="w-20 h-20 md:w-28 md:h-28 rounded-2xl mb-3 shadow-lg border border-zinc-700 object-cover"><h4 class="text-white text-center text-xs md:text-sm font-bold truncate w-full">${t.title}</h4>`; 
-            grid.appendChild(div); 
+            const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; div.onclick = () => playMedia('album', t.album.id, t.album.cover_medium, t.album.title, t.artist.name, true, 'deezer'); 
+            div.innerHTML = `<img src="${t.album.cover_medium}" onerror="this.src='https://placehold.co/200x200/18181b/10b981?text=No+Img'" class="w-20 h-20 md:w-28 md:h-28 rounded-2xl mb-3 shadow-lg border border-zinc-700 object-cover"><h4 class="text-white text-center text-xs md:text-sm font-bold truncate w-full">${t.title}</h4>`; grid.appendChild(div); 
         });
     };
 
     window.selectArtist = function(id, name) { 
-        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = [];
-        allFetchedFeatures = []; featureFetchCount = 0;   
+        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; allFetchedFeatures = []; featureFetchCount = 0;   
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); 
-        
         const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) ? 'KR' : 'US';
         loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&country=${countryCode}&callback=handleItunesAlbums`);
         loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=handleAllAlbumsPage`); 
@@ -400,12 +342,8 @@
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return; 
         document.getElementById('status-message').classList.add('hidden'); document.getElementById('results-controls').classList.remove('hidden'); 
         const seenTitles = new Set(); albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; 
-        
         const deezerTypeMap = new Map();
-        window.allFetchedAlbums.forEach(a => {
-            const tl = cleanTitleForSearch(a.title).toLowerCase();
-            if(!deezerTypeMap.has(tl)) deezerTypeMap.set(tl, a.record_type);
-        });
+        window.allFetchedAlbums.forEach(a => { const tl = cleanTitleForSearch(a.title).toLowerCase(); if(!deezerTypeMap.has(tl)) deezerTypeMap.set(tl, a.record_type); });
 
         if (window.itunesAlbums) {
             window.itunesAlbums.forEach(a => {
@@ -413,12 +351,8 @@
                 if (!seenTitles.has(tl)) { 
                     seenTitles.add(tl);
                     const itunesAlbum = { id: a.collectionId, title: a.collectionName, cover_medium: a.artworkUrl100 ? a.artworkUrl100.replace('100x100bb', '600x600bb') : '', release_date: a.releaseDate, record_type: 'itunes', artist: { name: a.artistName }, source: 'itunes', trackCount: a.trackCount };
-                    
                     const artistNameLower = a.artistName.toLowerCase(); const searchArtistLower = currentArtist ? currentArtist.toLowerCase() : '';
-                    
-                    if (searchArtistLower && !artistNameLower.includes(searchArtistLower) && !searchArtistLower.includes(artistNameLower)) {
-                        albumsData.features.push(itunesAlbum);
-                    }
+                    if (searchArtistLower && !artistNameLower.includes(searchArtistLower) && !searchArtistLower.includes(artistNameLower)) { albumsData.features.push(itunesAlbum); }
                     else if (tl.includes('live')) albumsData.live.push(itunesAlbum);
                     else if (tl.includes('best of') || tl.includes('greatest hits') || tl.includes('anthology')) albumsData.compilation.push(itunesAlbum);
                     else {
@@ -433,7 +367,6 @@
                 }
             });
         }
-
         window.allFetchedAlbums.forEach(a => { 
             const tl = cleanTitleForSearch(a.title).toLowerCase(); 
             if (!seenTitles.has(tl)) { 
@@ -444,7 +377,6 @@
                 else albumsData.regular.push(a); 
             }
         });
-
         if (window.deezerUniqueFeatures) {
             window.deezerUniqueFeatures.forEach(t => {
                 const tl = cleanTitleForSearch(t.album.title).toLowerCase();
@@ -458,9 +390,19 @@
         renderAllSections();
     }
 
+    // 🔥 V24.4: 딥서치 필터 로직 적용
     function renderAllSections() {
         const c = document.getElementById('sections-container'); c.innerHTML = ''; if (isFavoritesTab) { renderFavorites(); return; }
-        const f = (it) => { const q = document.getElementById('local-search-input').value.toLowerCase(); return !q || it.title.toLowerCase().includes(q); }; 
+        
+        const f = (it) => { 
+            const q = document.getElementById('local-search-input').value.toLowerCase().trim(); 
+            if (!q) return true; 
+            // 딥서치 수행어와 현재 입력창이 같으면, '세션매치' 혹은 '제목매치' 모두 띄움
+            if (sessionSearchQuery === q) return it.sessionMatched || it.title.toLowerCase().includes(q);
+            // 딥서치를 안 돌렸다면 단순 제목 검색
+            return it.title.toLowerCase().includes(q); 
+        }; 
+        
         const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date || 0) - new Date(a.release_date || 0) : new Date(a.release_date || 0) - new Date(b.release_date || 0));
         renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album'); renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album'); renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album'); renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album'); renderSection('🤝 피처링 참여곡', albumsData.features.filter(f), 'album');
     }
@@ -469,17 +411,21 @@
         const c = document.getElementById('sections-container'); c.innerHTML = '';
         const allFolders = ['전체 보관함', ...new Set(favorites.map(f => f.folderName || '기본 보관함'))];
         let tabsHtml = `<div class="flex flex-wrap gap-2 mb-8 px-4 md:px-0">`;
-        allFolders.forEach(f => {
-            const active = currentFavFolder === f;
-            tabsHtml += `<button onclick="setFavFolder('${f}')" class="px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${f}</button>`;
-        });
+        allFolders.forEach(f => { const active = currentFavFolder === f; tabsHtml += `<button onclick="setFavFolder('${f}')" class="px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${f}</button>`; });
         tabsHtml += `</div>`; c.innerHTML = tabsHtml;
 
-        const q = document.getElementById('local-search-input').value.toLowerCase();
-        const fItems = favorites.filter(it => (!q || it.title.toLowerCase().includes(q)) && (currentFavFolder === '전체 보관함' || (it.folderName || '기본 보관함') === currentFavFolder));
+        const q = document.getElementById('local-search-input').value.toLowerCase().trim();
+        const fItems = favorites.filter(it => {
+            const folderMatch = (currentFavFolder === '전체 보관함' || (it.folderName || '기본 보관함') === currentFavFolder);
+            if (!folderMatch) return false;
+            if (!q) return true;
+            if (sessionSearchQuery === q) return it.sessionMatched || it.title.toLowerCase().includes(q);
+            return it.title.toLowerCase().includes(q);
+        });
         if(!fItems.length) { c.innerHTML += "<div class='text-center py-20 text-zinc-600 font-bold'>폴더가 비어있습니다 ☁️</div>"; return; }
         renderSection(`📁 ${currentFavFolder}`, fItems, 'mixed');
     }
+    
     window.setFavFolder = function(f) { currentFavFolder = f; renderFavorites(); };
 
     function renderSection(title, items, sectionType) {
@@ -487,7 +433,12 @@
         sh.innerHTML = `<h3 class="text-xl md:text-2xl font-black mb-6 border-l-4 border-[#10b981] pl-4 md:pl-5">${title} <span class="text-zinc-600 text-xs md:text-sm ml-2">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-8 px-4 md:px-0"></div>`; c.appendChild(sh); const g = sh.querySelector('div');
         items.forEach(it => {
             const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = it.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : ''; const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
-            const card = document.createElement('div'); card.className = "group bg-zinc-900/40 rounded-2xl overflow-hidden relative border border-zinc-800/50 cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg"; 
+            const card = document.createElement('div'); 
+            
+            // 딥서치에 걸린 앨범은 테두리를 초록색으로 빛나게 처리
+            const matchedClass = it.sessionMatched ? 'border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'border-zinc-800/50';
+            
+            card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; 
             card.onclick = () => playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
             card.innerHTML = `<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
             ${it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>' : ''}
@@ -495,6 +446,104 @@
         });
     }
 
+    // 🔥 V24.4: 세션 딥서치 코어 엔진 함수
+    window.startDeepSessionSearch = async function() {
+        const q = document.getElementById('local-search-input').value.toLowerCase().trim();
+        if (!q) return showToast("검색창에 찾고 싶은 세션 멤버의 이름을 입력하세요!", "error");
+        if (isDeepSearching) return showToast("현재 세션 데이터를 초고속 분석 중입니다. 잠시만 기다려주세요.", "error");
+
+        sessionSearchQuery = q;
+        isDeepSearching = true;
+
+        const targetAlbums = isFavoritesTab ? favorites : [...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features];
+        
+        // 중복 검색 방지를 위한 앨범 정리
+        const uniqueAlbums = []; const seenIds = new Set();
+        targetAlbums.forEach(a => { if (!seenIds.has(a.id)) { seenIds.add(a.id); uniqueAlbums.push(a); } });
+
+        let matchCount = 0; let processed = 0;
+        const statusMsg = document.getElementById('status-message');
+        statusMsg.classList.remove('hidden'); statusMsg.textContent = `DEEP SEARCHING SESSIONS... (0 / ${uniqueAlbums.length})`;
+
+        // 기존 매치 내역 초기화
+        targetAlbums.forEach(a => a.sessionMatched = false);
+
+        // Vercel 서버 보호를 위해 3개씩 묶어서(Batch) API 호출 (약간의 Delay 추가)
+        for (let i = 0; i < uniqueAlbums.length; i += 3) {
+            const batch = uniqueAlbums.slice(i, i + 3);
+
+            await Promise.all(batch.map(async (album) => {
+                const artistName = (album.artistNameCache || currentArtist) || album.artist?.name;
+                const title = cleanTitleForSearch(album.title);
+                const cacheKey = `${title}_${artistName}`;
+
+                let creditsData = window.discogsCache[cacheKey];
+
+                if (!creditsData) {
+                    try {
+                        const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artistName)}`);
+                        if (r.ok) { creditsData = await r.json(); window.discogsCache[cacheKey] = creditsData; }
+                    } catch(e) { console.error(e); }
+                }
+
+                if (creditsData && creditsData.extraartists) {
+                    const isMatch = creditsData.extraartists.some(ar => ar.name.toLowerCase().includes(q) || ar.role.toLowerCase().includes(q));
+                    if (isMatch) {
+                        targetAlbums.forEach(ta => { if (ta.id === album.id) ta.sessionMatched = true; });
+                        matchCount++;
+                    }
+                }
+                processed++;
+            }));
+
+            statusMsg.textContent = `DEEP SEARCHING SESSIONS... (${processed} / ${uniqueAlbums.length})`;
+            // 서버 터짐 방지 0.2초 딜레이
+            await new Promise(res => setTimeout(res, 200)); 
+        }
+
+        statusMsg.classList.add('hidden');
+        showToast(`딥서치 완료! 해당 세션이 참여한 앨범 ${matchCount}장을 찾았습니다.`, "success");
+        if (document.body.classList.contains('pixel-theme')) playRetroSound('coin');
+
+        isDeepSearching = false;
+        if(isFavoritesTab) renderFavorites(); else renderAllSections();
+    };
+
+    function handleLocalSearch() { 
+        const q = document.getElementById('local-search-input').value.toLowerCase().trim();
+        // 검색어를 지우거나 수정하면 딥서치 필터링이 자동으로 풀리게 함
+        if (q !== sessionSearchQuery) sessionSearchQuery = ""; 
+        if(isFavoritesTab) renderFavorites(); else renderAllSections(); 
+    }
+
+    // V24.4: 개별 앨범 접속 시 기존에 구축된 캐시를 먼저 확인하여 로딩 속도 극대화
+    async function fetchDiscogsCreditsFromServer(title, artist) { 
+        const out = document.getElementById('discogs-credit-text'); 
+        out.innerHTML = "<span class='animate-pulse text-zinc-500'>Vercel 서버와 통신 중... 🌐</span>"; 
+        
+        const cacheKey = `${cleanTitleForSearch(title)}_${artist}`;
+
+        try { 
+            let d = window.discogsCache[cacheKey];
+            if (!d) {
+                const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`); 
+                if (!r.ok) { const errorDetail = await r.text(); throw new Error(`HTTP ${r.status} | ${errorDetail}`); }
+                d = await r.json(); 
+                window.discogsCache[cacheKey] = d; 
+            }
+            
+            currentDiscogsReleaseData = d; 
+            
+            if (d.extraartists?.length) { 
+                let h = ""; d.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); out.innerHTML = h; 
+            } else out.innerHTML = "<span class='text-zinc-500 font-bold'>세션 데이터가 없습니다.</span>";
+            if (currentAlbumTracks && currentAlbumTracks.length > 0 && currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); 
+        } catch (e) { out.innerHTML = `<span class='text-rose-500 text-[10px]'>에러: ${e.message}</span>`; } 
+    }
+
+    // ==========================================
+    // 기존 핵심 로직 (변동 없음)
+    // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search);
         const type = params.get('type'), id = params.get('id'), source = params.get('source') || 'deezer';
@@ -503,137 +552,71 @@
             else { loadJSONP(`https://api.deezer.com/${type}/${id}?output=jsonp&callback=handleDeepLinkInit`); }
         }
     });
-    
-    window.handleItunesDeepLink = function(d) {
-        if(d.results && d.results.length > 0) {
-            const a = d.results[0]; const cover = a.artworkUrl100 ? a.artworkUrl100.replace('100x100bb', '600x600bb') : '';
-            playMedia('album', a.collectionId, cover, a.collectionName, a.artistName, false, 'itunes');
-        }
-    };
-
+    window.handleItunesDeepLink = function(d) { if(d.results && d.results.length > 0) { const a = d.results[0]; const cover = a.artworkUrl100 ? a.artworkUrl100.replace('100x100bb', '600x600bb') : ''; playMedia('album', a.collectionId, cover, a.collectionName, a.artistName, false, 'itunes'); } };
     window.handleDeepLinkInit = function(d) { if(d && !d.error) { const cover = d.cover_medium || (d.album && d.album.cover_medium); playMedia(d.record_type ? 'album' : 'track', d.id, cover, d.title, d.artist?.name, false, 'deezer'); } };
     window.copyDeepLink = function() { navigator.clipboard.writeText(window.location.href).then(() => showToast("앨범 링크가 복사되었습니다! 🔗", "success")); };
-
-    window.openInAppleMusic = function(albumId) {
-        if (!albumId) return;
-        const appUrl = `music://id/${albumId}`, webUrl = `https://music.apple.com/kr/album/${albumId}`;
-        window.location.href = appUrl;
-        setTimeout(() => { if (document.hasFocus()) window.open(webUrl, '_blank'); }, 500);
-    };
-
+    window.openInAppleMusic = function(albumId) { if (!albumId) return; const appUrl = `music://id/${albumId}`, webUrl = `https://music.apple.com/kr/album/${albumId}`; window.location.href = appUrl; setTimeout(() => { if (document.hasFocus()) window.open(webUrl, '_blank'); }, 500); };
     window.searchSessionMusician = function(name) { if (!name) return; closeStudioView(); const searchInput = document.getElementById('search-input'), searchMode = document.getElementById('search-mode'); if (searchInput && searchMode) { searchMode.value = 'artist'; searchInput.value = name; window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { initSearch(); }, 400); } };
     function createSessionElement(role, name) { const cleanName = name.replace(/\s\(\d+\)$/, ''); return `<div class="mb-3 flex items-start gap-3"><span class="role-badge shrink-0 mt-0.5">${role}</span><button class="session-trigger text-left text-white hover:text-[#10b981] font-black border-b-2 border-zinc-900 transition-all" data-name="${cleanName.replace(/"/g, '&quot;')}">${cleanName}</button></div>`; }
     document.getElementById('studio-view').addEventListener('click', function(e) { const trigger = e.target.closest('.session-trigger'); if (trigger) window.searchSessionMusician(trigger.getAttribute('data-name')); });
-
-    async function fetchDiscogsCreditsFromServer(title, artist) { 
-        const out = document.getElementById('discogs-credit-text'); 
-        out.innerHTML = "<span class='animate-pulse text-zinc-500'>Vercel 서버와 통신 중... 🌐</span>"; 
-        try { 
-            const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`); 
-            if (!r.ok) { const errorDetail = await r.text(); throw new Error(`HTTP ${r.status} | ${errorDetail}`); }
-            const d = await r.json(); currentDiscogsReleaseData = d; 
-            if (d.extraartists?.length) { 
-                let h = ""; d.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); out.innerHTML = h; 
-            } else out.innerHTML = "<span class='text-zinc-500 font-bold'>세션 데이터가 없습니다.</span>";
-            if (currentAlbumTracks && currentAlbumTracks.length > 0 && currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); 
-        } catch (e) { out.innerHTML = `<span class='text-rose-500 text-[10px]'>에러: ${e.message}</span>`; } 
-    }
-    
     function updateTrackSpecificCredits(title) { 
         const cont = document.getElementById('discogs-track-credits-container'), dataUi = document.getElementById('discogs-track-data-ui'); 
         if (!currentDiscogsReleaseData?.tracklist || !title) return cont.classList.add('hidden'); 
         const cleanTarget = cleanTitleForSearch(title).toLowerCase();
         const track = currentDiscogsReleaseData.tracklist.find(tr => { if (!tr.title) return false; const cleanSource = cleanTitleForSearch(tr.title).toLowerCase(); return cleanSource.includes(cleanTarget) || cleanTarget.includes(cleanSource); }); 
-        if (track?.extraartists?.length) { 
-            document.getElementById('discogs-track-title').textContent = `TRACK: ${track.title}`; 
-            let h = ""; track.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); 
-            dataUi.innerHTML = h; cont.classList.remove('hidden'); 
-        } else cont.classList.add('hidden'); 
+        if (track?.extraartists?.length) { document.getElementById('discogs-track-title').textContent = `TRACK: ${track.title}`; let h = ""; track.extraartists.forEach(ar => h += createSessionElement(ar.role, ar.name)); dataUi.innerHTML = h; cont.classList.remove('hidden'); } else cont.classList.add('hidden'); 
     }
-
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); }
     window.closeStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); window.history.pushState({}, '', window.location.pathname); }
-
     window.playMedia = function(type, id, cover, title, artist, updateUrl = true, source = 'deezer') {
         if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); url.searchParams.set('source', source); window.history.pushState({}, '', url); }
-        currentAlbumCover = cover; currentDiscogsReleaseData = null; currentTrackIndex = 0; 
-        document.getElementById('studio-cover').src = cover; document.getElementById('studio-title').textContent = title; document.getElementById('studio-artist').textContent = artist; 
-        const appleBtn = document.getElementById('open-apple-music-btn');
-        if (source === 'itunes') { appleBtn.classList.remove('hidden'); appleBtn.onclick = () => openInAppleMusic(id); } else appleBtn.classList.add('hidden');
-        openStudioView();
-        const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(artist) ? 'KR' : 'US';
-        if (source === 'itunes') loadJSONP(`https://itunes.apple.com/lookup?id=${id}&entity=song&country=${countryCode}&callback=handleItunesTracks`);
-        else loadJSONP(`https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`);
+        currentAlbumCover = cover; currentDiscogsReleaseData = null; currentTrackIndex = 0; document.getElementById('studio-cover').src = cover; document.getElementById('studio-title').textContent = title; document.getElementById('studio-artist').textContent = artist; 
+        const appleBtn = document.getElementById('open-apple-music-btn'); if (source === 'itunes') { appleBtn.classList.remove('hidden'); appleBtn.onclick = () => openInAppleMusic(id); } else appleBtn.classList.add('hidden');
+        openStudioView(); const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(artist) ? 'KR' : 'US';
+        if (source === 'itunes') loadJSONP(`https://itunes.apple.com/lookup?id=${id}&entity=song&country=${countryCode}&callback=handleItunesTracks`); else loadJSONP(`https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`);
         const cleanTitle = cleanTitleForSearch(title); fetchAlbumWikiStory(cleanTitle, artist); fetchDiscogsCreditsFromServer(cleanTitle, artist);
     };
-
     window.handleItunesTracks = function(d) { if (!d.results) return; handleTracks({ data: d.results.filter(t => t.wrapperType === 'track').map(t => ({ id: t.trackId, title: t.trackName, preview: t.previewUrl, artist: { name: t.artistName } })) }); };
     window.handleTracks = function(d) { 
         currentAlbumTracks = d.data || [d]; const list = document.getElementById('studio-track-list'); list.innerHTML = ''; 
         currentAlbumTracks.forEach((t, i) => { const div = document.createElement('div'); div.className = `p-3 md:p-4 hover:bg-white/5 cursor-pointer rounded-xl flex items-center gap-4 ${!t.preview?'opacity-20':''}`; div.onclick = () => t.preview ? playSpecificTrack(i) : null; div.innerHTML = `<span class="text-zinc-600 font-mono w-6 text-center">${i+1}</span> <span class="font-bold flex-1 truncate">${t.title}</span>`; list.appendChild(div); }); 
         if (currentDiscogsReleaseData && currentAlbumTracks.length > 0) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title);
     };
-
     function playSpecificTrack(i) { currentTrackIndex = i; playingQueue = [...currentAlbumTracks]; playingIndex = i; playingCover = currentAlbumCover; loadTrack(); }
     function loadTrack() { 
         const t = playingQueue[playingIndex]; if(!t?.preview) return; document.getElementById('global-player').classList.remove('translate-y-full'); document.getElementById('player-title').textContent = t.title; document.getElementById('player-artist').textContent = t.artist.name; document.getElementById('player-cover').src = playingCover; audio.src = t.preview.replace(/^http:\/\//i, 'https://'); audio.play(); document.getElementById('play-icon').classList.add('hidden'); document.getElementById('pause-icon').classList.remove('hidden'); 
         updateTrackSpecificCredits(t.title); fetchBpm(t.id); 
     }
-
     function fetchBpm(id) { window[`handleBpm_${id}`] = (d) => { const b = document.getElementById('aura-badge'), p = document.getElementById('global-player'); if(d.bpm) { b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden'); p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[120] transition-all duration-500 border-t border-zinc-900 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`; } else b.classList.add('hidden'); }; loadJSONP(`https://api.deezer.com/track/${id}?output=jsonp&callback=handleBpm_${id}`); }
-
     async function fetchAlbumWikiStory(title, artist) {
         const wikiUI = document.getElementById('wiki-credit-text'); wikiUI.innerHTML = "<span class='animate-pulse text-zinc-500'>데이터베이스 검색 중... 🔍</span>";
         try {
-            const wikiRes = await fetch(`https://ko.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=4&explaintext=true&origin=*&titles=${encodeURIComponent(title)}`);
-            const wikiData = await wikiRes.json(); const pageId = Object.keys(wikiData.query.pages)[0]; const extract = wikiData.query.pages[pageId].extract;
+            const wikiRes = await fetch(`https://ko.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=4&explaintext=true&origin=*&titles=${encodeURIComponent(title)}`); const wikiData = await wikiRes.json(); const pageId = Object.keys(wikiData.query.pages)[0]; const extract = wikiData.query.pages[pageId].extract;
             if (extract && extract.length > 20) { wikiUI.innerHTML = extract; return; }
-            const LAST_FM_API_KEY = "bc6dfd44dfc503c39ec41ade07e02778";
-            const lastFmRes = await fetch(`https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LAST_FM_API_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`);
-            const lastFmData = await lastFmRes.json();
+            const LAST_FM_API_KEY = "bc6dfd44dfc503c39ec41ade07e02778"; const lastFmRes = await fetch(`https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LAST_FM_API_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`); const lastFmData = await lastFmRes.json();
             if (lastFmData.album?.wiki?.summary) { let cleanSummary = lastFmData.album.wiki.summary.replace(/<a href=.*<\/a>/, '').trim(); wikiUI.innerHTML = `<span class="text-[#10b981] font-bold text-[10px] bg-[#10b981]/20 px-2 py-1 rounded mb-2 inline-block">Last.fm Trivia</span><br>${cleanSummary}`; } else wikiUI.innerHTML = "트리비아가 없습니다 💿";
         } catch(e) { wikiUI.innerHTML = "로드 실패"; }
     }
-
     const audio = document.getElementById('audio-element'), pI = document.getElementById('play-icon'), psI = document.getElementById('pause-icon');
     function togglePlay() { if(audio.paused) { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); } else { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); } }
     function playNextTrack() { playingIndex = (playingIndex+1)%playingQueue.length; loadTrack(); }
     function playPrevTrack() { playingIndex = (playingIndex-1+playingQueue.length)%playingQueue.length; loadTrack(); }
     function closePlayerEntirely() { audio.pause(); document.getElementById('global-player').classList.add('translate-y-full'); closeStudioView(); }
-    
-    function handleLocalSearch() { if(isFavoritesTab) renderFavorites(); else renderAllSections(); }
     function applyAlbumSort() { albumSortOrder = document.getElementById('album-sort-select').value; renderAllSections(); }
     function switchTab(t) { 
         isFavoritesTab = (t === 'fav'); const ts = document.getElementById('tab-search'), tf = document.getElementById('tab-fav');
-        ts.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500" : "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg";
-        tf.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg" : "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500";
-        renderAllSections(); 
+        ts.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500" : "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg"; tf.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg" : "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500"; renderAllSections(); 
     }
-    
     function showToast(m, t) { 
-        const c = document.getElementById('toast-container'); 
-        const toast = document.createElement('div'); 
+        const c = document.getElementById('toast-container'); const toast = document.createElement('div'); 
         toast.className = `toast-animate bg-zinc-900 border ${t === 'success' ? 'border-[#10b981]' : 'border-zinc-500'} text-white px-6 py-3 rounded-full shadow-2xl font-bold text-xs md:text-sm flex items-center gap-2 mb-2`; 
-        
         if (document.body.classList.contains('pixel-theme')) {
-            toast.innerHTML = `<span>${t==='success'?'▶':'▷'}</span> <span class="typing-text"></span>`;
-            c.appendChild(toast); 
+            toast.innerHTML = `<span>${t==='success'?'▶':'▷'}</span> <span class="typing-text"></span>`; c.appendChild(toast); 
             if (t === 'success') playRetroSound('coin');
-            
-            const textSpan = toast.querySelector('.typing-text');
-            let i = 0;
-            const typing = setInterval(() => {
-                textSpan.textContent += m.charAt(i);
-                i++;
-                if (i >= m.length) clearInterval(typing);
-            }, 50); 
-        } else {
-            toast.innerHTML = `<span>${t==='success'?'✅':'✨'}</span> <span>${m}</span>`; 
-            c.appendChild(toast); 
-        }
+            const textSpan = toast.querySelector('.typing-text'); let i = 0; const typing = setInterval(() => { textSpan.textContent += m.charAt(i); i++; if (i >= m.length) clearInterval(typing); }, 50); 
+        } else { toast.innerHTML = `<span>${t==='success'?'✅':'✨'}</span> <span>${m}</span>`; c.appendChild(toast); }
         setTimeout(() => toast.remove(), 4000); 
     }
-
     audio.addEventListener('timeupdate', () => { if (audio.duration) document.getElementById('progress-bar').value = (audio.currentTime / audio.duration) * 100; });
     document.getElementById('progress-bar').addEventListener('input', (e) => { if (audio.duration) audio.currentTime = (e.target.value / 100) * audio.duration; });
     document.getElementById('search-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') initSearch(); });
