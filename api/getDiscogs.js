@@ -119,9 +119,11 @@ export default async function handler(req, res) {
       );
       if (!rData?.releases) return res.json({ matchedTitles: [] });
 
-      const sessionLower = sessionName.toLowerCase();
+      // 수정사항: 검색어 앞뒤 공백 제거 및 다중 공백 정규화
+      const sessionLower = sessionName.toLowerCase().trim().replace(/\s+/g, ' ');
+      
       const toCheck = rData.releases
-        .filter(r => r.role === 'Main' && r.id && r.title)
+        .filter(r => r.role === 'Main' && r.title)
         .slice(0, 25);
 
       // 동시 5개씩 청크로 검사 (rate limit 방어)
@@ -131,20 +133,35 @@ export default async function handler(req, res) {
         const chunk = toCheck.slice(i, i + chunkSize);
         const results = await Promise.allSettled(
           chunk.map(async rel => {
+            
+            // 수정사항: Master 타입일 경우 실제 크레딧이 들어있는 main_release ID를 사용
+            const targetReleaseId = rel.type === 'master' ? rel.main_release : rel.id;
+            
+            // targetReleaseId가 없는 예외 케이스 방어
+            if (!targetReleaseId) return null;
+
             const detail = await fetchJson(
-              `https://api.discogs.com/releases/${rel.id}?${TOKEN_Q.slice(1)}`
+              `https://api.discogs.com/releases/${targetReleaseId}?${TOKEN_Q.slice(1)}`
             );
-            if (!detail) return null;
+            
+            if (!detail) return null; // 404나 타임아웃 발생 시 패스
+            
             const allCredits = [
               ...(detail.extraartists || []),
               ...((detail.tracklist || []).flatMap(t => t.extraartists || []))
             ];
-            const found = allCredits.some(ar =>
-              ar.name && ar.name.toLowerCase().replace(/\s\(\d+\)$/, '').includes(sessionLower)
-            );
+            
+            const found = allCredits.some(ar => {
+              if (!ar.name) return false;
+              // Discogs 특유의 (2), (3) 같은 동명이인 넘버링 제거 후 비교
+              const cleanArtistName = ar.name.toLowerCase().replace(/\s\(\d+\)$/, '').trim();
+              return cleanArtistName.includes(sessionLower);
+            });
+            
             return found ? rel.title : null;
           })
         );
+        
         results.forEach(r => {
           if (r.status === 'fulfilled' && r.value) matchedTitles.add(r.value);
         });
