@@ -1,5 +1,4 @@
-// /api/getDiscogs.js  V3 — Pro-Digger Edition
-// 수정 사항: 검색 깊이 확장(25 -> 100), 마스터 매칭 로직 강화, 에러 로그 정교화
+// /api/getDiscogs.js  V4 — Ultimate Sniper & Rate Limit Safe Edition
 
 const TOKEN = process.env.DISCOGS_TOKEN;
 const TOKEN_Q = TOKEN ? `&token=${TOKEN}` : '';
@@ -80,7 +79,9 @@ function scoreRelease(rel) {
 export default async function handler(req, res) {
   const { albumTitle, artistName, deepSearch, sessionName } = req.query;
 
+  // ============================================================
   // MODE 1: Deep Session Search (스나이퍼 서치)
+  // ============================================================
   if (deepSearch === 'true' && artistName && sessionName) {
     try {
       const artistSearch = await fetchJson(
@@ -93,25 +94,27 @@ export default async function handler(req, res) {
       );
       const artistId = (exactMatch || artistSearch.results[0]).id;
 
-      // per_page=100으로 설정하여 더 과거의 앨범까지 검색 대상으로 포함
+      // 과거 명반 추적을 위해 검색 범위 100개로 확장
       const rData = await fetchJson(
         `https://api.discogs.com/artists/${artistId}/releases?per_page=100&sort=year&sort_order=desc${TOKEN_Q}`
       );
       if (!rData?.releases) return res.json({ matchedTitles: [] });
 
+      // 다중 공백 및 앞뒤 공백 제거 정규화
       const sessionLower = sessionName.toLowerCase().trim().replace(/\s+/g, ' ');
       
-      // FIX: 검색 범위를 25개에서 100개로 확장 (브라이언 블레이드 같은 다작 아티스트의 과거 명반 추적용)
       const toCheck = rData.releases
         .filter(r => r.role === 'Main' && r.title)
         .slice(0, 100); 
 
       const matchedTitles = new Set();
-      const chunkSize = 8; // 처리 속도 향상을 위해 청크 사이즈 상향
+      const chunkSize = 4; // 한 번에 4개씩만 요청하여 API 부하 분산
+
       for (let i = 0; i < toCheck.length; i += chunkSize) {
         const chunk = toCheck.slice(i, i + chunkSize);
         const results = await Promise.allSettled(
           chunk.map(async rel => {
+            // 마스터 타입일 경우 크레딧이 존재하는 main_release로 우회
             const targetReleaseId = rel.type === 'master' ? rel.main_release : rel.id;
             if (!targetReleaseId) return null;
 
@@ -132,19 +135,27 @@ export default async function handler(req, res) {
             return found ? rel.title : null;
           })
         );
+        
         results.forEach(r => { if (r.status === 'fulfilled' && r.value) matchedTitles.add(r.value); });
+        
+        // ⭐ Rate Limit 회피용 1초 대기 (이게 없으면 100개 검색 시 차단됨)
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
+      res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
       return res.json({ matchedTitles: Array.from(matchedTitles) });
     } catch (e) {
       return res.status(500).json({ error: e.message, matchedTitles: [] });
     }
   }
 
-  // MODE 2: Album Credits
+  // ============================================================
+  // MODE 2: Album Credits (앨범 상세 크레딧)
+  // ============================================================
   if (!albumTitle || !artistName) return res.status(400).json({ error: 'Required params missing' });
 
   try {
+    // 아티스트명과 앨범명을 통합 검색어로 생성 (더 유연한 매칭)
     const queryStr = encodeURIComponent(`${artistName} ${albumTitle}`);
     const masterSearch = await fetchJson(
       `https://api.discogs.com/database/search?q=${queryStr}&type=master&per_page=5${TOKEN_Q}`
@@ -163,9 +174,10 @@ export default async function handler(req, res) {
       const versions = await fetchJson(`https://api.discogs.com/masters/${masterId}/versions?per_page=20${TOKEN_Q}`);
       if (versions?.versions) {
         const top = versions.versions
+          .filter(v => v.id)
           .map(v => ({ v, s: scoreRelease(v) }))
           .sort((a, b) => b.s - a.s)
-          .slice(0, 4) // 더 많은 버전을 합쳐 크레딧 누락 방지
+          .slice(0, 4) 
           .map(x => x.v.id);
         releaseIdsToFetch = top;
       }
@@ -182,6 +194,8 @@ export default async function handler(req, res) {
     if (validReleases.length === 0) return res.json({ extraartists: [], tracklist: [], notFound: true });
 
     const primary = [...validReleases].sort((a, b) => (b.extraartists?.length || 0) - (a.extraartists?.length || 0))[0];
+    
+    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
     return res.json({
       ...primary,
       extraartists: mergeArtists(validReleases.flatMap(r => r.extraartists || [])),
