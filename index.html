@@ -198,6 +198,10 @@
         font-size: 10px; color: #10b981; font-weight: 700;
         margin-bottom: 12px;
     }
+    @media (prefers-reduced-motion: reduce) {
+        body.pixel-theme { animation: none !important; }
+        .chain-loaded { animation: none !important; }
+    }
 </style>
 ```
 
@@ -663,30 +667,63 @@
         });
     };
 
+    // ✅ FIX 3: 레이스 컨디션 방어 — 아티스트 전환 시 이전 응답 무시
+    let _fetchEpoch = 0; // 매 selectArtist 호출마다 증가, 오래된 콜백은 epoch 불일치로 폐기
+
     window.selectArtist = function(id, name) {
-        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; allFetchedFeatures = []; featureFetchCount = 0;
+        currentArtist = name; currentArtistId = id;
+        window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = [];
+        allFetchedFeatures = []; featureFetchCount = 0;
+        fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
+
+        const epoch = ++_fetchEpoch; // 이 요청의 고유 번호
+
         document.getElementById('artist-selection-container').classList.add('hidden');
         document.getElementById('status-message').classList.remove('hidden');
         const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) ? 'KR' : 'US';
-        loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&country=${countryCode}&callback=handleItunesAlbums`);
-        loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=handleAllAlbumsPage`);
-        loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=handleFeaturedTracks`);
+
+        // iTunes
+        const itCb = `_it_${epoch}`;
+        window[itCb] = (d) => {
+            delete window[itCb];
+            if (epoch !== _fetchEpoch) return; // 🚫 구식 응답 폐기
+            if (d.results) window.itunesAlbums = d.results;
+            fetchState.itunesDone = true; tryRenderAll(epoch);
+        };
+        loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&country=${countryCode}&callback=${itCb}`);
+
+        // Deezer albums (페이지네이션 콜백도 epoch 체크)
+        const albumCb = `_alb_${epoch}`;
+        window[albumCb] = function self(d) {
+            if (epoch !== _fetchEpoch) { delete window[albumCb]; return; }
+            if (d.data) window.allFetchedAlbums.push(...d.data);
+            if (d.next) { loadJSONP(d.next + `&output=jsonp&callback=${albumCb}`); }
+            else { delete window[albumCb]; fetchState.albumsDone = true; tryRenderAll(epoch); }
+        };
+        loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=${albumCb}`);
+
+        // Deezer features
+        featureFetchCount = 0;
+        const featCb = `_feat_${epoch}`;
+        window[featCb] = function self(d) {
+            if (epoch !== _fetchEpoch) { delete window[featCb]; return; }
+            if (d.data) { allFetchedFeatures.push(...d.data.filter(t => t.artist.id !== currentArtistId)); }
+            featureFetchCount++;
+            if (d.next && featureFetchCount < 4) { loadJSONP(d.next + `&output=jsonp&callback=${featCb}`); }
+            else {
+                delete window[featCb];
+                const uniqueFeatures = []; const seenAlbums = new Set();
+                allFetchedFeatures.forEach(t => { if (!seenAlbums.has(t.album.id)) { seenAlbums.add(t.album.id); uniqueFeatures.push(t); } });
+                window.deezerUniqueFeatures = uniqueFeatures;
+                fetchState.featuresDone = true; tryRenderAll(epoch);
+            }
+        };
+        loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=${featCb}`);
     };
 
-    window.handleItunesAlbums = function(d) { if(d.results) window.itunesAlbums = d.results; fetchState.itunesDone = true; tryRenderAll(); };
-    window.handleAllAlbumsPage = function(d) { if(d.data) window.allFetchedAlbums.push(...d.data); if(d.next) { loadJSONP(d.next + '&output=jsonp&callback=handleAllAlbumsPage'); } else { fetchState.albumsDone = true; tryRenderAll(); } };
-    window.handleFeaturedTracks = function(d) {
-        if(d.data) { const features = d.data.filter(t => t.artist.id !== currentArtistId); allFetchedFeatures.push(...features); }
-        featureFetchCount++;
-        if(d.next && featureFetchCount < 4) { loadJSONP(d.next + '&output=jsonp&callback=handleFeaturedTracks'); }
-        else {
-            const uniqueFeatures = []; const seenAlbums = new Set();
-            allFetchedFeatures.forEach(t => { if(!seenAlbums.has(t.album.id)) { seenAlbums.add(t.album.id); uniqueFeatures.push(t); } });
-            window.deezerUniqueFeatures = uniqueFeatures; fetchState.featuresDone = true; tryRenderAll();
-        }
-    };
-
-    function tryRenderAll() {
+    function tryRenderAll(epoch) {
+        // ✅ FIX 3: epoch 불일치 시 폐기
+        if (epoch !== undefined && epoch !== _fetchEpoch) return;
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return;
         document.getElementById('status-message').classList.add('hidden');
         document.getElementById('results-controls').classList.remove('hidden');
@@ -909,6 +946,13 @@
         renderChainBar();
 
         openStudioView();
+
+        // ✅ FIX 4: 새 앨범 진입 시 트랙리스트 & Digging Notes 스크롤 최상단으로 리셋
+        const trackList = document.getElementById('studio-track-list');
+        const notesPane = trackList?.closest('.lg\\:flex-1')?.nextElementSibling?.querySelector('.lg\\:overflow-y-auto');
+        if (trackList) trackList.scrollTop = 0;
+        if (notesPane) notesPane.scrollTop = 0;
+
         const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(artist) ? 'KR' : 'US';
         if (source === 'itunes') loadJSONP(`https://itunes.apple.com/lookup?id=${id}&entity=song&country=${countryCode}&callback=handleItunesTracks`);
         else loadJSONP(`https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`);
@@ -981,28 +1025,33 @@
     const pI = document.getElementById('play-icon'), psI = document.getElementById('pause-icon');
 
     function playSpecificTrack(i) {
-        // 이전 트랙 하이라이트 제거
-        const prev = document.getElementById(`track-item-${currentTrackIndex}`);
-        if (prev) prev.classList.remove('track-playing');
-
         currentTrackIndex = i; playingQueue = [...currentAlbumTracks]; playingIndex = i; playingCover = currentAlbumCover;
-        
-        // 힌트 배너 숨기기
         document.getElementById('track-hint-banner').style.display = 'none';
-        
         loadTrack();
     }
 
     function loadTrack() {
-        const t = playingQueue[playingIndex]; if(!t?.preview) return;
-        
-        // 트랙 하이라이트
-        document.querySelectorAll('[id^="track-item-"]').forEach(el => el.classList.remove('track-playing'));
+        const t = playingQueue[playingIndex];
+        if (!t?.preview) return;
+
+        // ✅ FIX 1: playingIndex → currentTrackIndex 동기화 (desync 해결)
+        currentTrackIndex = playingIndex;
+
+        // 트랙 하이라이트 — 번호 복원 후 현재 트랙에 점 표시
+        document.querySelectorAll('[id^="track-item-"]').forEach((el, idx) => {
+            el.classList.remove('track-playing');
+            const numEl = el.querySelector('.track-num');
+            if (numEl && numEl.querySelector('.playing-dot')) {
+                numEl.textContent = idx + 1; // 번호 복원
+            }
+        });
         const currentEl = document.getElementById(`track-item-${playingIndex}`);
         if (currentEl) {
             currentEl.classList.add('track-playing');
             const numEl = currentEl.querySelector('.track-num');
             if (numEl) numEl.innerHTML = '<span class="playing-dot"></span>';
+            // ✅ FIX 4: 재생 트랙이 뷰에 보이도록 스크롤
+            currentEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
 
         document.getElementById('global-player').classList.remove('translate-y-full');
@@ -1010,25 +1059,49 @@
         document.getElementById('player-artist').textContent = t.artist.name;
         document.getElementById('player-cover').src = playingCover;
         audio.src = t.preview.replace(/^http:\/\//i, 'https://');
-        audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden');
+        audio.play();
+        pI.classList.add('hidden'); psI.classList.remove('hidden');
         updateTrackSpecificCredits(t.title);
         fetchBpm(t.id);
+
+        // ✅ FIX 10: MediaSession API — 잠금화면 앨범아트 + 컨트롤
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: t.title,
+                artist: t.artist.name,
+                album: document.getElementById('studio-title').textContent,
+                artwork: [{ src: playingCover, sizes: '512x512', type: 'image/jpeg' }]
+            });
+            navigator.mediaSession.setActionHandler('previoustrack', playPrevTrack);
+            navigator.mediaSession.setActionHandler('nexttrack', playNextTrack);
+            navigator.mediaSession.setActionHandler('play', () => { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); });
+            navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); });
+        }
     }
 
-    function togglePlay() { if(audio.paused) { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); } else { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); } }
-    function playNextTrack() { playingIndex = (playingIndex+1) % playingQueue.length; loadTrack(); }
-    function playPrevTrack() { playingIndex = (playingIndex-1+playingQueue.length) % playingQueue.length; loadTrack(); }
+    function togglePlay() {
+        if (audio.paused) { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); }
+        else { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); }
+    }
+    // ✅ FIX 1 (연동): next/prev도 currentTrackIndex 동기화는 loadTrack() 안에서 처리
+    function playNextTrack() { if (!playingQueue.length) return; playingIndex = (playingIndex + 1) % playingQueue.length; loadTrack(); }
+    function playPrevTrack() { if (!playingQueue.length) return; playingIndex = (playingIndex - 1 + playingQueue.length) % playingQueue.length; loadTrack(); }
     function closePlayerEntirely() { audio.pause(); document.getElementById('global-player').classList.add('translate-y-full'); closeStudioView(); }
 
     audio.addEventListener('ended', playNextTrack);
 
+    // ✅ FIX 2: fetchBpm 메모리 누수 — 콜백 실행 후 즉시 삭제
     function fetchBpm(id) {
-        window[`handleBpm_${id}`] = (d) => {
+        const cbName = `_bpm_${id}`;
+        window[cbName] = (d) => {
+            delete window[cbName]; // 즉시 GC
             const b = document.getElementById('aura-badge'), p = document.getElementById('global-player');
-            if(d.bpm) { b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden'); p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[120] transition-all duration-500 border-t border-zinc-900 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`; }
-            else b.classList.add('hidden');
+            if (d.bpm) {
+                b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden');
+                p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[120] transition-all duration-500 border-t border-zinc-900 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`;
+            } else b.classList.add('hidden');
         };
-        loadJSONP(`https://api.deezer.com/track/${id}?output=jsonp&callback=handleBpm_${id}`);
+        loadJSONP(`https://api.deezer.com/track/${id}?output=jsonp&callback=${cbName}`);
     }
 
     // ==========================================
@@ -1344,7 +1417,7 @@
             }
 
             if (extract && extract.length > 20) {
-                wikiUI.innerHTML = extract;
+                renderWikiText(wikiUI, extract);
                 return;
             }
 
@@ -1369,9 +1442,33 @@
             const data = await res.json();
             const pageId = Object.keys(data.query.pages)[0];
             if (pageId === '-1') return null;
-            return data.query.pages[pageId].extract || null;
+            const page = data.query.pages[pageId];
+            // ✅ FIX 6: disambiguation 페이지 필터링
+            if (!page.extract || page.extract.includes('may refer to') || page.extract.includes('다음을 가리킬 수')) return null;
+            return page.extract;
         } catch { return null; }
     }
+
+    // ✅ FIX 7: 위키 텍스트 길면 접기 + 더 보기 버튼
+    function renderWikiText(el, text) {
+        const LIMIT = 220;
+        if (!text || text.length <= LIMIT) { el.innerHTML = text || ''; return; }
+        const short = text.slice(0, LIMIT).trimEnd();
+        el.innerHTML = `<span class="wiki-preview">${short}…</span><span class="wiki-full hidden">${text}</span>
+        <button onclick="toggleWikiExpand(this)" class="mt-2 block text-[10px] text-[#10b981] font-black hover:underline">더 보기 ▾</button>`;
+    }
+
+    window.toggleWikiExpand = function(btn) {
+        const preview = btn.previousElementSibling;
+        const full = preview.previousElementSibling;
+        if (full.classList.contains('hidden')) {
+            full.classList.remove('hidden'); preview.classList.add('hidden');
+            btn.textContent = '접기 ▴';
+        } else {
+            full.classList.add('hidden'); preview.classList.remove('hidden');
+            btn.textContent = '더 보기 ▾';
+        }
+    };
 
     function showToast(m, t) {
         const c = document.getElementById('toast-container');
@@ -1392,6 +1489,16 @@
 
     audio.addEventListener('timeupdate', () => { if (audio.duration) document.getElementById('progress-bar').value = (audio.currentTime / audio.duration) * 100; });
     document.getElementById('progress-bar').addEventListener('input', (e) => { if (audio.duration) audio.currentTime = (e.target.value / 100) * audio.duration; });
+
+    // ✅ FIX 5: ESC 키로 세션 패널 / 스튜디오 뷰 닫기
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (document.getElementById('session-panel').classList.contains('open')) {
+            closeSessionPanel();
+        } else if (document.getElementById('studio-view').classList.contains('studio-view-enter')) {
+            closeStudioView();
+        }
+    });
 </script>
 
 </body>
