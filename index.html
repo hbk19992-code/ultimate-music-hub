@@ -66,7 +66,7 @@
     .autocomplete-item .meta-sub { font-size: 11px; color: #71717a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .autocomplete-item .play-badge { font-size: 10px; color: #10b981; font-weight: 700; background: #10b981/10; border: 1px solid #10b981/30; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
 
-    /* ✅ 개선 4-1: 크레딧 역할 그룹 */
+    /* ✅ 크레딧 역할 그룹 — 모바일 오버플로 수정 */
     .credit-group { margin-bottom: 20px; }
     .credit-group-label {
         font-size: 9px; font-weight: 900; letter-spacing: 0.25em;
@@ -74,16 +74,29 @@
         padding-bottom: 6px; border-bottom: 1px solid #18181b;
     }
     .credit-item {
-        display: flex; align-items: flex-start; gap: 10px;
+        display: flex; flex-direction: column; gap: 4px;
         padding: 8px 10px; border-radius: 10px;
-        transition: background 0.15s; margin-bottom: 2px;
+        transition: background 0.15s; margin-bottom: 4px;
     }
     .credit-item:hover { background: rgba(16,185,129,0.05); }
     .credit-item .role-pill {
         display: inline-block; background: #18181b; color: #10b981;
         border: 1px solid #27272a; border-radius: 4px; padding: 2px 7px;
-        font-size: 9px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+        font-size: 9px; font-weight: 700;
+        /* ✅ 긴 역할명 말줄임 */
+        max-width: 100%; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap;
+        align-self: flex-start;
     }
+    .session-trigger {
+        font-size: 13px; font-weight: 800;
+        color: #fff; text-align: left;
+        /* ✅ 이름 오버플로 방지 */
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        max-width: 100%;
+        background: none; border: none; padding: 0; cursor: pointer;
+    }
+    .session-trigger:hover { color: #10b981; }
 
     /* ✅ 개선 4-2: 세션 뮤지션 사이드패널 */
     #session-panel {
@@ -1308,9 +1321,13 @@
             groupEl.innerHTML = `<div class="credit-group-label">${group}</div>`;
             members.forEach(ar => {
                 const cleanName = ar.name.replace(/\s\(\d+\)$/, '');
+                const roleText = ar.role || '–';
                 const item = document.createElement('div');
                 item.className = 'credit-item';
-                item.innerHTML = `<span class="role-pill">${ar.role || '–'}</span><button class="session-trigger text-left text-white hover:text-[#10b981] font-black text-sm transition-colors flex-1" data-name="${cleanName.replace(/"/g, '&quot;')}" data-role="${(ar.role||'').replace(/"/g, '&quot;')}">${cleanName}</button>`;
+                item.innerHTML = `
+                    <span class="role-pill" title="${roleText.replace(/"/g,'&quot;')}">${roleText}</span>
+                    <button class="session-trigger" data-name="${cleanName.replace(/"/g,'&quot;')}" data-role="${roleText.replace(/"/g,'&quot;')}">${cleanName}</button>
+                `;
                 groupEl.appendChild(item);
             });
             container.appendChild(groupEl);
