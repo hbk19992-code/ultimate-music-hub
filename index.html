@@ -505,23 +505,15 @@
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); showSkeletonCards();
         const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) ? 'KR' : 'US';
         
+        // 1. iTunes API: 일단 전부 다 가져옵니다. (필터링은 Deezer 데이터를 받고 나서 tryRenderAll에서 교차 검증)
         const itCb = `_it_${epoch}`; window[itCb] = (d) => { 
             delete window[itCb]; if (epoch !== _fetchEpoch) return; 
-            if (d.results) {
-                // 💡 [동명이인 필터 1: iTunes] Dominant ID Check
-                const idCounts = {}; let dominantId = null; let maxCount = 0;
-                d.results.forEach(a => {
-                    if (a.artistName.toLowerCase() === name.toLowerCase()) {
-                        idCounts[a.artistId] = (idCounts[a.artistId] || 0) + 1;
-                        if (idCounts[a.artistId] > maxCount) { maxCount = idCounts[a.artistId]; dominantId = a.artistId; }
-                    }
-                });
-                window.itunesAlbums = dominantId ? d.results.filter(a => a.artistId === dominantId || a.artistName.toLowerCase() !== name.toLowerCase()) : d.results;
-            }
+            if (d.results) window.itunesAlbums = d.results;
             fetchState.itunesDone = true; tryRenderAll(epoch); 
         }; 
         loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&country=${countryCode}&callback=${itCb}`);
         
+        // 2. Deezer 정규/EP API
         const albumCb = `_alb_${epoch}`; window[albumCb] = function self(d) { 
             if (epoch !== _fetchEpoch) { delete window[albumCb]; return; } 
             if (d.data) window.allFetchedAlbums.push(...d.data); 
@@ -530,16 +522,15 @@
         }; 
         loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=${albumCb}`);
         
+        // 3. Deezer 피처링 API
         featureFetchCount = 0; const featCb = `_feat_${epoch}`; window[featCb] = function self(d) {
             if (epoch !== _fetchEpoch) { delete window[featCb]; return; }
             if (d.data) { 
                 const strictFeatures = d.data.filter(t => {
                     if (t.artist.id === currentArtistId) return false;
                     const cArtistLower = currentArtist.toLowerCase();
-                    
-                    // 💡 [동명이인 필터 2: Deezer Features] Strict ID Check
+                    // 피처링 트랙의 메인 아티스트가 '존 맥러플린'인데, 진짜 ID가 아니라면 AI 가수의 곡이므로 차단
                     if (t.artist.name.toLowerCase() === cArtistLower && t.artist.id !== currentArtistId) return false;
-
                     return isStrictMatch(t.artist.name, cArtistLower) || isStrictMatch(t.title, cArtistLower) || isStrictMatch(t.album.title, cArtistLower);
                 });
                 allFetchedFeatures.push(...strictFeatures); 
@@ -558,7 +549,38 @@
     function tryRenderAll(epoch) {
         if (epoch !== undefined && epoch !== _fetchEpoch) return;
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return;
+        
         document.getElementById('status-message').classList.add('hidden'); document.getElementById('results-controls').classList.remove('hidden'); document.getElementById('reset-btn').classList.remove('hidden');
+        
+        // 💡 [궁극의 철벽 방어: Deezer ↔ iTunes 교차 검증 로직]
+        if (window.itunesAlbums && window.allFetchedAlbums.length > 0) {
+            const cArtistLower = (currentArtist || "").toLowerCase();
+            // Deezer에서 가져온 '진짜' 앨범들의 제목을 전부 추출해 Set으로 만듭니다.
+            const validDeezerTitles = new Set(window.allFetchedAlbums.map(a => cleanTitleForSearch(a.title).toLowerCase()));
+            const realItunesIds = new Set();
+            
+            window.itunesAlbums.forEach(a => {
+                if (a.artistName.toLowerCase() === cArtistLower) {
+                    const itTitle = cleanTitleForSearch(a.collectionName).toLowerCase();
+                    // iTunes 앨범 제목이 Deezer 앨범 목록에 존재하면, 이 iTunes ID를 '진짜 본체 ID'로 확정합니다.
+                    if (validDeezerTitles.has(itTitle)) {
+                        realItunesIds.add(a.artistId);
+                    }
+                }
+            });
+
+            // 진짜 ID를 찾았다면, iTunes 앨범 리스트에서 가짜 AI 가수의 ID를 흔적도 없이 날려버립니다.
+            if (realItunesIds.size > 0) {
+                window.itunesAlbums = window.itunesAlbums.filter(a => {
+                    if (a.artistName.toLowerCase() === cArtistLower) {
+                        return realItunesIds.has(a.artistId);
+                    }
+                    return true; // 피처링 앨범(이름이 다른 경우)은 그대로 둡니다.
+                });
+            }
+        }
+        // ==========================================================
+
         const seenTitles = new Set(); albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
         const deezerTypeMap = new Map(); window.allFetchedAlbums.forEach(a => { const tl = cleanTitleForSearch(a.title).toLowerCase(); if(!deezerTypeMap.has(tl)) deezerTypeMap.set(tl, a.record_type); });
 
