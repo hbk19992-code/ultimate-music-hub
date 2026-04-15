@@ -253,7 +253,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Hidden Sideman Edition V27</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Sideman Hunter Edition V28</p>
         </header>
 
 ```
@@ -443,19 +443,24 @@
     // 🆕 [캐시 영속화] 페이지 로드 시 localStorage에서 복원
     window.discogsCache = window.discogsCache || {};
     try {
-        const persisted = localStorage.getItem('discogsCache_v1');
+        const persisted = localStorage.getItem('discogsCache_v2');
         if (persisted) window.discogsCache = JSON.parse(persisted);
     } catch {}
-    const CACHE_TTL = 5 * 60 * 1000;
+    const CACHE_TTL = 30 * 60 * 1000;  // 30분 (랭킹 안정성 확보)
+    // 🆕 캐시 키 헬퍼: '||' 구분자 사용 (제목/아티스트명에 _가 있어도 안전)
+    function makeCacheKey(title, artist) {
+        return `${cleanTitleForSearch(title)}||${(artist || '').toLowerCase()}`;
+    }
     function cacheGet(key) { const entry = window.discogsCache[key]; if (!entry) return null; if (Date.now() - entry.ts > CACHE_TTL) { delete window.discogsCache[key]; return null; } return entry.data; }
     let _cachePersistTimer = null;
     function cacheSet(key, data) {
-        window.discogsCache[key] = { data, ts: Date.now() };
-        // 디바운스 저장 (500ms)
+        // 🆕 entry에 artist 메타 함께 저장 (랭킹 필터링용)
+        const artist = key.split('||')[1] || '';
+        window.discogsCache[key] = { data, ts: Date.now(), artist };
         clearTimeout(_cachePersistTimer);
         _cachePersistTimer = setTimeout(() => {
-            try { localStorage.setItem('discogsCache_v1', JSON.stringify(window.discogsCache)); }
-            catch {} // QuotaExceeded 등은 무시
+            try { localStorage.setItem('discogsCache_v2', JSON.stringify(window.discogsCache)); }
+            catch {}
         }, 500);
     }
 
@@ -666,31 +671,53 @@
     }
 
     // ==========================================================
-    // 🆕 [Discogs 사이드맨 발굴] role !== 'Main' 인 모든 참여작
+    // 🆕 [Discogs 사이드맨 발굴 V2] groups + database search 통합
+    //   1) /artists/{id}/groups → Mahavishnu Orchestra 같은 밴드
+    //   2) /database/search?q={name} → 키워드로 모든 참여작
+    //   3) 매칭 완화: 제목만 일치해도 OK
+    //   4) Deezer에 없으면 → 'discogs-only' 카드로 표시 (정보 노출 + 외부 검색)
     // ==========================================================
     async function fetchDiscogsAppearances(artistName, epoch) {
         try {
             const r = await fetch(`/api/getDiscogsAppearances?artistName=${encodeURIComponent(artistName)}`);
             if (!r.ok) return;
             const d = await r.json();
-            if (epoch !== _fetchEpoch || !d.appearances?.length) return;
+            if (epoch !== _fetchEpoch) return;
 
-            // 이미 디스코그래피에 있는 앨범 제목 셋
+            const groupReleases = d.groupReleases || [];   // 🆕 Mahavishnu Orchestra 등의 앨범
+            const appearances = d.appearances || [];       // role !== 'Main'
+            const searchHits = d.searchHits || [];         // database/search 결과
+            const groups = d.groups || [];                 // 그룹 메타정보 (밴드명 표시용)
+
+            // 이미 디스코그래피에 있는 앨범 제목 셋 (모든 섹션에서 수집)
             const existingTitleIds = new Set();
             [...albumsData.regular, ...albumsData.ep, ...albumsData.features,
              ...albumsData.compilation, ...albumsData.live].forEach(a => {
                 existingTitleIds.add(superCleanTitle(a.title));
             });
 
-            // 미매칭된 Discogs 참여작만, 최대 30개
-            const newOnes = d.appearances.filter(app =>
-                !existingTitleIds.has(superCleanTitle(app.title))
-            ).slice(0, 30);
+            // 🆕 후보 통합 (각각 어디서 왔는지 메타 부착)
+            const candidates = [
+                ...groupReleases.map(x => ({ ...x, _origin: 'group', _badge: 'BAND' })),
+                ...appearances.map(x => ({ ...x, _origin: 'appearance', _badge: 'SIDEMAN' })),
+                ...searchHits.map(x => ({ ...x, _origin: 'search', _badge: 'SIDEMAN' }))
+            ];
 
-            if (!newOnes.length) return;
+            // 제목 기반 중복 제거 + 기존 디스코그래피와 겹치는 것 제외
+            const seenTitles = new Set();
+            const filtered = candidates.filter(c => {
+                const cid = superCleanTitle(c.title);
+                if (!cid || cid.length < 2) return false;
+                if (existingTitleIds.has(cid)) return false;
+                if (seenTitles.has(cid)) return false;
+                seenTitles.add(cid);
+                return true;
+            }).slice(0, 50);   // 상한 50개
 
-            // Deezer에서 재생 가능한 매칭 찾기 (병렬, 타임아웃 5초)
-            const matchPromises = newOnes.map(app => new Promise(resolve => {
+            if (!filtered.length) return;
+
+            // Deezer 매칭 (병렬, 제목 매칭만 강제 - artist는 보너스)
+            const matchPromises = filtered.map(app => new Promise(resolve => {
                 const cb = `_app_${Math.random().toString(36).slice(2)}`;
                 let resolved = false;
                 window[cb] = (data) => {
@@ -699,30 +726,63 @@
                     delete window[cb];
                     const cleanAppTitle = superCleanTitle(app.title);
                     const cleanAppArtist = (app.artist || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-                    const found = (data.data || []).find(t => {
+                    const results = data.data || [];
+                    // 🆕 제목 매칭 우선 (artist는 가산점)
+                    let bestMatch = null, bestScore = 0;
+                    results.forEach(t => {
                         const tTitle = superCleanTitle(t.album.title);
                         const tArtist = t.artist.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        const titleMatch = tTitle === cleanAppTitle || tTitle.includes(cleanAppTitle) || cleanAppTitle.includes(tTitle);
-                        const artistMatch = cleanAppArtist.length >= 4 && tArtist.includes(cleanAppArtist.slice(0, Math.min(8, cleanAppArtist.length)));
-                        return titleMatch && artistMatch;
+                        let score = 0;
+                        if (tTitle === cleanAppTitle) score += 10;
+                        else if (tTitle.includes(cleanAppTitle) || cleanAppTitle.includes(tTitle)) score += 6;
+                        else return;  // 제목 매칭 실패 → 패스
+                        if (cleanAppArtist && tArtist.includes(cleanAppArtist.slice(0, Math.min(6, cleanAppArtist.length)))) score += 3;
+                        if (score > bestScore) { bestScore = score; bestMatch = t; }
                     });
-                    resolve(found ? {
-                        id: found.album.id,
-                        title: found.album.title,
-                        cover_medium: found.album.cover_medium,
-                        release_date: app.year ? `${app.year}-01-01` : '',
-                        artist: { name: found.artist.name },
-                        source: 'deezer',
-                        discogsRole: app.role
-                    } : null);
+                    if (bestMatch && bestScore >= 6) {
+                        resolve({
+                            id: bestMatch.album.id,
+                            title: bestMatch.album.title,
+                            cover_medium: bestMatch.album.cover_medium,
+                            release_date: app.year ? `${app.year}-01-01` : (bestMatch.album.release_date || ''),
+                            artist: { name: bestMatch.artist.name },
+                            source: 'deezer',
+                            discogsRole: app.role || app._badge,
+                            originBadge: app._badge
+                        });
+                    } else {
+                        // 🆕 Deezer에 없음 → discogs-only 카드 (재생 불가지만 표시)
+                        resolve({
+                            id: `discogs_${app.discogsId || Math.random().toString(36).slice(2)}`,
+                            title: app.title,
+                            cover_medium: app.thumb || 'https://placehold.co/300x300/18181b/a238ff?text=Discogs',
+                            release_date: app.year ? `${app.year}-01-01` : '',
+                            artist: { name: app.artist || 'Various' },
+                            source: 'discogs-only',
+                            discogsRole: app.role || app._badge,
+                            originBadge: app._badge,
+                            discogsId: app.discogsId
+                        });
+                    }
                 };
                 const q = encodeURIComponent(`${app.artist || ''} ${app.title}`.trim());
-                loadJSONP(`https://api.deezer.com/search?q=${q}&limit=3&output=jsonp&callback=${cb}`);
+                loadJSONP(`https://api.deezer.com/search?q=${q}&limit=5&output=jsonp&callback=${cb}`);
                 setTimeout(() => {
                     if (!resolved) {
                         resolved = true;
                         delete window[cb];
-                        resolve(null);
+                        // 타임아웃 시에도 discogs-only 카드라도 만들어서 정보 노출
+                        resolve({
+                            id: `discogs_${app.discogsId || Math.random().toString(36).slice(2)}`,
+                            title: app.title,
+                            cover_medium: app.thumb || 'https://placehold.co/300x300/18181b/a238ff?text=Discogs',
+                            release_date: app.year ? `${app.year}-01-01` : '',
+                            artist: { name: app.artist || 'Various' },
+                            source: 'discogs-only',
+                            discogsRole: app.role || app._badge,
+                            originBadge: app._badge,
+                            discogsId: app.discogsId
+                        });
                     }
                 }, 5000);
             }));
@@ -738,20 +798,29 @@
                 ...albumsData.compilation.map(f => f.id),
                 ...albumsData.live.map(f => f.id)
             ]);
-            let addedCount = 0;
+            const existingTitles2 = new Set();
+            [...albumsData.regular, ...albumsData.ep, ...albumsData.features,
+             ...albumsData.compilation, ...albumsData.live].forEach(a => {
+                existingTitles2.add(superCleanTitle(a.title));
+            });
+            let addedCount = 0, deezerCount = 0, discogsOnlyCount = 0;
             matched.forEach(m => {
-                if (!existingIds.has(m.id)) {
-                    albumsData.features.push(m);
-                    existingIds.add(m.id);
-                    addedCount++;
-                }
+                const tid = superCleanTitle(m.title);
+                if (existingIds.has(m.id) || existingTitles2.has(tid)) return;
+                albumsData.features.push(m);
+                existingIds.add(m.id);
+                existingTitles2.add(tid);
+                addedCount++;
+                if (m.source === 'deezer') deezerCount++;
+                else discogsOnlyCount++;
             });
 
             if (addedCount > 0) {
-                showToast(`Discogs에서 숨은 참여작 ${addedCount}장 발견 🎯`, 'success');
+                const groupNames = groups.length ? ` (밴드: ${groups.slice(0,2).map(g=>g.name).join(', ')})` : '';
+                showToast(`사이드맨/밴드 참여작 ${addedCount}장 발견 🎯${groupNames}`, 'success');
                 if (!isFavoritesTab) renderAllSections();
             }
-        } catch(e) { /* silent */ }
+        } catch(e) { console.warn('Appearances fetch failed:', e); }
     }
 
     function clearSniperMode() { sessionSearchQuery = ""; const allAlbums = [...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features, ...favorites]; allAlbums.forEach(a => a.sessionMatched = false); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('local-search-input').value = ''; if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
@@ -828,13 +897,31 @@
         items.forEach(it => {
             const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = it.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : ''; const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
             const card = document.createElement('div'); const matchedClass = it.sessionMatched ? 'border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'border-zinc-800/50';
-            card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; card.setAttribute('data-memo-id', it.id);
-            card.onclick = () => playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
+            // 🆕 discogs-only는 보라색 보더로 구분
+            const isDiscogsOnly = it.source === 'discogs-only';
+            const onlyClass = isDiscogsOnly ? 'border-[#a238ff]/40' : '';
+            card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} ${onlyClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; card.setAttribute('data-memo-id', it.id);
+            // 🆕 discogs-only 카드는 클릭 시 외부 검색
+            card.onclick = () => {
+                if (isDiscogsOnly) {
+                    showToast(`${it.title} - 외부 서비스에서 검색합니다`, 'info');
+                    openInSpotify(it.title, it.artist.name);
+                } else {
+                    playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
+                }
+            };
             const safeIt = JSON.stringify(it).replace(/"/g, '"'); const hasMemo = allUserMemos[String(it.id)];
+            // 🆕 뱃지 분기: BAND(보라) / SIDEMAN(시안) / Apple(빨강)
+            let originBadgeHtml = '';
+            if (it.originBadge === 'BAND') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-[#a238ff] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🎸 BAND</span>';
+            else if (it.originBadge === 'SIDEMAN' || it.discogsRole) originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-cyan-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">💎 SIDEMAN</span>';
+            const sourceBadge = it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>'
+                : isDiscogsOnly ? '<span class="absolute top-2 left-2 bg-[#a238ff]/80 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🔍 Discogs</span>'
+                : '';
             card.innerHTML = `${hasMemo ? '<div class="memo-dot"></div>' : ''}<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
-            ${it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>' : ''}
-            ${it.discogsRole ? '<span class="absolute bottom-2 left-2 bg-[#a238ff] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">💎 SIDEMAN</span>' : ''}
-            <button onclick="toggleFavorite(event, JSON.parse(this.dataset.item), '${type}')" data-item="${safeIt}" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`;
+            ${sourceBadge}
+            ${originBadgeHtml}
+            <button onclick="toggleFavorite(event, JSON.parse(this.dataset.item), '${type}')" data-item="${safeIt}" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}${isDiscogsOnly && it.artist?.name ? ' · ' + it.artist.name : ''}</p></div>`;
             g.appendChild(card);
         });
     }
@@ -1009,7 +1096,7 @@
         if (_discogsAbort) _discogsAbort.abort(); _discogsAbort = new AbortController(); const signal = _discogsAbort.signal;
         const out = document.getElementById('discogs-credit-text'); out.innerHTML = "<span class='animate-pulse text-zinc-500 text-xs'>Vercel 서버와 통신 중... 🌐</span>";
         activeCreditFilter = 'ALL'; const filterTabs = document.getElementById('credit-filter-tabs'); if (filterTabs) { filterTabs.classList.add('hidden'); filterTabs.innerHTML = ''; } const countBadge = document.getElementById('credit-count-badge'); if (countBadge) countBadge.classList.add('hidden');
-        const cacheKey = `${cleanTitleForSearch(title)}_${artist}`;
+        const cacheKey = makeCacheKey(title, artist);
         try {
             let d = cacheGet(cacheKey);
             if (!d) { const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`, { signal }); if (!r.ok) { const errorDetail = await r.text(); throw new Error(`HTTP ${r.status} | ${errorDetail}`); } d = await r.json(); cacheSet(cacheKey, d); }
@@ -1104,14 +1191,24 @@
         document.getElementById('ranking-list').innerHTML = '';
         document.getElementById('ranking-progress-fill').style.width = '0%';
 
-        const currentArtistNorm = normalizeArtistName(currentArtist || '');
+        if (!currentArtist) {
+            document.getElementById('ranking-loading').classList.add('hidden');
+            document.getElementById('ranking-list').innerHTML = '<p class="text-center text-zinc-600 py-8 text-sm font-bold">먼저 아티스트를 검색해주세요</p>';
+            return;
+        }
+
+        const currentArtistNorm = normalizeArtistName(currentArtist);
+        const currentArtistKeyLower = currentArtist.toLowerCase();
         const tally = {};
 
-        // 1) 캐시된 것 먼저 즉시 반영
+        // 🆕 [핵심 수정] 현재 아티스트의 디스코그래피만 분석 대상
+        // 캐시 키 형식: "albumTitle||artist" → 현재 아티스트로 끝나는 것만
+        const cacheKeySuffix = `||${currentArtistKeyLower}`;
         Object.entries(window.discogsCache || {}).forEach(([key, entry]) => {
+            if (!key.endsWith(cacheKeySuffix)) return;  // 다른 아티스트 데이터 완전 차단
             const d = entry?.data || entry;
             if (!d?.extraartists) return;
-            const albumTitle = key.split('_')[0];
+            const albumTitle = key.slice(0, -cacheKeySuffix.length);
             d.extraartists.forEach(ar => addToTally(tally, ar, albumTitle, currentArtistNorm));
         });
 
@@ -1120,35 +1217,41 @@
             renderRankingList(tally, '캐시 데이터 표시 중...');
         }
 
-        // 2) 디스코그래피 전체에서 미캐시 앨범 추출
-        const allAlbums = [
+        // 🆕 분석 대상은 오직 현재 아티스트의 디스코그래피만
+        // (features는 의도적으로 제외 - 본인이 메인이 아니므로 다른 사람의 작품)
+        const targetAlbums = [
             ...albumsData.regular,
             ...albumsData.ep,
             ...albumsData.compilation,
             ...albumsData.live
         ];
-        const toFetch = allAlbums.filter(a => {
-            const key = `${cleanTitleForSearch(a.title)}_${currentArtist}`;
-            return !cacheGet(key);
-        });
+
+        if (!targetAlbums.length) {
+            document.getElementById('ranking-loading').classList.add('hidden');
+            document.getElementById('ranking-progress-fill').style.width = '100%';
+            renderRankingList(tally, `${currentArtist}의 디스코그래피가 비어있습니다`);
+            return;
+        }
+
+        const toFetch = targetAlbums.filter(a => !cacheGet(makeCacheKey(a.title, currentArtist)));
 
         if (!toFetch.length) {
             document.getElementById('ranking-loading').classList.add('hidden');
             document.getElementById('ranking-progress-fill').style.width = '100%';
-            renderRankingList(tally, `전체 ${allAlbums.length}장 분석 완료`);
+            renderRankingList(tally, `${currentArtist} · ${targetAlbums.length}장 전체 분석 완료`);
             return;
         }
 
-        // 3) 병렬 fetch (동시 3개) + 진행률 표시 + 점진적 렌더
+        // 병렬 fetch (concurrency 3) + 진행률 + 점진적 렌더
         document.getElementById('ranking-loading').classList.add('hidden');
         let done = 0;
         const total = toFetch.length;
         document.getElementById('ranking-subtitle').textContent =
-            `전체 ${total}장 분석 중... (0/${total})`;
+            `${currentArtist} · 분석 중 (0/${total})`;
 
         await pMap(toFetch, async (album) => {
             try {
-                const key = `${cleanTitleForSearch(album.title)}_${currentArtist}`;
+                const key = makeCacheKey(album.title, currentArtist);
                 const r = await fetch(
                     `/api/getDiscogs?albumTitle=${encodeURIComponent(album.title)}&artistName=${encodeURIComponent(currentArtist)}`
                 );
@@ -1163,14 +1266,13 @@
             const pct = Math.round((done / total) * 100);
             document.getElementById('ranking-progress-fill').style.width = `${pct}%`;
             document.getElementById('ranking-subtitle').textContent =
-                `전체 ${total}장 분석 중... (${done}/${total})`;
-            // 3장마다 또는 마지막에 점진적 업데이트
+                `${currentArtist} · 분석 중 (${done}/${total})`;
             if (done % 3 === 0 || done === total) renderRankingList(tally, null);
-        }, 3);  // ← concurrency 3
+        }, 3);
 
         document.getElementById('ranking-progress-fill').style.width = '100%';
         document.getElementById('ranking-subtitle').textContent =
-            `${allAlbums.length}장 전체 분석 완료 · ${Object.keys(tally).length}명의 세션 뮤지션`;
+            `${currentArtist} · ${targetAlbums.length}장 분석 완료 · ${Object.keys(tally).length}명의 세션 뮤지션`;
     };
 
     function renderRankingList(tally, subtitleOverride) {
