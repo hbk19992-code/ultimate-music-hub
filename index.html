@@ -505,24 +505,54 @@
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); showSkeletonCards();
         const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) ? 'KR' : 'US';
         
-        const itCb = `_it_${epoch}`; window[itCb] = (d) => { delete window[itCb]; if (epoch !== _fetchEpoch) return; if (d.results) window.itunesAlbums = d.results; fetchState.itunesDone = true; tryRenderAll(epoch); }; loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&country=${countryCode}&callback=${itCb}`);
-        const albumCb = `_alb_${epoch}`; window[albumCb] = function self(d) { if (epoch !== _fetchEpoch) { delete window[albumCb]; return; } if (d.data) window.allFetchedAlbums.push(...d.data); if (d.next) { loadJSONP(d.next + `&output=jsonp&callback=${albumCb}`); } else { delete window[albumCb]; fetchState.albumsDone = true; tryRenderAll(epoch); } }; loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=${albumCb}`);
+        const itCb = `_it_${epoch}`; window[itCb] = (d) => { 
+            delete window[itCb]; if (epoch !== _fetchEpoch) return; 
+            if (d.results) {
+                // 💡 [동명이인 필터 1: iTunes] Dominant ID Check
+                const idCounts = {}; let dominantId = null; let maxCount = 0;
+                d.results.forEach(a => {
+                    if (a.artistName.toLowerCase() === name.toLowerCase()) {
+                        idCounts[a.artistId] = (idCounts[a.artistId] || 0) + 1;
+                        if (idCounts[a.artistId] > maxCount) { maxCount = idCounts[a.artistId]; dominantId = a.artistId; }
+                    }
+                });
+                window.itunesAlbums = dominantId ? d.results.filter(a => a.artistId === dominantId || a.artistName.toLowerCase() !== name.toLowerCase()) : d.results;
+            }
+            fetchState.itunesDone = true; tryRenderAll(epoch); 
+        }; 
+        loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&country=${countryCode}&callback=${itCb}`);
+        
+        const albumCb = `_alb_${epoch}`; window[albumCb] = function self(d) { 
+            if (epoch !== _fetchEpoch) { delete window[albumCb]; return; } 
+            if (d.data) window.allFetchedAlbums.push(...d.data); 
+            if (d.next) { loadJSONP(d.next + `&output=jsonp&callback=${albumCb}`); } 
+            else { delete window[albumCb]; fetchState.albumsDone = true; tryRenderAll(epoch); } 
+        }; 
+        loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=${albumCb}`);
         
         featureFetchCount = 0; const featCb = `_feat_${epoch}`; window[featCb] = function self(d) {
             if (epoch !== _fetchEpoch) { delete window[featCb]; return; }
             if (d.data) { 
-                // 🔥 V26.1: 피처링 동명이인 엄격 차단 필터
                 const strictFeatures = d.data.filter(t => {
                     if (t.artist.id === currentArtistId) return false;
                     const cArtistLower = currentArtist.toLowerCase();
+                    
+                    // 💡 [동명이인 필터 2: Deezer Features] Strict ID Check
+                    if (t.artist.name.toLowerCase() === cArtistLower && t.artist.id !== currentArtistId) return false;
+
                     return isStrictMatch(t.artist.name, cArtistLower) || isStrictMatch(t.title, cArtistLower) || isStrictMatch(t.album.title, cArtistLower);
                 });
                 allFetchedFeatures.push(...strictFeatures); 
             }
             featureFetchCount++;
             if (d.next && featureFetchCount < 4) { loadJSONP(d.next + `&output=jsonp&callback=${featCb}`); }
-            else { delete window[featCb]; const uniqueFeatures = []; const seenAlbums = new Set(); allFetchedFeatures.forEach(t => { if (!seenAlbums.has(t.album.id)) { seenAlbums.add(t.album.id); uniqueFeatures.push(t); } }); window.deezerUniqueFeatures = uniqueFeatures; fetchState.featuresDone = true; tryRenderAll(epoch); }
-        }; loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=${featCb}`);
+            else { 
+                delete window[featCb]; const uniqueFeatures = []; const seenAlbums = new Set(); 
+                allFetchedFeatures.forEach(t => { if (!seenAlbums.has(t.album.id)) { seenAlbums.add(t.album.id); uniqueFeatures.push(t); } }); 
+                window.deezerUniqueFeatures = uniqueFeatures; fetchState.featuresDone = true; tryRenderAll(epoch); 
+            }
+        }; 
+        loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=${featCb}`);
     };
 
     function tryRenderAll(epoch) {
@@ -541,7 +571,6 @@
                     const artistNameLower = a.artistName.toLowerCase(); const searchArtistLower = currentArtist ? currentArtist.toLowerCase() : '';
                     
                     if (searchArtistLower && !artistNameLower.includes(searchArtistLower)) { 
-                        // 🔥 V26.1: iTunes 피처링 엄격 차단 필터
                         if (isStrictMatch(a.collectionName, searchArtistLower)) {
                             albumsData.features.push(itunesAlbum); 
                         }
@@ -634,7 +663,7 @@
         const c = document.getElementById('sections-container'); c.innerHTML = '';
         const allFolders = ['전체 보관함', ...new Set(favorites.map(f => f.folderName || '기본 보관함'))];
         let tabsHtml = `<div id="fav-folder-tabs" class="flex flex-wrap gap-2 mb-8 px-4 md:px-0">`;
-        allFolders.forEach(f => { const active = currentFavFolder === f; const safeF = f.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); tabsHtml += `<button data-folder="${safeF}" class="fav-folder-btn px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${safeF}</button>`; });
+        allFolders.forEach(f => { const active = currentFavFolder === f; const safeF = f.replace(/&/g,'&').replace(/"/g,'"'); tabsHtml += `<button data-folder="${safeF}" class="fav-folder-btn px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${safeF}</button>`; });
         tabsHtml += `</div>`; c.innerHTML = tabsHtml;
         document.getElementById('fav-folder-tabs').addEventListener('click', e => { const btn = e.target.closest('.fav-folder-btn'); if (btn) window.setFavFolder(btn.dataset.folder); });
         const fItems = favorites.filter(it => { const folderMatch = (currentFavFolder === '전체 보관함' || (it.folderName || '기본 보관함') === currentFavFolder); if (!folderMatch) return false; const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g, ''); if (!q) return true; const searchQ = sessionSearchQuery.replace(/\s/g, ''); const targetTitle = it.title.toLowerCase().replace(/\s/g, ''); if (searchQ === q) return it.sessionMatched || targetTitle.includes(q); return targetTitle.includes(q); });
@@ -652,7 +681,7 @@
             const card = document.createElement('div'); const matchedClass = it.sessionMatched ? 'border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'border-zinc-800/50';
             card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; card.setAttribute('data-memo-id', it.id);
             card.onclick = () => playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
-            const safeIt = JSON.stringify(it).replace(/"/g, '&quot;'); const hasMemo = allUserMemos[String(it.id)];
+            const safeIt = JSON.stringify(it).replace(/"/g, '"'); const hasMemo = allUserMemos[String(it.id)];
             card.innerHTML = `${hasMemo ? '<div class="memo-dot"></div>' : ''}<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
             ${it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>' : ''}
             <button onclick="toggleFavorite(event, JSON.parse(this.dataset.item), '${type}')" data-item="${safeIt}" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`;
@@ -779,7 +808,7 @@
         const filteredGroups = activeCreditFilter === 'ALL' ? groups : { [activeCreditFilter]: groups[activeCreditFilter] || [] };
         Object.entries(filteredGroups).forEach(([group, members]) => {
             if (!members.length) return; const groupEl = document.createElement('div'); groupEl.className = 'credit-group'; groupEl.innerHTML = `<div class="credit-group-label">${group}</div>`;
-            members.forEach(ar => { const cleanName = ar.name.replace(/\s\(\d+\)$/, ''); const roleText = ar.role || '–'; const item = document.createElement('div'); item.className = 'credit-item'; item.innerHTML = `<span class="role-pill" title="${roleText.replace(/"/g,'&quot;')}">${roleText}</span><button class="session-trigger" data-name="${cleanName.replace(/"/g,'&quot;')}" data-role="${roleText.replace(/"/g,'&quot;')}">${cleanName}</button>`; groupEl.appendChild(item); }); container.appendChild(groupEl);
+            members.forEach(ar => { const cleanName = ar.name.replace(/\s\(\d+\)$/, ''); const roleText = ar.role || '–'; const item = document.createElement('div'); item.className = 'credit-item'; item.innerHTML = `<span class="role-pill" title="${roleText.replace(/"/g,'"')}">${roleText}</span><button class="session-trigger" data-name="${cleanName.replace(/"/g,'"')}" data-role="${roleText.replace(/"/g,'"')}">${cleanName}</button>`; groupEl.appendChild(item); }); container.appendChild(groupEl);
         });
     }
 
