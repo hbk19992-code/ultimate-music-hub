@@ -241,6 +241,62 @@
         width: 36px; height: 4px; border-radius: 2px;
         background: rgba(255,255,255,0.15); z-index: 161; cursor: grab;
     }
+
+    /* ══════════════════════════════════════
+       C-① 타임라인 뷰
+    ══════════════════════════════════════ */
+    .timeline-wrap { position: relative; padding-left: 36px; }
+    .timeline-wrap::before { content:''; position:absolute; left:12px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom,#10b981,rgba(162,56,255,0.15)); border-radius:2px; }
+    .timeline-group { margin-bottom: 48px; position: relative; }
+    .timeline-group-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .timeline-year-dot { width:12px; height:12px; border-radius:50%; background:#10b981; border:2px solid #050505; box-shadow:0 0 8px rgba(16,185,129,0.6); flex-shrink:0; position:absolute; left:-42px; }
+    .timeline-year-label { font-size:13px; font-weight:900; color:#10b981; letter-spacing:0.08em; }
+    .timeline-card { display:flex; align-items:center; gap:12px; background:#0d0d0d; border:1px solid #1a1a1a; border-radius:14px; padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
+    .timeline-card:hover { background:#141414; border-color:#10b981; transform:translateX(4px); }
+    .timeline-card:hover .tc-title { color:#10b981; }
+    .timeline-card img { width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid #2a2a2a; flex-shrink:0; }
+    .timeline-card .tc-title { font-weight:700; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .timeline-card .tc-meta { font-size:10px; color:#52525b; margin-top:2px; }
+    .timeline-card.tc-matched { border-color:#10b981; box-shadow:0 0 12px rgba(16,185,129,0.2); }
+    .view-toggle-btn { padding:6px 14px; font-size:11px; font-weight:700; border-radius:8px; cursor:pointer; border:none; transition:all 0.15s; }
+    .view-toggle-btn.active { background:#10b981; color:#000; }
+    .view-toggle-btn:not(.active) { background:#18181b; color:#71717a; border:1px solid #27272a; }
+
+    /* ══════════════════════════════════════
+       B-① 앨범 메모
+    ══════════════════════════════════════ */
+    #memo-section { border-top:1px solid #18181b; padding-top:20px; margin-top:4px; }
+    .star-btn { font-size:22px; cursor:pointer; transition:transform 0.1s; line-height:1; background:none; border:none; padding:2px; opacity:0.35; }
+    .star-btn.lit, .star-btn:hover { opacity:1; transform:scale(1.15); }
+    #memo-textarea { width:100%; background:#0d0d0d; border:1px solid #27272a; border-radius:12px; color:#fff; padding:10px 12px; font-size:12px; font-family:inherit; resize:none; outline:none; min-height:72px; transition:border-color 0.2s; line-height:1.6; }
+    #memo-textarea:focus { border-color:#10b981; }
+    #memo-textarea::placeholder { color:#3f3f46; }
+    .memo-tag { display:inline-flex; align-items:center; gap:4px; background:#18181b; border:1px solid #27272a; border-radius:20px; padding:4px 11px; font-size:10px; font-weight:700; color:#71717a; cursor:pointer; transition:all 0.15s; user-select:none; }
+    .memo-tag.selected { background:rgba(16,185,129,0.12); border-color:#10b981; color:#10b981; }
+    .memo-dot { position:absolute; top:6px; left:6px; width:8px; height:8px; background:#a238ff; border-radius:50%; border:2px solid #050505; z-index:10; box-shadow:0 0 6px rgba(162,56,255,0.7); pointer-events:none; }
+    @keyframes memoPop { 0%{transform:scale(0)} 70%{transform:scale(1.3)} 100%{transform:scale(1)} }
+    .memo-dot { animation:memoPop 0.3s ease-out; }
+
+    /* ══════════════════════════════════════
+       A-② 세션 뮤지션 랭킹
+    ══════════════════════════════════════ */
+    #ranking-modal { position:fixed; inset:0; z-index:400; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+    #ranking-modal.open { opacity:1; pointer-events:auto; }
+    #ranking-panel { background:#0a0a0a; border:1px solid #1f1f1f; border-radius:24px 24px 0 0; width:100%; max-width:700px; max-height:88vh; display:flex; flex-direction:column; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); overflow:hidden; }
+    #ranking-modal.open #ranking-panel { transform:translateY(0); }
+    .ranking-handle { width:36px; height:4px; background:#27272a; border-radius:2px; margin:12px auto 0; flex-shrink:0; }
+    .ranking-item { display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:12px; cursor:pointer; transition:background 0.15s; }
+    .ranking-item:hover { background:rgba(16,185,129,0.06); }
+    .ranking-rank { font-size:11px; font-weight:900; color:#3f3f46; width:26px; text-align:center; flex-shrink:0; }
+    .ranking-rank.top3 { color:#10b981; font-size:15px; }
+    .ranking-bar-wrap { flex:1; min-width:0; }
+    .ranking-name { font-weight:800; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
+    .ranking-role-tag { font-size:9px; color:#52525b; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+    .ranking-bar-bg { height:3px; background:#1a1a1a; border-radius:2px; overflow:hidden; margin-top:5px; }
+    .ranking-bar-fill { height:100%; background:linear-gradient(90deg,#10b981,#a238ff); border-radius:2px; width:0; transition:width 0.7s ease-out; }
+    .ranking-count { font-size:12px; font-weight:900; color:#10b981; flex-shrink:0; min-width:28px; text-align:right; }
+    .ranking-album-chips { display:flex; gap:3px; margin-top:4px; flex-wrap:wrap; max-height:30px; overflow:hidden; }
+    .ranking-album-chip { font-size:9px; color:#52525b; background:#111; border:1px solid #1f1f1f; border-radius:4px; padding:1px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
 </style>
 ```
 
@@ -249,6 +305,22 @@
 
 ```
 <div id="toast-container" class="fixed bottom-[110px] left-1/2 z-[300] flex flex-col gap-2 pointer-events-none w-full max-w-xs md:max-w-md"></div>
+
+<!-- ✅ A-② 세션 랭킹 모달 -->
+<div id="ranking-modal" onclick="e => { if(e.target===this) closeRankingModal(); }">
+    <div id="ranking-panel">
+        <div class="ranking-handle"></div>
+        <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-900 flex-shrink-0">
+            <div>
+                <h3 class="text-white font-black text-lg">🎭 세션 뮤지션 랭킹</h3>
+                <p id="ranking-subtitle" class="text-zinc-500 text-xs mt-0.5"></p>
+            </div>
+            <button onclick="closeRankingModal()" class="p-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs">✕</button>
+        </div>
+        <div id="ranking-loading" class="hidden p-10 text-center text-[#10b981] font-mono text-xs animate-pulse tracking-widest">ANALYZING SESSION DATA...</div>
+        <div id="ranking-list" class="overflow-y-auto flex-1 p-4 space-y-1"></div>
+    </div>
+</div>
 
 <!-- ✅ 세션 뮤지션 사이드패널 백드롭 -->
 <div id="session-panel-backdrop" onclick="closeSessionPanel()"></div>
@@ -338,17 +410,28 @@
         <div id="artist-selection-grid" class="grid grid-cols-2 md:flex md:flex-wrap justify-center gap-4 md:gap-6"></div>
     </div>
 
-    <div id="results-controls" class="hidden flex flex-col md:flex-row justify-between items-center gap-4 mb-10 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800">
-        <div class="flex w-full md:w-auto gap-2 flex-1">
+    <div id="results-controls" class="hidden flex flex-col gap-3 mb-10 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800">
+        <!-- 1행: 검색 + 스나이퍼 -->
+        <div class="flex w-full gap-2">
             <input type="text" id="local-search-input" oninput="handleLocalSearch()" onkeypress="if(event.key==='Enter') startDeepSessionSearch()" placeholder="앨범 제목 또는 세션명 검색..." class="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#10b981]">
             <button onclick="startDeepSessionSearch()" class="bg-[#10b981] text-black px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-transform hover:scale-105 shadow-lg active:scale-95 flex items-center gap-1 shrink-0">
                 🎯 스나이퍼 서치
             </button>
         </div>
-        <select id="album-sort-select" onchange="applyAlbumSort()" class="w-full md:w-auto bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold border border-zinc-800 cursor-pointer">
-            <option value="desc">📅 발매일 최신순</option>
-            <option value="asc">⏳ 발매일 과거순</option>
-        </select>
+        <!-- 2행: 뷰 토글 + 랭킹 + 정렬 -->
+        <div class="flex items-center gap-2 flex-wrap">
+            <div class="flex gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+                <button id="view-grid-btn" onclick="setViewMode('grid')" class="view-toggle-btn active">⊞ 그리드</button>
+                <button id="view-timeline-btn" onclick="setViewMode('timeline')" class="view-toggle-btn">≡ 타임라인</button>
+            </div>
+            <button onclick="openRankingModal()" class="flex items-center gap-1.5 px-3 py-2 bg-zinc-950 border border-zinc-800 hover:border-[#a238ff] text-zinc-400 hover:text-[#a238ff] rounded-lg text-xs font-bold transition-colors">
+                🎭 세션 랭킹
+            </button>
+            <select id="album-sort-select" onchange="applyAlbumSort()" class="ml-auto bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold border border-zinc-800 cursor-pointer">
+                <option value="desc">📅 최신순</option>
+                <option value="asc">⏳ 과거순</option>
+            </select>
+        </div>
     </div>
 
     <!-- ✅ SNIPER FIX 4: 스나이퍼 모드 활성 배너 -->
@@ -441,6 +524,39 @@
                 <div id="credit-filter-tabs" class="hidden flex flex-wrap gap-2 mb-5"></div>
                 <div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-1"></div>
             </section>
+
+            <!-- ✅ B-① 앨범 개인 메모 -->
+            <section id="memo-section">
+                <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4">📝 내 메모</h4>
+                <div id="memo-login-prompt" class="hidden text-zinc-600 text-xs font-bold py-4 text-center">로그인 후 메모를 남길 수 있습니다</div>
+                <div id="memo-form" class="hidden space-y-3">
+                    <!-- 별점 -->
+                    <div class="flex items-center gap-1" id="star-rating">
+                        <button class="star-btn" data-val="1">★</button>
+                        <button class="star-btn" data-val="2">★</button>
+                        <button class="star-btn" data-val="3">★</button>
+                        <button class="star-btn" data-val="4">★</button>
+                        <button class="star-btn" data-val="5">★</button>
+                        <span id="memo-rating-label" class="text-zinc-600 text-[10px] font-bold ml-2">평점 없음</span>
+                    </div>
+                    <!-- 태그 -->
+                    <div class="flex flex-wrap gap-2" id="memo-tags-row">
+                        <span class="memo-tag" data-tag="명반">명반</span>
+                        <span class="memo-tag" data-tag="재발견">재발견</span>
+                        <span class="memo-tag" data-tag="세션맛집">세션맛집</span>
+                        <span class="memo-tag" data-tag="디깅추천">디깅추천</span>
+                        <span class="memo-tag" data-tag="희귀반">희귀반</span>
+                    </div>
+                    <!-- 텍스트 -->
+                    <textarea id="memo-textarea" placeholder="이 앨범에 대한 메모를 남겨보세요..."></textarea>
+                    <!-- 저장 -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="saveMemo()" class="px-4 py-2 bg-[#10b981] text-black text-xs font-black rounded-xl hover:bg-[#0ea472] transition-colors">저장</button>
+                        <button onclick="deleteMemo()" id="memo-delete-btn" class="hidden px-4 py-2 bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black rounded-xl transition-colors">삭제</button>
+                        <span id="memo-saved-indicator" class="text-[#10b981] text-[10px] font-bold hidden">✓ 저장됨</span>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 </div>
@@ -502,6 +618,13 @@
     // ✅ Chain Digging 상태 — 탐험 경로 스택
     // 각 노드: { artist, albumTitle, albumId, cover, source }
     let diggingChain = [];
+
+    // ✅ C-① 타임라인 뷰 / A-② 랭킹 상태
+    let currentViewMode = 'grid'; // 'grid' | 'timeline'
+    let memoCurrentAlbumId = null;
+    let memoCurrentRating = 0;
+    let memoSelectedTags = new Set();
+    let allUserMemos = {}; // albumId → memo object (로컬 캐시)
 
     function superCleanTitle(title) {
         if (!title) return "";
@@ -585,7 +708,13 @@
         else { currentUser = null; favorites = []; lb.classList.remove('hidden'); up.classList.add('hidden'); }
     });
 
-    async function loadFavoritesFromCloud() { if (!currentUser) return; const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); favorites = []; snap.forEach(d => favorites.push(d.data())); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
+    async function loadFavoritesFromCloud() {
+        if (!currentUser) return;
+        const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get();
+        favorites = []; snap.forEach(d => favorites.push(d.data()));
+        await loadAllMemos(); // ✅ B-①: 메모도 함께 로드
+        if (isFavoritesTab) renderFavorites(); else renderAllSections();
+    }
     async function toggleFavorite(e, item, type) { e.stopPropagation(); if (!currentUser) return showToast("로그인 후 하트를 눌러보세요!", "error"); const itemId = `${type}_${item.id}`, idx = favorites.findIndex(f => f.dbId === itemId); if (idx > -1) { favorites.splice(idx, 1); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).delete(); showToast("보관함 삭제", "info"); if (isFavoritesTab) renderFavorites(); else renderAllSections(); } else { pendingFavItem = item; pendingFavType = type; openFolderModal(); } }
     function openFolderModal() { const m = document.getElementById('folder-modal'), list = document.getElementById('folder-list'); const existingFolders = [...new Set(favorites.map(f => f.folderName || '기본 보관함'))]; list.innerHTML = existingFolders.map(f => `<button onclick="document.getElementById('new-folder-input').value='${f}'" class="block w-full text-left px-4 py-2.5 hover:bg-zinc-800 rounded-lg text-sm text-zinc-300 font-bold transition-colors">${f}</button>`).join(''); m.classList.remove('hidden'); document.getElementById('new-folder-input').focus(); }
     function closeFolderModal() { document.getElementById('folder-modal').classList.add('hidden'); document.getElementById('new-folder-input').value = ''; pendingFavItem = null; }
@@ -922,6 +1051,80 @@
 
     function applyAlbumSort() { albumSortOrder = document.getElementById('album-sort-select').value; renderAllSections(); }
 
+    // ✅ C-① 뷰 모드 전환
+    window.setViewMode = function(mode) {
+        currentViewMode = mode;
+        document.getElementById('view-grid-btn').classList.toggle('active', mode === 'grid');
+        document.getElementById('view-timeline-btn').classList.toggle('active', mode === 'timeline');
+        renderAllSections();
+    };
+
+    // ✅ C-① 타임라인 렌더링
+    function renderTimelineView(allItems) {
+        const c = document.getElementById('sections-container');
+        c.innerHTML = '';
+
+        const filtered = allItems.filter(it => {
+            const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g,'');
+            if (!q) return true;
+            const searchQ = sessionSearchQuery.replace(/\s/g,'');
+            const t = it.title.toLowerCase().replace(/\s/g,'');
+            if (searchQ === q) return it.sessionMatched || t.includes(q);
+            return t.includes(q);
+        });
+
+        if (!filtered.length) {
+            c.innerHTML = '<div class="text-center py-20 text-zinc-600 font-bold">검색 결과가 없습니다</div>';
+            return;
+        }
+
+        // 연도별 그루핑
+        const byYear = {};
+        filtered.forEach(it => {
+            const y = it.release_date ? it.release_date.split('-')[0] : '연도 미상';
+            if (!byYear[y]) byYear[y] = [];
+            byYear[y].push(it);
+        });
+
+        const years = Object.keys(byYear).sort((a, b) =>
+            albumSortOrder === 'desc' ? b - a : a - b
+        );
+
+        const wrap = document.createElement('div');
+        wrap.className = 'timeline-wrap';
+
+        years.forEach(year => {
+            const group = document.createElement('div');
+            group.className = 'timeline-group';
+
+            const header = document.createElement('div');
+            header.className = 'timeline-group-header';
+            header.innerHTML = `<div class="timeline-year-dot"></div><span class="timeline-year-label">${year}</span><span class="text-zinc-700 text-[10px] font-bold ml-1">${byYear[year].length}장</span>`;
+            group.appendChild(header);
+
+            byYear[year].forEach(it => {
+                const card = document.createElement('div');
+                card.className = `timeline-card${it.sessionMatched ? ' tc-matched' : ''}`;
+                const hasMemo = allUserMemos[String(it.id)];
+                card.innerHTML = `
+                    <img src="${it.cover_medium}" onerror="this.src='https://placehold.co/48x48/18181b/10b981?text=?'">
+                    <div class="tc-info flex-1 min-w-0">
+                        <div class="tc-title">${it.title}</div>
+                        <div class="tc-meta">${it.artist?.name || currentArtist || ''} ${it.source === 'itunes' ? '· 🍎' : ''}${hasMemo ? ' · <span style="color:#a238ff">📝</span>' : ''}</div>
+                    </div>
+                    ${it.sessionMatched ? '<span style="color:#10b981;font-size:11px;flex-shrink:0;font-weight:900;">🎯</span>' : ''}
+                    <svg class="w-4 h-4 flex-shrink-0" style="color:#3f3f46" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                `;
+                card.onclick = () => playMedia('album', it.id, it.cover_medium, it.title, (it.artistNameCache || currentArtist) || it.artist?.name, true, it.source);
+                group.appendChild(card);
+            });
+
+            wrap.appendChild(group);
+        });
+
+        c.appendChild(wrap);
+    }
+
     function switchTab(t) {
         isFavoritesTab = (t === 'fav');
         const ts = document.getElementById('tab-search'), tf = document.getElementById('tab-fav');
@@ -931,7 +1134,9 @@
     }
 
     function renderAllSections() {
-        const c = document.getElementById('sections-container'); c.innerHTML = ''; if (isFavoritesTab) { renderFavorites(); return; }
+        const c = document.getElementById('sections-container'); c.innerHTML = '';
+        if (isFavoritesTab) { renderFavorites(); return; }
+
         const f = (it) => {
             const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g, '');
             if (!q) return true;
@@ -941,6 +1146,14 @@
             return targetTitle.includes(q);
         };
         const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date || 0) - new Date(a.release_date || 0) : new Date(a.release_date || 0) - new Date(b.release_date || 0));
+
+        // ✅ C-① 타임라인 모드
+        if (currentViewMode === 'timeline') {
+            const all = sort([...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features].filter(f));
+            renderTimelineView(all);
+            return;
+        }
+
         renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album');
         renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album');
         renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album');
@@ -994,9 +1207,11 @@
             const card = document.createElement('div');
             const matchedClass = it.sessionMatched ? 'border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'border-zinc-800/50';
             card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`;
+            card.setAttribute('data-memo-id', it.id);
             card.onclick = () => playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
             const safeIt = JSON.stringify(it).replace(/"/g, '&quot;');
-            card.innerHTML = `<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
+            const hasMemo = allUserMemos[String(it.id)];
+            card.innerHTML = `${hasMemo ? '<div class="memo-dot"></div>' : ''}<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
             ${it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>' : ''}
             <button onclick="toggleFavorite(event, JSON.parse(this.dataset.item), '${type}')" data-item="${safeIt}" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`;
             g.appendChild(card);
@@ -1080,6 +1295,9 @@
         renderChainBar();
 
         openStudioView();
+
+        // ✅ B-①: 메모 로드
+        loadMemo(id);
 
         // ✅ FIX 4: 새 앨범 진입 시 트랙리스트 & Digging Notes 스크롤 최상단으로 리셋
         const trackList = document.getElementById('studio-track-list');
@@ -1641,12 +1859,258 @@
         setTimeout(() => toast.remove(), 4000);
     }
 
-    // ✅ FIX 9: resetApp에서 리셋 버튼 숨기기
-    const _origResetApp = window.resetApp;
-    window.resetApp = function() {
-        if (_origResetApp) _origResetApp();
-        document.getElementById('reset-btn').classList.add('hidden');
+    // ══════════════════════════════════════
+    // ✅ A-② 세션 뮤지션 랭킹
+    // ══════════════════════════════════════
+    window.openRankingModal = async function() {
+        const modal = document.getElementById('ranking-modal');
+        modal.classList.add('open');
+        document.getElementById('ranking-loading').classList.remove('hidden');
+        document.getElementById('ranking-list').innerHTML = '';
+
+        // 캐시된 Discogs 데이터에서 바로 집계 (이미 열어본 앨범들)
+        const cached = Object.entries(window.discogsCache || {});
+        const tally = {}; // name → { count, roles: Set, albums: [] }
+
+        // 캐시된 것 먼저 집계
+        cached.forEach(([key, entry]) => {
+            const d = entry?.data || entry;
+            if (!d?.extraartists) return;
+            const albumTitle = key.split('_')[0];
+            d.extraartists.forEach(ar => {
+                const name = ar.name.replace(/\s\(\d+\)$/, '');
+                if (!tally[name]) tally[name] = { count: 0, roles: new Set(), albums: [] };
+                tally[name].count++;
+                if (ar.role) tally[name].roles.add(ar.role.split(',')[0].trim());
+                if (!tally[name].albums.includes(albumTitle)) tally[name].albums.push(albumTitle);
+            });
+        });
+
+        // 캐시가 적으면 주요 앨범 5장 추가 fetch
+        const allAlbums = [...albumsData.regular, ...albumsData.ep].slice(0, 8);
+        const toFetch = allAlbums.filter(a => {
+            const key = `${cleanTitleForSearch(a.title)}_${currentArtist}`;
+            return !cacheGet(key);
+        }).slice(0, 5);
+
+        if (toFetch.length > 0) {
+            document.getElementById('ranking-subtitle').textContent = `${toFetch.length}개 앨범 추가 분석 중...`;
+            await Promise.allSettled(toFetch.map(async (album) => {
+                try {
+                    const key = `${cleanTitleForSearch(album.title)}_${currentArtist}`;
+                    const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(album.title)}&artistName=${encodeURIComponent(currentArtist)}`);
+                    if (!r.ok) return;
+                    const d = await r.json();
+                    cacheSet(key, d);
+                    if (!d?.extraartists) return;
+                    d.extraartists.forEach(ar => {
+                        const name = ar.name.replace(/\s\(\d+\)$/, '');
+                        if (!tally[name]) tally[name] = { count: 0, roles: new Set(), albums: [] };
+                        tally[name].count++;
+                        if (ar.role) tally[name].roles.add(ar.role.split(',')[0].trim());
+                        if (!tally[name].albums.includes(album.title)) tally[name].albums.push(album.title);
+                    });
+                } catch {}
+            }));
+        }
+
+        document.getElementById('ranking-loading').classList.add('hidden');
+
+        const sorted = Object.entries(tally)
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 30);
+
+        if (!sorted.length) {
+            document.getElementById('ranking-list').innerHTML = '<p class="text-center text-zinc-600 py-8 text-sm font-bold">먼저 앨범을 몇 개 열어보세요!<br><span class="text-xs text-zinc-700">앨범을 클릭할수록 분석 데이터가 쌓입니다</span></p>';
+            document.getElementById('ranking-subtitle').textContent = '';
+            return;
+        }
+
+        const maxCount = sorted[0][1].count;
+        const analyzedCount = new Set(sorted.flatMap(([,v]) => v.albums)).size;
+        document.getElementById('ranking-subtitle').textContent = `${analyzedCount}개 앨범 분석 · ${sorted.length}명의 세션 뮤지션`;
+
+        const list = document.getElementById('ranking-list');
+        sorted.forEach(([name, data], i) => {
+            const item = document.createElement('div');
+            item.className = 'ranking-item';
+            const rankLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+            const pct = Math.round((data.count / maxCount) * 100);
+            const rolesStr = [...data.roles].slice(0, 2).join(', ');
+            const chips = data.albums.slice(0, 4).map(t => `<span class="ranking-album-chip">${t}</span>`).join('');
+            item.innerHTML = `
+                <span class="ranking-rank ${i < 3 ? 'top3' : ''}">${rankLabel}</span>
+                <div class="ranking-bar-wrap">
+                    <div class="ranking-name">${name}</div>
+                    <div class="ranking-role-tag">${rolesStr || '–'}</div>
+                    <div class="ranking-album-chips">${chips}</div>
+                    <div class="ranking-bar-bg"><div class="ranking-bar-fill" data-pct="${pct}"></div></div>
+                </div>
+                <span class="ranking-count">${data.count}회</span>
+            `;
+            item.onclick = () => { closeRankingModal(); openSessionPanel(name, rolesStr); };
+            list.appendChild(item);
+        });
+
+        // 바 애니메이션 트리거
+        setTimeout(() => {
+            list.querySelectorAll('.ranking-bar-fill').forEach(el => {
+                el.style.width = el.dataset.pct + '%';
+            });
+        }, 50);
     };
+
+    window.closeRankingModal = function() {
+        document.getElementById('ranking-modal').classList.remove('open');
+    };
+    document.getElementById('ranking-modal').addEventListener('click', e => {
+        if (e.target === document.getElementById('ranking-modal')) closeRankingModal();
+    });
+
+    // ══════════════════════════════════════
+    // ✅ B-① 앨범 개인 메모
+    // ══════════════════════════════════════
+
+    // 메모 로드 (앨범 열 때 호출)
+    async function loadMemo(albumId) {
+        memoCurrentAlbumId = albumId;
+        memoCurrentRating = 0;
+        memoSelectedTags = new Set();
+
+        const form = document.getElementById('memo-form');
+        const prompt = document.getElementById('memo-login-prompt');
+
+        if (!currentUser) {
+            form.classList.add('hidden');
+            prompt.classList.remove('hidden');
+            return;
+        }
+        prompt.classList.add('hidden');
+        form.classList.remove('hidden');
+
+        // 별점/태그/텍스트 초기화
+        document.getElementById('memo-textarea').value = '';
+        document.getElementById('memo-delete-btn').classList.add('hidden');
+        document.getElementById('memo-saved-indicator').classList.add('hidden');
+        updateStarUI(0);
+        document.querySelectorAll('.memo-tag').forEach(t => t.classList.remove('selected'));
+
+        // 캐시 우선
+        const cached = allUserMemos[albumId];
+        if (cached) { applyMemoData(cached); return; }
+
+        try {
+            const snap = await db.collection('users').doc(currentUser.uid).collection('memos').doc(String(albumId)).get();
+            if (snap.exists) {
+                allUserMemos[albumId] = snap.data();
+                applyMemoData(snap.data());
+            }
+        } catch {}
+    }
+
+    function applyMemoData(data) {
+        if (!data) return;
+        memoCurrentRating = data.rating || 0;
+        updateStarUI(memoCurrentRating);
+        document.getElementById('memo-textarea').value = data.text || '';
+        memoSelectedTags = new Set(data.tags || []);
+        memoSelectedTags.forEach(tag => {
+            const el = document.querySelector(`.memo-tag[data-tag="${tag}"]`);
+            if (el) el.classList.add('selected');
+        });
+        if (data.rating || data.text || data.tags?.length) {
+            document.getElementById('memo-delete-btn').classList.remove('hidden');
+        }
+    }
+
+    function updateStarUI(val) {
+        const ratingLabels = ['평점 없음', '★ 별로', '★★ 그냥저냥', '★★★ 괜찮음', '★★★★ 좋음', '★★★★★ 명반'];
+        document.querySelectorAll('.star-btn').forEach((btn, i) => {
+            btn.classList.toggle('lit', i < val);
+        });
+        document.getElementById('memo-rating-label').textContent = ratingLabels[val] || '평점 없음';
+    }
+
+    // 별점 클릭
+    document.getElementById('star-rating').addEventListener('click', e => {
+        const btn = e.target.closest('.star-btn');
+        if (!btn) return;
+        const val = parseInt(btn.dataset.val);
+        memoCurrentRating = (memoCurrentRating === val) ? 0 : val; // 같은 별 재클릭 → 해제
+        updateStarUI(memoCurrentRating);
+    });
+
+    // 태그 클릭
+    document.getElementById('memo-tags-row').addEventListener('click', e => {
+        const tag = e.target.closest('.memo-tag');
+        if (!tag) return;
+        const t = tag.dataset.tag;
+        if (memoSelectedTags.has(t)) { memoSelectedTags.delete(t); tag.classList.remove('selected'); }
+        else { memoSelectedTags.add(t); tag.classList.add('selected'); }
+    });
+
+    window.saveMemo = async function() {
+        if (!currentUser || !memoCurrentAlbumId) return;
+        const data = {
+            albumId: memoCurrentAlbumId,
+            albumTitle: document.getElementById('studio-title').textContent,
+            artist: document.getElementById('studio-artist').textContent,
+            rating: memoCurrentRating,
+            tags: [...memoSelectedTags],
+            text: document.getElementById('memo-textarea').value.trim(),
+            updatedAt: Date.now()
+        };
+        allUserMemos[memoCurrentAlbumId] = data;
+        await db.collection('users').doc(currentUser.uid).collection('memos').doc(String(memoCurrentAlbumId)).set(data);
+        document.getElementById('memo-delete-btn').classList.remove('hidden');
+        const indicator = document.getElementById('memo-saved-indicator');
+        indicator.classList.remove('hidden');
+        setTimeout(() => indicator.classList.add('hidden'), 2000);
+        // 카드에 메모 점 표시 갱신
+        refreshMemoDotsOnCards();
+        showToast('메모가 저장되었습니다 📝', 'success');
+    };
+
+    window.deleteMemo = async function() {
+        if (!currentUser || !memoCurrentAlbumId) return;
+        delete allUserMemos[memoCurrentAlbumId];
+        await db.collection('users').doc(currentUser.uid).collection('memos').doc(String(memoCurrentAlbumId)).delete();
+        document.getElementById('memo-textarea').value = '';
+        memoCurrentRating = 0; updateStarUI(0);
+        memoSelectedTags = new Set();
+        document.querySelectorAll('.memo-tag').forEach(t => t.classList.remove('selected'));
+        document.getElementById('memo-delete-btn').classList.add('hidden');
+        refreshMemoDotsOnCards();
+        showToast('메모가 삭제되었습니다', 'info');
+    };
+
+    // 메모 있는 카드에 보라색 점 표시
+    function refreshMemoDotsOnCards() {
+        // 기존 점 모두 제거
+        document.querySelectorAll('.memo-dot').forEach(d => d.remove());
+        Object.keys(allUserMemos).forEach(id => {
+            // data-item 기반으로 찾기
+            const cards = document.querySelectorAll(`[data-memo-id="${id}"]`);
+            cards.forEach(card => {
+                if (!card.querySelector('.memo-dot')) {
+                    const dot = document.createElement('div');
+                    dot.className = 'memo-dot';
+                    card.style.position = 'relative';
+                    card.appendChild(dot);
+                }
+            });
+        });
+    }
+
+    // 메모 전체 로드 (로그인 시)
+    async function loadAllMemos() {
+        if (!currentUser) return;
+        try {
+            const snap = await db.collection('users').doc(currentUser.uid).collection('memos').get();
+            snap.forEach(d => { allUserMemos[d.id] = d.data(); });
+            refreshMemoDotsOnCards();
+        } catch {}
+    }
 
     // ✅ FIX 6: 스켈레톤 카드 렌더링
     function showSkeletonCards() {
@@ -1726,7 +2190,7 @@
         }
     });
 
-    // ✅ FIX 9: 전체 상태 리셋 함수
+    // ✅ 전체 상태 리셋 (타임라인 뷰 상태 포함)
     window.resetApp = function() {
         currentArtist = null; currentArtistId = null;
         albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
@@ -1741,6 +2205,9 @@
         document.getElementById('sniper-active-banner').classList.add('hidden');
         document.getElementById('artist-selection-container').classList.add('hidden');
         document.getElementById('status-message').classList.add('hidden');
+        document.getElementById('reset-btn').classList.add('hidden');
+        // 뷰 모드 그리드로 초기화
+        setViewMode('grid');
         clearAutocomplete();
         renderChainBar();
     };
