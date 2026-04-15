@@ -141,6 +141,63 @@
 
     @keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     .playing-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse-green 1s infinite; display: inline-block; }
+
+    /* ✅ Chain Digging 브레드크럼 */
+    #digging-chain-bar {
+        position: absolute; top: 0; left: 0; right: 0;
+        display: flex; align-items: center; gap: 0;
+        overflow-x: auto; overflow-y: hidden;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0));
+        padding: 12px 70px 16px 16px;
+        z-index: 155;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        min-height: 52px;
+    }
+    #digging-chain-bar::-webkit-scrollbar { display: none; }
+    #digging-chain-bar.hidden { display: none; }
+
+    .chain-node {
+        display: flex; align-items: center; gap-6px;
+        flex-shrink: 0; cursor: pointer;
+        padding: 4px 8px; border-radius: 20px;
+        transition: background 0.15s;
+        max-width: 140px;
+    }
+    .chain-node:hover { background: rgba(255,255,255,0.07); }
+    .chain-node.chain-current { background: rgba(16,185,129,0.12); cursor: default; }
+    .chain-node img {
+        width: 20px; height: 20px; border-radius: 4px;
+        object-fit: cover; border: 1px solid rgba(255,255,255,0.1);
+        flex-shrink: 0;
+    }
+    .chain-node .chain-label {
+        font-size: 10px; font-weight: 700;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        max-width: 90px;
+    }
+    .chain-node.chain-current .chain-label { color: #10b981; }
+    .chain-node:not(.chain-current) .chain-label { color: #71717a; }
+    .chain-node:not(.chain-current):hover .chain-label { color: #a1a1aa; }
+    .chain-arrow {
+        color: #3f3f46; font-size: 10px; flex-shrink: 0; padding: 0 2px;
+    }
+
+    /* 체인 진입 시 앨범 헤더 transition */
+    @keyframes chainSlideIn {
+        from { opacity: 0; transform: translateX(12px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    .chain-loaded { animation: chainSlideIn 0.25s ease-out; }
+
+    /* 세션 패널 안 "이 앨범에서 발견됨" 맥락 배지 */
+    .context-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);
+        border-radius: 6px; padding: 4px 8px;
+        font-size: 10px; color: #10b981; font-weight: 700;
+        margin-bottom: 12px;
+    }
 </style>
 ```
 
@@ -257,12 +314,16 @@
 </div>
 
 <div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950/98 backdrop-blur-3xl transition-all duration-500 studio-view-exit flex flex-col">
-    <button onclick="closeStudioView()" class="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-zinc-800 hover:bg-red-500 text-white rounded-full z-[160] shadow-2xl transition-transform hover:rotate-90">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
-    </button>
 
 ```
-<div class="max-w-7xl mx-auto w-full p-6 md:p-10 flex flex-col lg:flex-row gap-10">
+<!-- ✅ Chain Digging 브레드크럼 바 -->
+<div id="digging-chain-bar" class="hidden"></div>
+
+<button onclick="closeStudioView()" class="absolute top-3 right-4 md:top-4 md:right-8 p-2.5 bg-zinc-800 hover:bg-red-500 text-white rounded-full z-[160] shadow-2xl transition-transform hover:rotate-90">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
+</button>
+
+<div id="studio-inner" class="max-w-7xl mx-auto w-full p-6 md:p-10 flex flex-col lg:flex-row gap-10">
     <div class="w-full lg:flex-1 flex flex-col lg:h-[calc(100vh-250px)] shrink-0">
         <div class="flex items-center lg:items-end gap-5 md:gap-6 mb-8 shrink-0">
             <img id="studio-cover" src="" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-28 h-28 md:w-56 md:h-56 rounded-2xl shadow-2xl object-cover border border-zinc-800">
@@ -369,6 +430,9 @@
     // 세션 패널 상태
     let sessionPanelCurrentName = "";
     let sessionPanelCurrentRole = "";
+    // ✅ Chain Digging 상태 — 탐험 경로 스택
+    // 각 노드: { artist, albumTitle, albumId, cover, source }
+    let diggingChain = [];
 
     function superCleanTitle(title) {
         if (!title) return "";
@@ -787,12 +851,49 @@
     window.handleDeepLinkInit = function(d) { if(d && !d.error) { const cover = d.cover_medium || (d.album && d.album.cover_medium); playMedia(d.record_type ? 'album' : 'track', d.id, cover, d.title, d.artist?.name, false, 'deezer'); } };
 
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); };
-    window.closeStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit'); window.history.pushState({}, '', window.location.pathname); };
+    window.closeStudioView = function() {
+        document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit');
+        window.history.pushState({}, '', window.location.pathname);
+        // 체인 초기화 — 스튜디오 완전히 닫을 때
+        diggingChain = [];
+        renderChainBar();
+    };
 
-    window.playMedia = function(type, id, cover, title, artist, updateUrl = true, source = 'deezer') {
-        if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); url.searchParams.set('source', source); window.history.pushState({}, '', url); }
+    // ✅ playMedia: chain 옵션 추가
+    // chainPush=true  → 현재 컨텍스트를 스택에 쌓고 새 앨범 로드 (세션 패널에서 체인 진입)
+    // chainPush=false → 새 탐험 시작 (기존 chain 초기화)
+    // chainJump=index → 체인의 특정 인덱스로 되돌아가기
+    window.playMedia = function(type, id, cover, title, artist, updateUrl = true, source = 'deezer', chainPush = false, chainJump = -1) {
+        if (updateUrl) {
+            const url = new URL(window.location);
+            url.searchParams.set('type', type); url.searchParams.set('id', id); url.searchParams.set('source', source);
+            window.history.pushState({}, '', url);
+        }
+
+        // ── 체인 스택 관리 ──────────────────────────────
+        if (chainJump >= 0) {
+            // 특정 인덱스로 점프 → 그 이후 항목 제거
+            diggingChain = diggingChain.slice(0, chainJump + 1);
+        } else if (chainPush) {
+            // 새 노드 추가 (세션 패널 → 앨범)
+            diggingChain.push({ artist, albumTitle: title, albumId: id, cover, source, type });
+        } else {
+            // 완전히 새 탐험 시작 (메인 카드 클릭)
+            diggingChain = [{ artist, albumTitle: title, albumId: id, cover, source, type }];
+        }
+
+        // ✅ 핵심 수정: currentArtist를 현재 노드 아티스트로 업데이트
+        currentArtist = artist;
+
         currentAlbumCover = cover; currentDiscogsReleaseData = null; currentTrackIndex = 0;
-        document.getElementById('studio-cover').src = cover;
+
+        // 앨범 헤더 애니메이션
+        const cover_el = document.getElementById('studio-cover');
+        cover_el.src = cover;
+        cover_el.classList.remove('chain-loaded');
+        void cover_el.offsetWidth; // reflow
+        cover_el.classList.add('chain-loaded');
+
         document.getElementById('studio-title').textContent = title;
         document.getElementById('studio-artist').textContent = artist;
         document.getElementById('discogs-track-credits-container').classList.add('hidden');
@@ -804,6 +905,9 @@
         document.getElementById('open-spotify-btn').onclick = () => openInSpotify(title, artist);
         document.getElementById('open-youtube-music-btn').onclick = () => openInYouTubeMusic(title, artist);
 
+        // 체인 바 렌더링
+        renderChainBar();
+
         openStudioView();
         const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(artist) ? 'KR' : 'US';
         if (source === 'itunes') loadJSONP(`https://itunes.apple.com/lookup?id=${id}&entity=song&country=${countryCode}&callback=handleItunesTracks`);
@@ -812,6 +916,36 @@
         fetchAlbumWikiStory(cleanTitle, artist);
         fetchDiscogsCreditsFromServer(cleanTitle, artist);
     };
+
+    // ✅ 체인 브레드크럼 바 렌더링
+    function renderChainBar() {
+        const bar = document.getElementById('digging-chain-bar');
+        if (diggingChain.length <= 1) { bar.classList.add('hidden'); return; }
+        bar.classList.remove('hidden');
+        bar.innerHTML = '';
+        diggingChain.forEach((node, i) => {
+            const isCurrent = (i === diggingChain.length - 1);
+            // 노드
+            const nodeEl = document.createElement('div');
+            nodeEl.className = `chain-node ${isCurrent ? 'chain-current' : ''}`;
+            nodeEl.innerHTML = `<img src="${node.cover || ''}" onerror="this.style.display='none'" style="margin-right:5px;"><span class="chain-label">${node.artist}</span>`;
+            if (!isCurrent) {
+                nodeEl.onclick = () => {
+                    playMedia(node.type, node.albumId, node.cover, node.albumTitle, node.artist, true, node.source, false, i);
+                };
+            }
+            bar.appendChild(nodeEl);
+            // 구분자
+            if (!isCurrent) {
+                const arrow = document.createElement('span');
+                arrow.className = 'chain-arrow';
+                arrow.textContent = '›';
+                bar.appendChild(arrow);
+            }
+        });
+        // 자동 스크롤 → 끝으로
+        setTimeout(() => { bar.scrollLeft = bar.scrollWidth; }, 50);
+    }
 
     window.handleItunesTracks = function(d) {
         if (!d.results) return;
@@ -1030,8 +1164,16 @@
         const loading = document.getElementById('session-panel-loading');
         const stats = document.getElementById('session-panel-stats');
 
+        // 현재 보고 있는 앨범 맥락 배지 (어디서 이 뮤지션을 발견했는지)
+        const currentAlbumTitle = document.getElementById('studio-title').textContent;
+        const contextBadge = currentAlbumTitle && currentAlbumTitle !== '앨범 제목'
+            ? `<div class="context-badge mb-3">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l-7-7 7-7m5 14l7-7-7-7"/></svg>
+                발견: ${currentAlbumTitle}
+               </div>`
+            : '';
+
         try {
-            // Deezer에서 해당 아티스트의 앨범 검색
             const cbName = `handleSession_${Date.now()}`;
             await new Promise((resolve) => {
                 window[cbName] = (d) => {
@@ -1039,15 +1181,13 @@
                     const results = d.data || [];
 
                     if (!results.length) {
-                        content.innerHTML = `<div class="text-center py-8 text-zinc-600"><p class="font-bold text-sm">Deezer에서 찾을 수 없습니다</p><p class="text-xs mt-2">디스코그래피 검색을 시도해보세요</p></div>`;
+                        content.innerHTML = `${contextBadge}<div class="text-center py-8 text-zinc-600"><p class="font-bold text-sm">Deezer에서 찾을 수 없습니다</p><p class="text-xs mt-2">디스코그래피 검색을 시도해보세요</p></div>`;
                         resolve(); return;
                     }
 
-                    // 아티스트 목록 (이름이 정확히 일치하는 것 우선)
                     const exactMatch = results.find(a => a.name.toLowerCase() === name.toLowerCase());
                     const artist = exactMatch || results[0];
 
-                    // 아티스트 정보 표시
                     stats.classList.remove('hidden');
                     stats.innerHTML = `
                         <div class="col-span-2 flex items-center gap-3 bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
@@ -1059,19 +1199,18 @@
                         </div>
                     `;
 
-                    // 해당 아티스트의 앨범 로드
                     const albumCb = `handleSessionAlbums_${Date.now()}`;
                     window[albumCb] = (albumData) => {
                         const albums = (albumData.data || []).slice(0, 20);
-                        content.innerHTML = '';
+                        content.innerHTML = contextBadge;
 
                         if (!albums.length) {
-                            content.innerHTML = `<p class="text-zinc-500 text-sm text-center py-4">앨범 정보가 없습니다</p>`;
+                            content.innerHTML += `<p class="text-zinc-500 text-sm text-center py-4">앨범 정보가 없습니다</p>`;
                             delete window[albumCb]; resolve(); return;
                         }
 
                         const header = document.createElement('div');
-                        header.className = 'text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-3';
+                        header.className = 'text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-3 mt-1';
                         header.textContent = `디스코그래피 (${albums.length}+)`;
                         content.appendChild(header);
 
@@ -1087,9 +1226,19 @@
                                 </div>
                                 <svg class="w-4 h-4 text-zinc-700 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                             `;
+                            // ✅ 핵심 수정: chainPush=true → currentArtist 갱신 + 체인에 추가
                             card.onclick = () => {
                                 closeSessionPanel();
-                                playMedia('album', album.id, album.cover_medium, album.title, artist.name, true, 'deezer');
+                                playMedia(
+                                    'album',
+                                    album.id,
+                                    album.cover_medium || album.cover_small || '',
+                                    album.title,
+                                    artist.name,   // ← 세션 뮤지션 이름으로 currentArtist 갱신
+                                    true,
+                                    'deezer',
+                                    true           // ← chainPush: 체인에 쌓기
+                                );
                             };
                             content.appendChild(card);
                         });
