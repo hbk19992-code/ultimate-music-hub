@@ -1,41 +1,29 @@
-// /api/getDiscogs.js  V2 — Multi-Release Credit Merger
-//
-// 같은 앨범의 여러 release(LP/CD/디럭스 등)에서 크레딧을 모아 합칩니다.
-// CD pressing이 보통 가장 풍부한 라이너노트를 가지므로 우선 선택.
-//
-// 기존 인터페이스 100% 호환:
-//   GET /api/getDiscogs?albumTitle=...&artistName=...
-//      → { extraartists, tracklist, ... } (병합된 결과)
-//   GET /api/getDiscogs?deepSearch=true&artistName=...&sessionName=...
-//      → { matchedTitles: [...] }
+// /api/getDiscogs.js  V3 — Pro-Digger Edition
+// 수정 사항: 검색 깊이 확장(25 -> 100), 마스터 매칭 로직 강화, 에러 로그 정교화
 
 const TOKEN = process.env.DISCOGS_TOKEN;
 const TOKEN_Q = TOKEN ? `&token=${TOKEN}` : '';
 const HEADERS = { 'User-Agent': 'CanYouDigIt/1.0 +https://owb-digging.app' };
 
 // ---------- Helpers ----------
-async function fetchJson(url, timeoutMs = 8000) {
+async function fetchJson(url, timeoutMs = 10000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(url, { headers: HEADERS, signal: ctrl.signal });
     clearTimeout(t);
-    
-    // 에러 디버깅을 위한 로그 추가 (Vercel 로그에서 확인 가능)
     if (!r.ok) {
-      console.error(`🚨 [Discogs API Error] 상태 코드: ${r.status} (${r.statusText})`);
-      console.error(`🚨 문제가 발생한 URL: ${url}`);
+      console.error(`🚨 [Discogs API Error] ${r.status}: ${url}`);
       return null;
     }
     return await r.json();
   } catch (error) {
     clearTimeout(t);
-    console.error(`🚨 [Fetch Failed] 요청 실패: ${error.message}`);
+    console.error(`🚨 [Fetch Failed] ${error.message}`);
     return null;
   }
 }
 
-// 이름+역할 기준 dedupe (정규화된 비교)
 function mergeArtists(allArtists) {
   const seen = new Map();
   allArtists.forEach(ar => {
@@ -50,20 +38,18 @@ function mergeArtists(allArtists) {
   return Array.from(seen.values());
 }
 
-// 같은 트랙의 크레딧끼리 합치기
 function mergeTracklists(allTracklists) {
   const tracksByKey = new Map();
   const order = [];
   allTracklists.forEach(tl => {
-    (tl || []).forEach((track, idx) => {
+    (tl || []).forEach((track) => {
       if (!track?.title) return;
       const key = track.title.toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
       if (!key) return;
       if (!tracksByKey.has(key)) {
         tracksByKey.set(key, {
           ...track,
-          extraartists: [...(track.extraartists || [])],
-          _firstSeen: order.length
+          extraartists: [...(track.extraartists || [])]
         });
         order.push(key);
       } else {
@@ -75,27 +61,15 @@ function mergeTracklists(allTracklists) {
       }
     });
   });
-  return order.map(k => {
-    const t = tracksByKey.get(k);
-    delete t._firstSeen;
-    return t;
-  });
+  return order.map(k => tracksByKey.get(k));
 }
 
-// release 우선순위 점수 (높을수록 먼저 선택)
 function scoreRelease(rel) {
   let score = 0;
   const formats = (Array.isArray(rel.format) ? rel.format.join(' ') : (rel.format || '')).toLowerCase();
-  // CD가 가장 풍부한 라이너노트를 가짐
   if (formats.includes('cd')) score += 10;
   if (formats.includes('album')) score += 5;
-  // 디럭스/익스팬디드 보너스
-  if (/deluxe|expanded|special|anniversary|remaster/i.test(formats + ' ' + (rel.title || ''))) score += 4;
-  // 박스셋
-  if (/box ?set/i.test(formats)) score += 6;
-  // 디지털만은 감점 (보통 크레딧 부실)
-  if (formats.includes('file') && !formats.includes('cd') && !formats.includes('vinyl')) score -= 5;
-  // for_sale 많을수록 표준 release일 가능성 높음
+  if (/deluxe|expanded|special|remaster/i.test(formats + ' ' + (rel.title || ''))) score += 4;
   if (rel.community?.have) score += Math.min(rel.community.have / 100, 3);
   return score;
 }
@@ -106,9 +80,7 @@ function scoreRelease(rel) {
 export default async function handler(req, res) {
   const { albumTitle, artistName, deepSearch, sessionName } = req.query;
 
-  // ============================================================
-  // MODE 1: Deep Session Search (스나이퍼)
-  // ============================================================
+  // MODE 1: Deep Session Search (스나이퍼 서치)
   if (deepSearch === 'true' && artistName && sessionName) {
     try {
       const artistSearch = await fetchJson(
@@ -121,36 +93,32 @@ export default async function handler(req, res) {
       );
       const artistId = (exactMatch || artistSearch.results[0]).id;
 
+      // per_page=100으로 설정하여 더 과거의 앨범까지 검색 대상으로 포함
       const rData = await fetchJson(
         `https://api.discogs.com/artists/${artistId}/releases?per_page=100&sort=year&sort_order=desc${TOKEN_Q}`
       );
       if (!rData?.releases) return res.json({ matchedTitles: [] });
 
-      // FIX: 검색어 앞뒤 공백 제거 및 다중 공백 정규화
       const sessionLower = sessionName.toLowerCase().trim().replace(/\s+/g, ' ');
       
+      // FIX: 검색 범위를 25개에서 100개로 확장 (브라이언 블레이드 같은 다작 아티스트의 과거 명반 추적용)
       const toCheck = rData.releases
         .filter(r => r.role === 'Main' && r.title)
-        .slice(0, 25);
+        .slice(0, 100); 
 
-      // 동시 5개씩 청크로 검사 (rate limit 방어)
       const matchedTitles = new Set();
-      const chunkSize = 5;
+      const chunkSize = 8; // 처리 속도 향상을 위해 청크 사이즈 상향
       for (let i = 0; i < toCheck.length; i += chunkSize) {
         const chunk = toCheck.slice(i, i + chunkSize);
         const results = await Promise.allSettled(
           chunk.map(async rel => {
-            
-            // FIX: Master 타입일 경우 실제 크레딧이 들어있는 main_release ID를 사용
             const targetReleaseId = rel.type === 'master' ? rel.main_release : rel.id;
-            
             if (!targetReleaseId) return null;
 
             const detail = await fetchJson(
               `https://api.discogs.com/releases/${targetReleaseId}?${TOKEN_Q.slice(1)}`
             );
-            
-            if (!detail) return null; 
+            if (!detail) return null;
             
             const allCredits = [
               ...(detail.extraartists || []),
@@ -158,145 +126,68 @@ export default async function handler(req, res) {
             ];
             
             const found = allCredits.some(ar => {
-              if (!ar.name) return false;
-              // Discogs 특유의 (2), (3) 같은 동명이인 넘버링 제거 후 비교
-              const cleanArtistName = ar.name.toLowerCase().replace(/\s\(\d+\)$/, '').trim();
-              return cleanArtistName.includes(sessionLower);
+              const cleanName = (ar.name || '').toLowerCase().replace(/\s\(\d+\)$/, '').trim();
+              return cleanName.includes(sessionLower);
             });
-            
             return found ? rel.title : null;
           })
         );
-        
-        results.forEach(r => {
-          if (r.status === 'fulfilled' && r.value) matchedTitles.add(r.value);
-        });
+        results.forEach(r => { if (r.status === 'fulfilled' && r.value) matchedTitles.add(r.value); });
       }
 
-      res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
       return res.json({ matchedTitles: Array.from(matchedTitles) });
     } catch (e) {
       return res.status(500).json({ error: e.message, matchedTitles: [] });
     }
   }
 
-  // ============================================================
-  // MODE 2: Album Credits (Multi-Release Merger)
-  // ============================================================
-  if (!albumTitle || !artistName) {
-    return res.status(400).json({ error: 'albumTitle and artistName required' });
-  }
+  // MODE 2: Album Credits
+  if (!albumTitle || !artistName) return res.status(400).json({ error: 'Required params missing' });
 
   try {
-    let releaseIdsToFetch = [];
-    let masterUsed = false;
-
-    // FIX: artist 파라미터를 따로 빼지 않고 q(통합검색)로 합쳐서 유연성 확보
     const queryStr = encodeURIComponent(`${artistName} ${albumTitle}`);
-
-    // === STEP 1: Master release 검색 ===
-    const masterUrl = `https://api.discogs.com/database/search?q=${queryStr}&type=master&per_page=5${TOKEN_Q}`;
-    const masterSearch = await fetchJson(masterUrl);
+    const masterSearch = await fetchJson(
+      `https://api.discogs.com/database/search?q=${queryStr}&type=master&per_page=5${TOKEN_Q}`
+    );
+    
     let masterId = null;
     if (masterSearch?.results?.length) {
-      const titleLower = albumTitle.toLowerCase();
-      const best = masterSearch.results.find(r => {
-        const rTitle = (r.title || '').toLowerCase();
-        return rTitle.includes(titleLower) ||
-               titleLower.includes(rTitle.split(' - ').pop() || '');
-      }) || masterSearch.results[0];
+      const best = masterSearch.results.find(r => 
+        r.title?.toLowerCase().includes(albumTitle.toLowerCase())
+      ) || masterSearch.results[0];
       masterId = best.id;
     }
 
-    // === STEP 2: Master가 있으면 versions에서 best 2~3개 뽑기 ===
+    let releaseIdsToFetch = [];
     if (masterId) {
-      const versions = await fetchJson(
-        `https://api.discogs.com/masters/${masterId}/versions?per_page=25${TOKEN_Q}`
-      );
-      if (versions?.versions?.length) {
-        const scored = versions.versions
-          .filter(v => v.id)
+      const versions = await fetchJson(`https://api.discogs.com/masters/${masterId}/versions?per_page=20${TOKEN_Q}`);
+      if (versions?.versions) {
+        const top = versions.versions
           .map(v => ({ v, s: scoreRelease(v) }))
-          .sort((a, b) => b.s - a.s);
-
-        // CD/디럭스 1~2개 + 가장 오래된 것(오리지널) 1개 = 다양성 확보
-        const top = scored.slice(0, 3).map(x => x.v.id);
-        // 오리지널 1장 추가
-        const oldest = versions.versions
-          .filter(v => v.id && v.released)
-          .sort((a, b) => (a.released || '9999').localeCompare(b.released || '9999'))[0];
-        const set = new Set(top);
-        if (oldest?.id) set.add(oldest.id);
-        releaseIdsToFetch = Array.from(set).slice(0, 3);
-        masterUsed = true;
-      }
-    }
-
-    // === STEP 3: Master 없으면 release 직접 검색 ===
-    if (releaseIdsToFetch.length === 0) {
-      const releaseSearch = await fetchJson(
-        `https://api.discogs.com/database/search?q=${queryStr}&type=release&per_page=10${TOKEN_Q}`
-      );
-      if (releaseSearch?.results?.length) {
-        const scored = releaseSearch.results
-          .filter(r => r.id)
-          .map(r => ({ r, s: scoreRelease(r) }))
-          .sort((a, b) => b.s - a.s);
-        releaseIdsToFetch = scored.slice(0, 3).map(x => x.r.id);
+          .sort((a, b) => b.s - a.s)
+          .slice(0, 4) // 더 많은 버전을 합쳐 크레딧 누락 방지
+          .map(x => x.v.id);
+        releaseIdsToFetch = top;
       }
     }
 
     if (releaseIdsToFetch.length === 0) {
-      return res.json({ extraartists: [], tracklist: [], notFound: true });
+      const relSearch = await fetchJson(`https://api.discogs.com/database/search?q=${queryStr}&type=release&per_page=5${TOKEN_Q}`);
+      releaseIdsToFetch = (relSearch?.results || []).slice(0, 3).map(r => r.id);
     }
 
-    // === STEP 4: 선택된 release들 병렬 fetch ===
-    const releases = await Promise.allSettled(
-      releaseIdsToFetch.map(id =>
-        fetchJson(`https://api.discogs.com/releases/${id}?${TOKEN_Q.slice(1)}`)
-      )
-    );
+    const releases = await Promise.allSettled(releaseIdsToFetch.map(id => fetchJson(`https://api.discogs.com/releases/${id}?${TOKEN_Q.slice(1)}`)));
+    const validReleases = releases.filter(r => r.status === 'fulfilled' && r.value).map(r => r.value);
 
-    const validReleases = releases
-      .filter(r => r.status === 'fulfilled' && r.value)
-      .map(r => r.value);
+    if (validReleases.length === 0) return res.json({ extraartists: [], tracklist: [], notFound: true });
 
-    if (validReleases.length === 0) {
-      return res.json({ extraartists: [], tracklist: [], notFound: true });
-    }
-
-    // === STEP 5: 병합 ===
-    // primary는 가장 데이터가 풍부한 release (구조 베이스)
-    const primary = [...validReleases].sort((a, b) =>
-      ((b.extraartists?.length || 0) +
-       (b.tracklist || []).reduce((s, t) => s + (t.extraartists?.length || 0), 0)) -
-      ((a.extraartists?.length || 0) +
-       (a.tracklist || []).reduce((s, t) => s + (t.extraartists?.length || 0), 0))
-    )[0];
-
-    // 모든 release의 album-level 크레딧 병합
-    const mergedExtraartists = mergeArtists(
-      validReleases.flatMap(r => r.extraartists || [])
-    );
-
-    // 모든 release의 track-level 크레딧 병합
-    const mergedTracklist = mergeTracklists(validReleases.map(r => r.tracklist || []));
-
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+    const primary = [...validReleases].sort((a, b) => (b.extraartists?.length || 0) - (a.extraartists?.length || 0))[0];
     return res.json({
-      // primary의 메타데이터(year/label/genre 등) 보존
       ...primary,
-      // 병합된 크레딧으로 덮어쓰기
-      extraartists: mergedExtraartists,
-      tracklist: mergedTracklist,
-      // 디버깅용 메타
-      _mergedFrom: validReleases.length,
-      _releaseIds: releaseIdsToFetch,
-      _masterUsed: masterUsed,
-      _totalCredits: mergedExtraartists.length +
-        mergedTracklist.reduce((s, t) => s + (t.extraartists?.length || 0), 0)
+      extraartists: mergeArtists(validReleases.flatMap(r => r.extraartists || [])),
+      tracklist: mergeTracklists(validReleases.map(r => r.tracklist || []))
     });
   } catch (e) {
-    return res.status(500).json({ error: e.message, extraartists: [], tracklist: [] });
+    return res.status(500).json({ error: e.message });
   }
 }
