@@ -158,7 +158,7 @@
     #digging-chain-bar.hidden { display: none; }
 
     .chain-node {
-        display: flex; align-items: center; gap-6px;
+        display: flex; align-items: center; gap: 6px;
         flex-shrink: 0; cursor: pointer;
         padding: 4px 8px; border-radius: 20px;
         transition: background 0.15s;
@@ -201,6 +201,32 @@
     @media (prefers-reduced-motion: reduce) {
         body.pixel-theme { animation: none !important; }
         .chain-loaded { animation: none !important; }
+    }
+
+    /* ✅ FIX 6: 스켈레톤 로딩 */
+    @keyframes shimmer {
+        0% { background-position: -400px 0; }
+        100% { background-position: 400px 0; }
+    }
+    .skeleton {
+        background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.4s infinite linear;
+        border-radius: 12px;
+    }
+    .skeleton-card {
+        background: #111; border-radius: 16px; overflow: hidden;
+        border: 1px solid #1a1a1a;
+    }
+    .skeleton-card .sk-img { aspect-ratio: 1; width: 100%; }
+    .skeleton-card .sk-line1 { height: 12px; margin: 12px 12px 6px; border-radius: 6px; }
+    .skeleton-card .sk-line2 { height: 8px; margin: 0 12px 12px; width: 50%; border-radius: 4px; }
+
+    /* ✅ FIX 7: 스와이프 다운 제스처 */
+    #studio-swipe-handle {
+        position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+        width: 36px; height: 4px; border-radius: 2px;
+        background: rgba(255,255,255,0.15); z-index: 161; cursor: grab;
     }
 </style>
 ```
@@ -251,6 +277,7 @@
 </div>
 
 <div class="absolute top-4 right-4 md:top-6 md:right-8 z-50 flex items-center gap-2 md:gap-3">
+    <button id="reset-btn" onclick="resetApp()" class="hidden bg-zinc-900 text-zinc-500 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-colors border border-zinc-800 shadow-lg" title="처음으로">↩ 초기화</button>
     <button onclick="togglePixelTheme()" id="pixel-toggle-btn" class="bg-zinc-900 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold hover:text-[#10b981] transition-colors border border-zinc-700 shadow-lg">👾 8-BIT</button>
     <button id="login-btn" onclick="signInWithGoogle()" class="bg-white text-black px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold text-xs md:text-sm shadow-xl hidden">구글 로그인</button>
     <div id="user-profile" class="flex items-center gap-2 md:gap-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 px-2 py-1 md:px-3 md:py-1.5 rounded-full hidden">
@@ -334,6 +361,9 @@
 <div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950/98 backdrop-blur-3xl transition-all duration-500 studio-view-exit flex flex-col">
 
 ```
+<!-- ✅ FIX 7: 스와이프 핸들 -->
+<div id="studio-swipe-handle"></div>
+
 <!-- ✅ Chain Digging 브레드크럼 바 -->
 <div id="digging-chain-bar" class="hidden"></div>
 
@@ -441,7 +471,15 @@
     let pendingFavItem = null, pendingFavType = null;
     let activeCreditFilter = 'ALL';
 
-    window.discogsCache = window.discogsCache || {};
+    window.discogsCache = window.discogsCache || {}; // { key: {data, ts} }
+    const CACHE_TTL = 5 * 60 * 1000; // 5분
+    function cacheGet(key) {
+        const entry = window.discogsCache[key];
+        if (!entry) return null;
+        if (Date.now() - entry.ts > CACHE_TTL) { delete window.discogsCache[key]; return null; }
+        return entry.data;
+    }
+    function cacheSet(key, data) { window.discogsCache[key] = { data, ts: Date.now() }; }
     let sessionSearchQuery = "";
     let isDeepSearching = false;
 
@@ -699,6 +737,7 @@
 
         document.getElementById('artist-selection-container').classList.add('hidden');
         document.getElementById('status-message').classList.remove('hidden');
+        showSkeletonCards(); // ✅ FIX 6
         const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) ? 'KR' : 'US';
 
         // iTunes
@@ -746,6 +785,8 @@
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return;
         document.getElementById('status-message').classList.add('hidden');
         document.getElementById('results-controls').classList.remove('hidden');
+        // ✅ FIX 9: 아티스트 로드 완료 시 리셋 버튼 표시
+        document.getElementById('reset-btn').classList.remove('hidden');
         const seenTitles = new Set(); albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
         const deezerTypeMap = new Map();
         window.allFetchedAlbums.forEach(a => { const tl = cleanTitleForSearch(a.title).toLowerCase(); if(!deezerTypeMap.has(tl)) deezerTypeMap.set(tl, a.record_type); });
@@ -897,9 +938,21 @@
     function renderFavorites() {
         const c = document.getElementById('sections-container'); c.innerHTML = '';
         const allFolders = ['전체 보관함', ...new Set(favorites.map(f => f.folderName || '기본 보관함'))];
-        let tabsHtml = `<div class="flex flex-wrap gap-2 mb-8 px-4 md:px-0">`;
-        allFolders.forEach(f => { const active = currentFavFolder === f; tabsHtml += `<button onclick="setFavFolder('${f}')" class="px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${f}</button>`; });
+        // ✅ FIX 3: onclick 인라인 대신 data-folder + 이벤트 위임으로 싱글쿼트 버그 수정
+        let tabsHtml = `<div id="fav-folder-tabs" class="flex flex-wrap gap-2 mb-8 px-4 md:px-0">`;
+        allFolders.forEach(f => {
+            const active = currentFavFolder === f;
+            const safeF = f.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+            tabsHtml += `<button data-folder="${safeF}" class="fav-folder-btn px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${safeF}</button>`;
+        });
         tabsHtml += `</div>`; c.innerHTML = tabsHtml;
+
+        // 폴더 탭 이벤트 위임
+        document.getElementById('fav-folder-tabs').addEventListener('click', e => {
+            const btn = e.target.closest('.fav-folder-btn');
+            if (btn) window.setFavFolder(btn.dataset.folder);
+        });
+
         const fItems = favorites.filter(it => {
             const folderMatch = (currentFavFolder === '전체 보관함' || (it.folderName || '기본 보관함') === currentFavFolder);
             if (!folderMatch) return false;
@@ -1410,7 +1463,15 @@
     // ==========================================
     // 8. Discogs 크레딧 + Wikipedia
     // ==========================================
+    let _discogsAbort = null; // ✅ FIX 1: 동시 요청 레이스 방지
+    let _wikiAbort = null;
+
     async function fetchDiscogsCreditsFromServer(title, artist) {
+        // 이전 요청 취소
+        if (_discogsAbort) _discogsAbort.abort();
+        _discogsAbort = new AbortController();
+        const signal = _discogsAbort.signal;
+
         const out = document.getElementById('discogs-credit-text');
         out.innerHTML = "<span class='animate-pulse text-zinc-500 text-xs'>Vercel 서버와 통신 중... 🌐</span>";
         activeCreditFilter = 'ALL';
@@ -1421,15 +1482,16 @@
 
         const cacheKey = `${cleanTitleForSearch(title)}_${artist}`;
         try {
-            let d = window.discogsCache[cacheKey];
+            // ✅ FIX 8: TTL 캐시 적용
+            let d = cacheGet(cacheKey);
             if (!d) {
-                const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`);
+                const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`, { signal });
                 if (!r.ok) { const errorDetail = await r.text(); throw new Error(`HTTP ${r.status} | ${errorDetail}`); }
-                d = await r.json(); window.discogsCache[cacheKey] = d;
+                d = await r.json(); cacheSet(cacheKey, d);
             }
+            if (signal.aborted) return; // 응답 왔지만 이미 취소된 경우
             currentDiscogsReleaseData = d;
 
-            // ✅ 역할별 그룹핑 렌더링
             if (d.extraartists?.length) {
                 renderGroupedCredits(out, d.extraartists, true);
             } else {
@@ -1440,6 +1502,7 @@
                 updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title);
             }
         } catch (e) {
+            if (e.name === 'AbortError') return; // 정상 취소
             out.innerHTML = `<div class="bg-rose-500/10 p-3 rounded-lg border border-rose-500/30"><span class='text-rose-500 font-bold text-xs'>백엔드 에러 발생!</span><br><span class='text-zinc-300 text-[10px] break-all'>${e.message}</span></div>`;
         }
     }
@@ -1468,21 +1531,19 @@
 
     // ✅ 개선 2-3: Wikipedia 한국어→영어 폴백
     async function fetchAlbumWikiStory(title, artist) {
+        // ✅ FIX 1: 이전 위키 요청 취소
+        if (_wikiAbort) _wikiAbort.abort();
+        _wikiAbort = new AbortController();
+        const signal = _wikiAbort.signal;
+
         const wikiUI = document.getElementById('wiki-credit-text');
         wikiUI.innerHTML = "<span class='animate-pulse text-zinc-500 text-xs'>데이터베이스 검색 중... 🔍</span>";
         try {
-            // 1차: 한국어 위키
-            let extract = await fetchWikiExtract('ko', title);
+            let extract = await fetchWikiExtract('ko', title, signal);
+            if (!extract || extract.length < 20) extract = await fetchWikiExtract('en', title, signal);
+            if (!extract || extract.length < 20) extract = await fetchWikiExtract('en', `${title} ${artist}`, signal);
 
-            // 2차: 영어 위키 (한국어 없을 때)
-            if (!extract || extract.length < 20) {
-                extract = await fetchWikiExtract('en', title);
-            }
-
-            // 3차: 영어 위키 "artist album" 쿼리
-            if (!extract || extract.length < 20) {
-                extract = await fetchWikiExtract('en', `${title} ${artist}`);
-            }
+            if (signal.aborted) return;
 
             if (extract && extract.length > 20) {
                 renderWikiText(wikiUI, extract);
@@ -1491,27 +1552,35 @@
 
             // 4차: Last.fm
             const LAST_FM_API_KEY = "bc6dfd44dfc503c39ec41ade07e02778";
-            const lastFmRes = await fetch(`https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LAST_FM_API_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`);
+            const lastFmRes = await fetch(`https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LAST_FM_API_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`, { signal });
+            if (signal.aborted) return;
             const lastFmData = await lastFmRes.json();
             if (lastFmData.album?.wiki?.summary) {
-                let cleanSummary = lastFmData.album.wiki.summary.replace(/<a href=.*<\/a>/, '').trim();
-                wikiUI.innerHTML = `<span class="text-[#10b981] font-bold text-[10px] bg-[#10b981]/20 px-2 py-1 rounded mb-2 inline-block">Last.fm Trivia</span><br>${cleanSummary}`;
+                // ✅ FIX 5: HTML 태그 전체 제거 (a 태그만 제거하던 것 수정)
+                const rawSummary = lastFmData.album.wiki.summary;
+                const cleanSummary = rawSummary.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+                wikiUI.innerHTML = `<span class="text-[#10b981] font-bold text-[10px] bg-[#10b981]/20 px-2 py-1 rounded mb-2 inline-block">Last.fm Trivia</span><br>`;
+                // ✅ textContent로 안전하게 삽입
+                const p = document.createElement('span');
+                p.className = 'text-sm text-zinc-400 leading-relaxed';
+                p.textContent = cleanSummary;
+                wikiUI.appendChild(p);
             } else {
                 wikiUI.innerHTML = "<span class='text-zinc-600 text-sm'>트리비아가 없습니다 💿</span>";
             }
         } catch(e) {
+            if (e.name === 'AbortError') return;
             wikiUI.innerHTML = "<span class='text-zinc-600 text-sm'>로드 실패</span>";
         }
     }
 
-    async function fetchWikiExtract(lang, query) {
+    async function fetchWikiExtract(lang, query, signal) {
         try {
-            const res = await fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=5&explaintext=true&origin=*&titles=${encodeURIComponent(query)}`);
+            const res = await fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=5&explaintext=true&origin=*&titles=${encodeURIComponent(query)}`, { signal });
             const data = await res.json();
             const pageId = Object.keys(data.query.pages)[0];
             if (pageId === '-1') return null;
             const page = data.query.pages[pageId];
-            // ✅ FIX 6: disambiguation 페이지 필터링
             if (!page.extract || page.extract.includes('may refer to') || page.extract.includes('다음을 가리킬 수')) return null;
             return page.extract;
         } catch { return null; }
@@ -1555,8 +1624,80 @@
         setTimeout(() => toast.remove(), 4000);
     }
 
+    // ✅ FIX 9: resetApp에서 리셋 버튼 숨기기
+    const _origResetApp = window.resetApp;
+    window.resetApp = function() {
+        if (_origResetApp) _origResetApp();
+        document.getElementById('reset-btn').classList.add('hidden');
+    };
+
+    // ✅ FIX 6: 스켈레톤 카드 렌더링
+    function showSkeletonCards() {
+        const c = document.getElementById('sections-container');
+        c.innerHTML = '';
+        for (let s = 0; s < 2; s++) {
+            const section = document.createElement('div');
+            section.innerHTML = `
+                <div class="h-6 w-32 skeleton mb-6 rounded-lg"></div>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-8 px-4 md:px-0">
+                    ${Array(6).fill(0).map(() => `
+                        <div class="skeleton-card">
+                            <div class="sk-img skeleton"></div>
+                            <div class="sk-line1 skeleton"></div>
+                            <div class="sk-line2 skeleton"></div>
+                        </div>`).join('')}
+                </div>`;
+            c.appendChild(section);
+        }
+    }
+
+    // ✅ FIX 7: 스와이프 다운으로 스튜디오 뷰 닫기
+    (function initSwipeClose() {
+        const studioView = document.getElementById('studio-view');
+        let touchStartY = 0, touchStartTime = 0, isDragging = false;
+
+        studioView.addEventListener('touchstart', (e) => {
+            // 스크롤 영역 내부는 무시 (트랙리스트, 노트 패널)
+            if (e.target.closest('#studio-track-list, .lg\\:overflow-y-auto, #session-panel')) return;
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+            isDragging = true;
+        }, { passive: true });
+
+        studioView.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const dy = e.touches[0].clientY - touchStartY;
+            if (dy > 0) {
+                studioView.style.transform = `translateY(${Math.min(dy * 0.4, 120)}px)`;
+                studioView.style.transition = 'none';
+            }
+        }, { passive: true });
+
+        studioView.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            const dt = Date.now() - touchStartTime;
+            studioView.style.transition = '';
+            studioView.style.transform = '';
+            // 120px 이상 내리거나 빠른 플릭(60px/200ms)이면 닫기
+            if (dy > 120 || (dy > 60 && dt < 200)) {
+                closeStudioView();
+            }
+        }, { passive: true });
+    })();
+
     audio.addEventListener('timeupdate', () => { if (audio.duration) document.getElementById('progress-bar').value = (audio.currentTime / audio.duration) * 100; });
     document.getElementById('progress-bar').addEventListener('input', (e) => { if (audio.duration) audio.currentTime = (e.target.value / 100) * audio.duration; });
+
+    // ✅ FIX 2: 오디오 에러 핸들링
+    audio.addEventListener('error', () => {
+        pI.classList.remove('hidden'); psI.classList.add('hidden');
+        showToast("미리듣기를 불러올 수 없습니다 😞", "error");
+    });
+    audio.addEventListener('stalled', () => {
+        showToast("스트리밍이 지연되고 있습니다...", "error");
+    });
 
     // ✅ FIX 5: ESC 키로 세션 패널 / 스튜디오 뷰 닫기
     document.addEventListener('keydown', (e) => {
@@ -1567,6 +1708,25 @@
             closeStudioView();
         }
     });
+
+    // ✅ FIX 9: 전체 상태 리셋 함수
+    window.resetApp = function() {
+        currentArtist = null; currentArtistId = null;
+        albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
+        fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
+        window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = [];
+        allFetchedFeatures = []; featureFetchCount = 0;
+        sessionSearchQuery = ""; diggingChain = [];
+        document.getElementById('search-input').value = '';
+        document.getElementById('local-search-input').value = '';
+        document.getElementById('sections-container').innerHTML = '';
+        document.getElementById('results-controls').classList.add('hidden');
+        document.getElementById('sniper-active-banner').classList.add('hidden');
+        document.getElementById('artist-selection-container').classList.add('hidden');
+        document.getElementById('status-message').classList.add('hidden');
+        clearAutocomplete();
+        renderChainBar();
+    };
 </script>
 
 </body>
