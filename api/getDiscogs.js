@@ -20,10 +20,17 @@ async function fetchJson(url, timeoutMs = 8000) {
   try {
     const r = await fetch(url, { headers: HEADERS, signal: ctrl.signal });
     clearTimeout(t);
-    if (!r.ok) return null;
+    
+    // 에러 디버깅을 위한 로그 추가 (Vercel 로그에서 확인 가능)
+    if (!r.ok) {
+      console.error(`🚨 [Discogs API Error] 상태 코드: ${r.status} (${r.statusText})`);
+      console.error(`🚨 문제가 발생한 URL: ${url}`);
+      return null;
+    }
     return await r.json();
-  } catch {
+  } catch (error) {
     clearTimeout(t);
+    console.error(`🚨 [Fetch Failed] 요청 실패: ${error.message}`);
     return null;
   }
 }
@@ -119,7 +126,7 @@ export default async function handler(req, res) {
       );
       if (!rData?.releases) return res.json({ matchedTitles: [] });
 
-      // 수정사항: 검색어 앞뒤 공백 제거 및 다중 공백 정규화
+      // FIX: 검색어 앞뒤 공백 제거 및 다중 공백 정규화
       const sessionLower = sessionName.toLowerCase().trim().replace(/\s+/g, ' ');
       
       const toCheck = rData.releases
@@ -134,17 +141,16 @@ export default async function handler(req, res) {
         const results = await Promise.allSettled(
           chunk.map(async rel => {
             
-            // 수정사항: Master 타입일 경우 실제 크레딧이 들어있는 main_release ID를 사용
+            // FIX: Master 타입일 경우 실제 크레딧이 들어있는 main_release ID를 사용
             const targetReleaseId = rel.type === 'master' ? rel.main_release : rel.id;
             
-            // targetReleaseId가 없는 예외 케이스 방어
             if (!targetReleaseId) return null;
 
             const detail = await fetchJson(
               `https://api.discogs.com/releases/${targetReleaseId}?${TOKEN_Q.slice(1)}`
             );
             
-            if (!detail) return null; // 404나 타임아웃 발생 시 패스
+            if (!detail) return null; 
             
             const allCredits = [
               ...(detail.extraartists || []),
@@ -185,8 +191,11 @@ export default async function handler(req, res) {
     let releaseIdsToFetch = [];
     let masterUsed = false;
 
+    // FIX: artist 파라미터를 따로 빼지 않고 q(통합검색)로 합쳐서 유연성 확보
+    const queryStr = encodeURIComponent(`${artistName} ${albumTitle}`);
+
     // === STEP 1: Master release 검색 ===
-    const masterUrl = `https://api.discogs.com/database/search?q=${encodeURIComponent(albumTitle)}&type=master&artist=${encodeURIComponent(artistName)}&per_page=5${TOKEN_Q}`;
+    const masterUrl = `https://api.discogs.com/database/search?q=${queryStr}&type=master&per_page=5${TOKEN_Q}`;
     const masterSearch = await fetchJson(masterUrl);
     let masterId = null;
     if (masterSearch?.results?.length) {
@@ -226,7 +235,7 @@ export default async function handler(req, res) {
     // === STEP 3: Master 없으면 release 직접 검색 ===
     if (releaseIdsToFetch.length === 0) {
       const releaseSearch = await fetchJson(
-        `https://api.discogs.com/database/search?q=${encodeURIComponent(albumTitle)}&type=release&artist=${encodeURIComponent(artistName)}&per_page=10${TOKEN_Q}`
+        `https://api.discogs.com/database/search?q=${queryStr}&type=release&per_page=10${TOKEN_Q}`
       );
       if (releaseSearch?.results?.length) {
         const scored = releaseSearch.results
