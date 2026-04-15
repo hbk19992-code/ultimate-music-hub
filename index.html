@@ -1,346 +1,963 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Can you dig it?</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet"/>
-<link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<style>
-html,body{font-family:'Pretendard Variable',sans-serif;background-color:#050505;color:#fff;margin:0;padding:0;width:100%;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
-.text-gradient{background:linear-gradient(135deg,#a238ff 0%,#10b981 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0a0a0a}::-webkit-scrollbar-thumb{background:#27272a;border-radius:10px}
-.role-badge{display:inline-block;background:#18181b;color:#10b981;border:1px solid #27272a;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:bold;margin-right:6px;pointer-events:none}
-#main-scroll-area{height:100vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:120px}
-.studio-view-enter{transform:translateY(0);opacity:1;pointer-events:auto;visibility:visible}
-.studio-view-exit{transform:translateY(100%);opacity:0;pointer-events:none;visibility:hidden}
-#studio-view{overflow-y:auto;-webkit-overflow-scrolling:touch}
-.card-fav-active{color:#10b981!important;fill:#10b981!important}
-.aura-chill{background:linear-gradient(to right,#0f172a,#1e1b4b,#000000)!important}
-.aura-groove{background:linear-gradient(to right,#064e3b,#065f46,#000000)!important}
-.aura-hype{background:linear-gradient(to right,#7f1d1d,#991b1b,#000000)!important}
-.modal-enter{animation:fadeIn 0.2s ease-out forwards}
-@keyframes fadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
-@keyframes slideUpFade{0%{transform:translate(-50%,100%);opacity:0}10%{transform:translate(-50%,0);opacity:1}90%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-20px);opacity:0}}
-.toast-animate{animation:slideUpFade 4s ease-in-out forwards}
-@keyframes crt-flicker{0%{opacity:0.98}50%{opacity:0.95}100%{opacity:1}}
-body.pixel-theme{font-family:'Galmuri11','Galmuri9',sans-serif!important;background-color:#000!important;animation:crt-flicker 0.15s infinite;cursor:url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'),auto!important}
-body.pixel-theme::after{content:" ";display:block;position:fixed;top:0;left:0;bottom:0;right:0;background:linear-gradient(rgba(18,16,16,0) 50%,rgba(0,0,0,0.25) 50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06));z-index:9999;background-size:100% 3px,3px 100%;pointer-events:none}
-body.pixel-theme::before{content:" ";display:block;position:fixed;top:0;left:0;bottom:0;right:0;background:radial-gradient(circle,rgba(0,0,0,0) 60%,rgba(0,0,0,0.6) 100%);z-index:9998;pointer-events:none}
-body.pixel-theme a,body.pixel-theme button,body.pixel-theme .cursor-pointer,body.pixel-theme select,body.pixel-theme input{cursor:url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'),pointer!important}
-body.pixel-theme *{border-radius:0!important;transition:none!important}
-body.pixel-theme img{image-rendering:pixelated!important;border:2px solid #333!important}
-body.pixel-theme .text-gradient{background:none!important;-webkit-text-fill-color:#10b981!important;text-shadow:3px 3px 0px #a238ff!important}
-body.pixel-theme .bg-zinc-900,body.pixel-theme .bg-zinc-800{background-color:#111!important;border:2px solid #10b981!important}
-body.pixel-theme .shadow-lg,body.pixel-theme .shadow-2xl,body.pixel-theme .group:hover{box-shadow:4px 4px 0px rgba(16,185,129,0.8)!important;transform:translate(-2px,-2px)!important}
-body.pixel-theme input:not([type="range"]),body.pixel-theme select,body.pixel-theme button{border:2px solid #444!important;text-transform:uppercase}
-body.pixel-theme input:focus:not([type="range"]),body.pixel-theme select:focus{border-color:#a238ff!important}
-body.pixel-theme input[type="range"]{border:none!important;height:6px!important;background:#333!important;padding:0!important}
-body.pixel-theme input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:16px;background:#10b981;border:2px solid #fff;border-radius:0;cursor:url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'),pointer}
-body.pixel-theme .toast-animate{border:4px solid #fff!important;background:#000!important;color:#fff!important;font-family:'Galmuri11',sans-serif!important;box-shadow:6px 6px 0px rgba(0,0,0,0.8)!important;border-radius:0!important;padding:16px 24px!important;letter-spacing:1px}
-#autocomplete-dropdown{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#111;border:1px solid #27272a;border-radius:16px;z-index:200;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.8);max-height:320px;overflow-y:auto}
-.autocomplete-item{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;transition:background 0.15s}
-.autocomplete-item:hover,.autocomplete-item.active{background:#1a1a1a}
-.autocomplete-item img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #333;flex-shrink:0}
-.autocomplete-item.track-item img{border-radius:6px}
-.autocomplete-item .meta{flex:1;min-width:0}
-.autocomplete-item .meta-name{font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.autocomplete-item .meta-sub{font-size:11px;color:#71717a;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.autocomplete-item .play-badge{font-size:10px;color:#10b981;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0;border:1px solid rgba(16,185,129,0.3)}
-.credit-group{margin-bottom:20px}
-.credit-group-label{font-size:9px;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;color:#52525b;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #18181b}
-.credit-item{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:10px;transition:background 0.15s;margin-bottom:4px}
-.credit-item:hover{background:rgba(16,185,129,0.05)}
-.credit-item .role-pill{display:inline-block;background:#18181b;color:#10b981;border:1px solid #27272a;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:flex-start}
-.session-trigger{font-size:13px;font-weight:800;color:#fff;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;background:none;border:none;padding:0;cursor:pointer}
-.session-trigger:hover{color:#10b981}
-#session-panel{position:fixed;top:0;right:0;bottom:0;width:100%;max-width:420px;background:#0a0a0a;border-left:1px solid #1a1a1a;z-index:500;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(0,0,0,0.8)}
-#session-panel.open{transform:translateX(0)}
-#session-panel-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:499;opacity:0;pointer-events:none;transition:opacity 0.3s}
-#session-panel-backdrop.open{opacity:1;pointer-events:auto}
-.session-panel-header{padding:24px 20px 16px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:14px;flex-shrink:0}
-.session-panel-body{flex:1;overflow-y:auto;padding:16px}
-.session-album-card{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;cursor:pointer;transition:background 0.15s;margin-bottom:4px;border:1px solid transparent}
-.session-album-card:hover{background:#111;border-color:#27272a}
-.session-album-card img{width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid #333;flex-shrink:0}
-.session-album-card .info{flex:1;min-width:0}
-.session-album-card .info-title{font-weight:700;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.session-album-card .info-meta{font-size:10px;color:#71717a;margin-top:2px}
-.track-hint-banner{background:linear-gradient(135deg,rgba(162,56,255,0.08),rgba(16,185,129,0.08));border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:12px 16px;font-size:11px;color:#a1a1aa;text-align:center;margin-bottom:12px;display:flex;align-items:center;justify-content:center}
-.track-hint-banner span{color:#10b981;font-weight:700}
-#search-wrapper{position:relative}
-.track-playing{background:rgba(16,185,129,0.08)!important}
-.track-playing .track-num{color:#10b981!important}
-@keyframes pulse-green{0%,100%{opacity:1}50%{opacity:0.4}}
-.playing-dot{width:6px;height:6px;background:#10b981;border-radius:50%;animation:pulse-green 1s infinite;display:inline-block}
-#digging-chain-bar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;overflow-x:auto;overflow-y:hidden;background:linear-gradient(to bottom,rgba(0,0,0,0.9),rgba(0,0,0,0));padding:12px 70px 16px 16px;z-index:155;scrollbar-width:none;-webkit-overflow-scrolling:touch;min-height:52px}
-#digging-chain-bar::-webkit-scrollbar{display:none}
-#digging-chain-bar.hidden{display:none}
-.chain-node{display:flex;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;padding:4px 8px;border-radius:20px;transition:background 0.15s;max-width:140px}
-.chain-node:hover{background:rgba(255,255,255,0.07)}
-.chain-node.chain-current{background:rgba(16,185,129,0.12);cursor:default}
-.chain-node img{width:20px;height:20px;border-radius:4px;object-fit:cover;border:1px solid rgba(255,255,255,0.1);flex-shrink:0}
-.chain-node .chain-label{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
-.chain-node.chain-current .chain-label{color:#10b981}
-.chain-node:not(.chain-current) .chain-label{color:#71717a}
-.chain-node:not(.chain-current):hover .chain-label{color:#a1a1aa}
-.chain-arrow{color:#3f3f46;font-size:10px;flex-shrink:0;padding:0 2px}
-@keyframes chainSlideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
-.chain-loaded{animation:chainSlideIn 0.25s ease-out}
-.context-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:6px;padding:4px 8px;font-size:10px;color:#10b981;font-weight:700;margin-bottom:12px}
-@media(prefers-reduced-motion:reduce){body.pixel-theme{animation:none!important}.chain-loaded{animation:none!important}}
-@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
-.skeleton{background:linear-gradient(90deg,#1a1a1a 25%,#252525 50%,#1a1a1a 75%);background-size:800px 100%;animation:shimmer 1.4s infinite linear;border-radius:12px}
-.skeleton-card{background:#111;border-radius:16px;overflow:hidden;border:1px solid #1a1a1a}
-.skeleton-card .sk-img{aspect-ratio:1;width:100%}
-.skeleton-card .sk-line1{height:12px;margin:12px 12px 6px;border-radius:6px}
-.skeleton-card .sk-line2{height:8px;margin:0 12px 12px;width:50%;border-radius:4px}
-#studio-swipe-handle{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);z-index:161;cursor:grab}
-.timeline-wrap{position:relative;padding-left:36px}
-.timeline-wrap::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,#10b981,rgba(162,56,255,0.15));border-radius:2px}
-.timeline-group{margin-bottom:48px;position:relative}
-.timeline-group-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.timeline-year-dot{width:12px;height:12px;border-radius:50%;background:#10b981;border:2px solid #050505;box-shadow:0 0 8px rgba(16,185,129,0.6);flex-shrink:0;position:absolute;left:-42px}
-.timeline-year-label{font-size:13px;font-weight:900;color:#10b981;letter-spacing:0.08em}
-.timeline-card{display:flex;align-items:center;gap:12px;background:#0d0d0d;border:1px solid #1a1a1a;border-radius:14px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}
-.timeline-card:hover{background:#141414;border-color:#10b981;transform:translateX(4px)}
-.timeline-card:hover .tc-title{color:#10b981}
-.timeline-card img{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #2a2a2a;flex-shrink:0}
-.timeline-card .tc-title{font-weight:700;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.timeline-card .tc-meta{font-size:10px;color:#52525b;margin-top:2px}
-.timeline-card.tc-matched{border-color:#10b981;box-shadow:0 0 12px rgba(16,185,129,0.2)}
-.view-toggle-btn{padding:6px 14px;font-size:11px;font-weight:700;border-radius:8px;cursor:pointer;border:none;transition:all 0.15s}
-.view-toggle-btn.active{background:#10b981;color:#000}
-.view-toggle-btn:not(.active){background:#18181b;color:#71717a;border:1px solid #27272a}
-#memo-section{border-top:1px solid #18181b;padding-top:20px;margin-top:4px}
-.star-btn{font-size:22px;cursor:pointer;transition:transform 0.1s;line-height:1;background:none;border:none;padding:2px;opacity:0.35}
-.star-btn.lit,.star-btn:hover{opacity:1;transform:scale(1.15)}
-#memo-textarea{width:100%;background:#0d0d0d;border:1px solid #27272a;border-radius:12px;color:#fff;padding:10px 12px;font-size:12px;font-family:inherit;resize:none;outline:none;min-height:72px;transition:border-color 0.2s;line-height:1.6}
-#memo-textarea:focus{border-color:#10b981}
-#memo-textarea::placeholder{color:#3f3f46}
-.memo-tag{display:inline-flex;align-items:center;gap:4px;background:#18181b;border:1px solid #27272a;border-radius:20px;padding:4px 11px;font-size:10px;font-weight:700;color:#71717a;cursor:pointer;transition:all 0.15s;user-select:none}
-.memo-tag.selected{background:rgba(16,185,129,0.12);border-color:#10b981;color:#10b981}
-.memo-dot{position:absolute;top:6px;left:6px;width:8px;height:8px;background:#a238ff;border-radius:50%;border:2px solid #050505;z-index:10;box-shadow:0 0 6px rgba(162,56,255,0.7);pointer-events:none}
-@keyframes memoPop{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
-.memo-dot{animation:memoPop 0.3s ease-out}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Can you dig it?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        html, body { font-family: 'Pretendard Variable', sans-serif; background-color: #050505; color: #fff; margin: 0; padding: 0; width: 100%; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .text-gradient { background: linear-gradient(135deg, #a238ff 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0a0a0a; } ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        .role-badge { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; margin-right: 6px; pointer-events: none; }
+        #main-scroll-area { height: 100vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 120px; }
+        .studio-view-enter { transform: translateY(0); opacity: 1; pointer-events: auto; visibility: visible; }
+        .studio-view-exit { transform: translateY(100%); opacity: 0; pointer-events: none; visibility: hidden; }
+        #studio-view { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .card-fav-active { color: #10b981 !important; fill: #10b981 !important; }
+        .aura-chill { background: linear-gradient(to right, #0f172a, #1e1b4b, #000000) !important; }
+        .aura-groove { background: linear-gradient(to right, #064e3b, #065f46, #000000) !important; }
+        .aura-hype { background: linear-gradient(to right, #7f1d1d, #991b1b, #000000) !important; }
+        .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
+        .toast-animate { animation: slideUpFade 4s ease-in-out forwards; }
 
-/* ✅ FIX 1: 동명이인 경고 배너 */
-#homonym-warning{display:none;margin-bottom:16px;max-width:64rem;margin-left:auto;margin-right:auto}
-#homonym-warning.show{display:block}
-.homonym-inner{background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:16px;padding:14px 16px}
-.homonym-artist-btn{display:flex;align-items:center;gap:10px;background:#111;border:1px solid #27272a;border-radius:12px;padding:8px 12px;cursor:pointer;transition:all 0.15s;flex:1;min-width:120px;text-align:left}
-.homonym-artist-btn:hover{border-color:#10b981;background:#0d0d0d}
-.homonym-artist-btn.hm-selected{border-color:#10b981;background:rgba(16,185,129,0.08)}
-.homonym-artist-btn img{width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid #333;flex-shrink:0}
-.homonym-artist-btn .hm-name{font-size:11px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
-.homonym-artist-btn .hm-meta{font-size:9px;color:#71717a;margin-top:2px}
-</style>
+        /* 👾 8-BIT RETRO THEME */
+        @keyframes crt-flicker { 0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; } }
+        body.pixel-theme { font-family: 'Galmuri11', 'Galmuri9', sans-serif !important; background-color: #000 !important; animation: crt-flicker 0.15s infinite; cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important; }
+        body.pixel-theme::after { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 9999; background-size: 100% 3px, 3px 100%; pointer-events: none; }
+        body.pixel-theme::before { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%); z-index: 9998; pointer-events: none; }
+        body.pixel-theme a, body.pixel-theme button, body.pixel-theme .cursor-pointer, body.pixel-theme select, body.pixel-theme input { cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer !important; }
+        body.pixel-theme * { border-radius: 0 !important; transition: none !important; }
+        body.pixel-theme img { image-rendering: pixelated !important; border: 2px solid #333 !important; }
+        body.pixel-theme .text-gradient { background: none !important; -webkit-text-fill-color: #10b981 !important; text-shadow: 3px 3px 0px #a238ff !important; }
+        body.pixel-theme .bg-zinc-900, body.pixel-theme .bg-zinc-800 { background-color: #111 !important; border: 2px solid #10b981 !important; }
+        body.pixel-theme .shadow-lg, body.pixel-theme .shadow-2xl, body.pixel-theme .group:hover { box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important; transform: translate(-2px, -2px) !important; }
+        body.pixel-theme input:not([type="range"]), body.pixel-theme select, body.pixel-theme button { border: 2px solid #444 !important; text-transform: uppercase; }
+        body.pixel-theme input:focus:not([type="range"]), body.pixel-theme select:focus { border-color: #a238ff !important; }
+        body.pixel-theme input[type="range"] { border: none !important; height: 6px !important; background: #333 !important; padding: 0 !important; }
+        body.pixel-theme input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; background: #10b981; border: 2px solid #fff; border-radius: 0; cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer; }
+        body.pixel-theme .toast-animate { border: 4px solid #fff !important; background: #000 !important; color: #fff !important; font-family: 'Galmuri11', sans-serif !important; box-shadow: 6px 6px 0px rgba(0,0,0,0.8) !important; border-radius: 0 !important; padding: 16px 24px !important; letter-spacing: 1px; }
 
+        /* 자동완성 드롭다운 */
+        #autocomplete-dropdown { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #111; border: 1px solid #27272a; border-radius: 16px; z-index: 200; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-height: 320px; overflow-y: auto; }
+        .autocomplete-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; }
+        .autocomplete-item:hover, .autocomplete-item.active { background: #1a1a1a; }
+        .autocomplete-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #333; flex-shrink: 0; }
+        .autocomplete-item.track-item img { border-radius: 6px; }
+        .autocomplete-item .meta { flex: 1; min-width: 0; }
+        .autocomplete-item .meta-name { font-weight: 700; font-size: 13px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .autocomplete-item .meta-sub { font-size: 11px; color: #71717a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .autocomplete-item .play-badge { font-size: 10px; color: #10b981; font-weight: 700; background: #10b981/10; border: 1px solid #10b981/30; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+
+        /* 크레딧 역할 그룹 */
+        .credit-group { margin-bottom: 20px; }
+        .credit-group-label { font-size: 9px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; color: #52525b; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #18181b; }
+        .credit-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 10px; transition: background 0.15s; margin-bottom: 4px; }
+        .credit-item:hover { background: rgba(16,185,129,0.05); }
+        .credit-item .role-pill { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 7px; font-size: 9px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: flex-start; }
+        .session-trigger { font-size: 13px; font-weight: 800; color: #fff; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; background: none; border: none; padding: 0; cursor: pointer; }
+        .session-trigger:hover { color: #10b981; }
+
+        /* 세션 뮤지션 사이드패널 */
+        #session-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 420px; background: #0a0a0a; border-left: 1px solid #1a1a1a; z-index: 500; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; box-shadow: -20px 0 60px rgba(0,0,0,0.8); }
+        #session-panel.open { transform: translateX(0); }
+        #session-panel-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 499; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        #session-panel-backdrop.open { opacity: 1; pointer-events: auto; }
+        .session-panel-header { padding: 24px 20px 16px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+        .session-panel-body { flex: 1; overflow-y: auto; padding: 16px; }
+        .session-album-card { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; cursor: pointer; transition: background 0.15s; margin-bottom: 4px; border: 1px solid transparent; }
+        .session-album-card:hover { background: #111; border-color: #27272a; }
+        .session-album-card img { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid #333; flex-shrink: 0; }
+        .session-album-card .info { flex: 1; min-width: 0; }
+        .session-album-card .info-title { font-weight: 700; font-size: 12px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-album-card .info-meta { font-size: 10px; color: #71717a; margin-top: 2px; }
+
+        /* 트랙 힌트 배너 */
+        .track-hint-banner { background: linear-gradient(135deg, rgba(162,56,255,0.08), rgba(16,185,129,0.08)); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 12px 16px; font-size: 11px; color: #a1a1aa; text-align: center; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap-8px; }
+        .track-hint-banner span { color: #10b981; font-weight: 700; }
+
+        #search-wrapper { position: relative; }
+        .track-playing { background: rgba(16,185,129,0.08) !important; }
+        .track-playing .track-num { color: #10b981 !important; }
+
+        @keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .playing-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse-green 1s infinite; display: inline-block; }
+
+        /* Chain Digging 브레드크럼 */
+        #digging-chain-bar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 0; overflow-x: auto; overflow-y: hidden; background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0)); padding: 12px 70px 16px 16px; z-index: 155; scrollbar-width: none; -webkit-overflow-scrolling: touch; min-height: 52px; }
+        #digging-chain-bar::-webkit-scrollbar { display: none; }
+        #digging-chain-bar.hidden { display: none; }
+        .chain-node { display: flex; align-items: center; gap: 6px; flex-shrink: 0; cursor: pointer; padding: 4px 8px; border-radius: 20px; transition: background 0.15s; max-width: 140px; }
+        .chain-node:hover { background: rgba(255,255,255,0.07); }
+        .chain-node.chain-current { background: rgba(16,185,129,0.12); cursor: default; }
+        .chain-node img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+        .chain-node .chain-label { font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+        .chain-node.chain-current .chain-label { color: #10b981; }
+        .chain-node:not(.chain-current) .chain-label { color: #71717a; }
+        .chain-node:not(.chain-current):hover .chain-label { color: #a1a1aa; }
+        .chain-arrow { color: #3f3f46; font-size: 10px; flex-shrink: 0; padding: 0 2px; }
+        @keyframes chainSlideIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+        .chain-loaded { animation: chainSlideIn 0.25s ease-out; }
+        .context-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 6px; padding: 4px 8px; font-size: 10px; color: #10b981; font-weight: 700; margin-bottom: 12px; }
+        @media (prefers-reduced-motion: reduce) { body.pixel-theme { animation: none !important; } .chain-loaded { animation: none !important; } }
+
+        /* 스켈레톤 로딩 */
+        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+        .skeleton { background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%); background-size: 800px 100%; animation: shimmer 1.4s infinite linear; border-radius: 12px; }
+        .skeleton-card { background: #111; border-radius: 16px; overflow: hidden; border: 1px solid #1a1a1a; }
+        .skeleton-card .sk-img { aspect-ratio: 1; width: 100%; }
+        .skeleton-card .sk-line1 { height: 12px; margin: 12px 12px 6px; border-radius: 6px; }
+        .skeleton-card .sk-line2 { height: 8px; margin: 0 12px 12px; width: 50%; border-radius: 4px; }
+
+        /* 스와이프 핸들 */
+        #studio-swipe-handle { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); z-index: 161; cursor: grab; }
+
+        /* 타임라인 뷰 */
+        .timeline-wrap { position: relative; padding-left: 36px; }
+        .timeline-wrap::before { content:''; position:absolute; left:12px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom,#10b981,rgba(162,56,255,0.15)); border-radius:2px; }
+        .timeline-group { margin-bottom: 48px; position: relative; }
+        .timeline-group-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+        .timeline-year-dot { width:12px; height:12px; border-radius:50%; background:#10b981; border:2px solid #050505; box-shadow:0 0 8px rgba(16,185,129,0.6); flex-shrink:0; position:absolute; left:-42px; }
+        .timeline-year-label { font-size:13px; font-weight:900; color:#10b981; letter-spacing:0.08em; }
+        .timeline-card { display:flex; align-items:center; gap:12px; background:#0d0d0d; border:1px solid #1a1a1a; border-radius:14px; padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
+        .timeline-card:hover { background:#141414; border-color:#10b981; transform:translateX(4px); }
+        .timeline-card:hover .tc-title { color:#10b981; }
+        .timeline-card img { width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid #2a2a2a; flex-shrink:0; }
+        .timeline-card .tc-title { font-weight:700; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .timeline-card .tc-meta { font-size:10px; color:#52525b; margin-top:2px; }
+        .timeline-card.tc-matched { border-color:#10b981; box-shadow:0 0 12px rgba(16,185,129,0.2); }
+        .view-toggle-btn { padding:6px 14px; font-size:11px; font-weight:700; border-radius:8px; cursor:pointer; border:none; transition:all 0.15s; }
+        .view-toggle-btn.active { background:#10b981; color:#000; }
+        .view-toggle-btn:not(.active) { background:#18181b; color:#71717a; border:1px solid #27272a; }
+
+        /* 앨범 메모 */
+        #memo-section { border-top:1px solid #18181b; padding-top:20px; margin-top:4px; }
+        .star-btn { font-size:22px; cursor:pointer; transition:transform 0.1s; line-height:1; background:none; border:none; padding:2px; opacity:0.35; }
+        .star-btn.lit, .star-btn:hover { opacity:1; transform:scale(1.15); }
+        #memo-textarea { width:100%; background:#0d0d0d; border:1px solid #27272a; border-radius:12px; color:#fff; padding:10px 12px; font-size:12px; font-family:inherit; resize:none; outline:none; min-height:72px; transition:border-color 0.2s; line-height:1.6; }
+        #memo-textarea:focus { border-color:#10b981; }
+        #memo-textarea::placeholder { color:#3f3f46; }
+        .memo-tag { display:inline-flex; align-items:center; gap:4px; background:#18181b; border:1px solid #27272a; border-radius:20px; padding:4px 11px; font-size:10px; font-weight:700; color:#71717a; cursor:pointer; transition:all 0.15s; user-select:none; }
+        .memo-tag.selected { background:rgba(16,185,129,0.12); border-color:#10b981; color:#10b981; }
+        .memo-dot { position:absolute; top:6px; left:6px; width:8px; height:8px; background:#a238ff; border-radius:50%; border:2px solid #050505; z-index:10; box-shadow:0 0 6px rgba(162,56,255,0.7); pointer-events:none; }
+        @keyframes memoPop { 0%{transform:scale(0)} 70%{transform:scale(1.3)} 100%{transform:scale(1)} }
+        .memo-dot { animation:memoPop 0.3s ease-out; }
+    </style>
 </head>
 <body class="relative">
 
 <div id="toast-container" class="fixed bottom-[110px] left-1/2 z-[300] flex flex-col gap-2 pointer-events-none w-full max-w-xs md:max-w-md"></div>
+
 <div id="session-panel-backdrop" onclick="closeSessionPanel()"></div>
+
 <div id="session-panel">
-  <div class="session-panel-header">
-    <button onclick="closeSessionPanel()" class="p-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex-shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
-    <div class="min-w-0">
-      <div id="session-panel-role" class="text-[10px] text-[#10b981] font-black uppercase tracking-widest mb-0.5"></div>
-      <div id="session-panel-name" class="text-white font-black text-lg leading-tight truncate"></div>
-    </div>
-    <button id="session-panel-search-btn" onclick="searchSessionFromPanel()" class="ml-auto px-3 py-1.5 bg-[#10b981] text-black text-[10px] font-black rounded-lg flex-shrink-0 hover:bg-[#0ea472]">디스코그래피 →</button>
-  </div>
-  <div id="session-panel-loading" class="hidden p-8 text-center"><div class="text-[#10b981] font-mono text-xs animate-pulse tracking-widest">SCANNING DATABASE...</div></div>
-  <div class="session-panel-body">
-    <div id="session-panel-stats" class="hidden mb-4 grid grid-cols-2 gap-3"></div>
-    <div id="session-panel-content"></div>
-  </div>
-</div>
-<div id="folder-modal" class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-  <div class="bg-zinc-900 p-6 rounded-3xl border border-zinc-700 w-full max-w-sm shadow-2xl modal-enter">
-    <h3 class="text-xl font-bold text-white mb-2">보관함 저장</h3>
-    <p class="text-zinc-400 text-xs mb-5">어떤 폴더에 저장할까요?</p>
-    <div id="folder-list" class="space-y-2 mb-5 max-h-40 overflow-y-auto scrollbar-thin border-b border-zinc-800 pb-4"></div>
-    <input type="text" id="new-folder-input" placeholder="또는 새 폴더 이름 입력..." class="w-full bg-zinc-950 border border-zinc-800 focus:border-[#10b981] text-white px-4 py-3 rounded-xl text-sm mb-5 outline-none transition-colors">
-    <div class="flex gap-3">
-      <button onclick="closeFolderModal()" class="flex-1 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700">취소</button>
-      <button onclick="saveToFolder()" class="flex-1 py-3 bg-[#10b981] text-black font-extrabold rounded-xl hover:scale-105 transition-transform">저장하기</button>
-    </div>
-  </div>
-</div>
-<div class="absolute top-4 right-4 md:top-6 md:right-8 z-50 flex items-center gap-2 md:gap-3">
-  <button id="reset-btn" onclick="resetApp()" class="hidden bg-zinc-900 text-zinc-500 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-colors border border-zinc-800 shadow-lg" title="처음으로">↩ 초기화</button>
-  <button onclick="togglePixelTheme()" id="pixel-toggle-btn" class="bg-zinc-900 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold hover:text-[#10b981] transition-colors border border-zinc-700 shadow-lg">👾 8-BIT</button>
-  <button id="login-btn" onclick="signInWithGoogle()" class="bg-white text-black px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold text-xs md:text-sm shadow-xl hidden">구글 로그인</button>
-  <div id="user-profile" class="flex items-center gap-2 md:gap-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 px-2 py-1 md:px-3 md:py-1.5 rounded-full hidden">
-    <img id="user-photo" src="" onerror="this.src='https://placehold.co/100x100/18181b/10b981?text=U'" class="w-6 h-6 md:w-7 md:h-7 rounded-full border border-zinc-700">
-    <span id="user-name" class="text-[10px] md:text-xs font-bold text-white max-w-[80px] md:max-w-[100px] truncate">사용자</span>
-    <button onclick="signOut()" class="text-[10px] text-zinc-500 hover:text-white px-2 py-1 border-l border-zinc-700">로그아웃</button>
-  </div>
-</div>
-<div id="main-scroll-area">
-  <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
-    <header class="mb-8 text-center">
-      <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
-      <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Precision Sniper V27.0</p>
-    </header>
-    <div id="search-section" class="max-w-3xl mx-auto mb-8">
-      <div id="search-wrapper" class="relative flex flex-col md:flex-row items-stretch md:items-center gap-2 bg-zinc-900 p-2 rounded-2xl md:rounded-3xl border border-zinc-800 focus-within:border-[#10b981]/50 transition-colors">
-        <div class="flex flex-1 gap-1">
-          <select id="search-mode" onchange="clearAutocomplete()" class="bg-zinc-800 text-white px-3 py-3 rounded-xl border border-zinc-700 text-xs md:text-sm font-bold">
-            <option value="artist">👤 아티스트</option>
-            <option value="track">🎵 곡명</option>
-          </select>
-          <input type="text" id="search-input" placeholder="검색어를 입력하세요..." autocomplete="off" class="flex-1 bg-transparent text-white px-3 py-3 focus:outline-none text-base md:text-lg">
+    <div class="session-panel-header">
+        <button onclick="closeSessionPanel()" class="p-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full flex-shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <div class="min-w-0">
+            <div id="session-panel-role" class="text-[10px] text-[#10b981] font-black uppercase tracking-widest mb-0.5"></div>
+            <div id="session-panel-name" class="text-white font-black text-lg leading-tight truncate"></div>
         </div>
-        <div id="autocomplete-dropdown" class="hidden"></div>
-      </div>
+        <button id="session-panel-search-btn" onclick="searchSessionFromPanel()" class="ml-auto px-3 py-1.5 bg-[#10b981] text-black text-[10px] font-black rounded-lg flex-shrink-0 hover:bg-[#0ea472]">
+            디스코그래피 →
+        </button>
     </div>
-    <div class="flex justify-center mb-10">
-      <div class="bg-zinc-900/50 p-1 rounded-xl flex border border-zinc-800 w-full max-w-sm">
-        <button id="tab-search" onclick="switchTab('search')" class="flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-all">디스코그래피</button>
-        <button id="tab-fav" onclick="switchTab('fav')" class="flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500 transition-all">☁️ 커스텀 보관함</button>
-      </div>
+    <div id="session-panel-loading" class="hidden p-8 text-center">
+        <div class="text-[#10b981] font-mono text-xs animate-pulse tracking-widest">SCANNING DATABASE...</div>
     </div>
-    <div id="status-message" class="text-center text-[#10b981] mb-8 hidden font-mono text-xs animate-pulse tracking-widest font-bold">ANALYZING DATABASE...</div>
-    <div id="artist-selection-container" class="max-w-6xl mx-auto mb-10 hidden">
-      <div id="artist-selection-grid" class="grid grid-cols-2 md:flex md:flex-wrap justify-center gap-4 md:gap-6"></div>
+    <div class="session-panel-body">
+        <div id="session-panel-stats" class="hidden mb-4 grid grid-cols-2 gap-3"></div>
+        <div id="session-panel-content"></div>
     </div>
-
-```
-<!-- ✅ FIX 1: 동명이인 감지 배너 -->
-<div id="homonym-warning">
-  <div class="homonym-inner">
-    <div class="flex items-start gap-2 mb-3">
-      <span class="text-amber-400 text-base flex-shrink-0 mt-0.5">⚠️</span>
-      <div class="flex-1 min-w-0">
-        <p class="text-amber-300 font-black text-xs">iTunes에서 동명이인이 감지됐습니다.</p>
-        <p class="text-zinc-500 text-[10px] mt-0.5">Deezer 데이터와 교차검증해 자동 선택했습니다. 다른 아티스트를 원하면 아래에서 변경하세요.</p>
-      </div>
-      <button onclick="dismissHomonymWarning()" class="text-zinc-600 hover:text-zinc-400 text-xs flex-shrink-0 ml-2 mt-0.5">✕</button>
-    </div>
-    <div id="homonym-artist-list" class="flex flex-wrap gap-2"></div>
-  </div>
 </div>
 
-<div id="results-controls" class="hidden flex flex-col gap-3 mb-10 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800">
-  <div class="flex w-full gap-2">
-    <input type="text" id="local-search-input" oninput="handleLocalSearch()" onkeypress="if(event.key==='Enter') startDeepSessionSearch()" placeholder="앨범 제목 또는 세션명 검색..." class="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#10b981]">
-    <button onclick="startDeepSessionSearch()" class="bg-[#10b981] text-black px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-transform hover:scale-105 shadow-lg active:scale-95 flex items-center gap-1 shrink-0">🎯 스나이퍼 서치</button>
-  </div>
-  <div class="flex items-center gap-2 flex-wrap">
-    <div class="flex gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
-      <button id="view-grid-btn" onclick="setViewMode('grid')" class="view-toggle-btn active">⊞ 그리드</button>
-      <button id="view-timeline-btn" onclick="setViewMode('timeline')" class="view-toggle-btn">≡ 타임라인</button>
+<div id="folder-modal" class="fixed inset-0 z-[250] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 p-6 rounded-3xl border border-zinc-700 w-full max-w-sm shadow-2xl modal-enter">
+        <h3 class="text-xl font-bold text-white mb-2">보관함 저장</h3>
+        <p class="text-zinc-400 text-xs mb-5">어떤 폴더에 저장할까요?</p>
+        <div id="folder-list" class="space-y-2 mb-5 max-h-40 overflow-y-auto scrollbar-thin border-b border-zinc-800 pb-4"></div>
+        <input type="text" id="new-folder-input" placeholder="또는 새 폴더 이름 입력..." class="w-full bg-zinc-950 border border-zinc-800 focus:border-[#10b981] text-white px-4 py-3 rounded-xl text-sm mb-5 outline-none transition-colors">
+        <div class="flex gap-3">
+            <button onclick="closeFolderModal()" class="flex-1 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700">취소</button>
+            <button onclick="saveToFolder()" class="flex-1 py-3 bg-[#10b981] text-black font-extrabold rounded-xl hover:scale-105 transition-transform">저장하기</button>
+        </div>
     </div>
-    <select id="album-sort-select" onchange="applyAlbumSort()" class="ml-auto bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold border border-zinc-800 cursor-pointer">
-      <option value="desc">📅 최신순</option>
-      <option value="asc">⏳ 과거순</option>
-    </select>
-  </div>
 </div>
-<div id="sniper-active-banner" class="hidden mb-6 flex items-center justify-between gap-4 bg-[#10b981]/10 border border-[#10b981]/30 px-5 py-3 rounded-2xl">
-  <div class="flex items-center gap-3 min-w-0">
-    <span class="text-lg flex-shrink-0">🎯</span>
-    <div class="min-w-0">
-      <p class="text-[#10b981] font-black text-sm">스나이퍼 모드 활성</p>
-      <p id="sniper-active-label" class="text-zinc-400 text-xs mt-0.5 truncate"></p>
-    </div>
-  </div>
-  <button onclick="clearSniperMode()" class="flex-shrink-0 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold rounded-lg transition-colors">✕ 초기화</button>
-</div>
-<div id="sections-container" class="space-y-16"></div>
-```
 
-  </div>
+<div class="absolute top-4 right-4 md:top-6 md:right-8 z-50 flex items-center gap-2 md:gap-3">
+    <button id="reset-btn" onclick="resetApp()" class="hidden bg-zinc-900 text-zinc-500 hover:text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition-colors border border-zinc-800 shadow-lg" title="처음으로">↩ 초기화</button>
+    <button onclick="togglePixelTheme()" id="pixel-toggle-btn" class="bg-zinc-900 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold hover:text-[#10b981] transition-colors border border-zinc-700 shadow-lg">👾 8-BIT</button>
+    <button id="login-btn" onclick="signInWithGoogle()" class="bg-white text-black px-4 py-1.5 md:px-5 md:py-2 rounded-full font-bold text-xs md:text-sm shadow-xl hidden">구글 로그인</button>
+    <div id="user-profile" class="flex items-center gap-2 md:gap-3 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 px-2 py-1 md:px-3 md:py-1.5 rounded-full hidden">
+        <img id="user-photo" src="" onerror="this.src='https://placehold.co/100x100/18181b/10b981?text=U'" class="w-6 h-6 md:w-7 md:h-7 rounded-full border border-zinc-700">
+        <span id="user-name" class="text-[10px] md:text-xs font-bold text-white max-w-[80px] md:max-w-[100px] truncate">사용자</span>
+        <button onclick="signOut()" class="text-[10px] text-zinc-500 hover:text-white px-2 py-1 border-l border-zinc-700">로그아웃</button>
+    </div>
+</div>
+
+<div id="main-scroll-area">
+    <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Strict Filter & Lightweight V26.2</p>
+        </header>
+
+        <div id="search-section" class="max-w-3xl mx-auto mb-8">
+            <div id="search-wrapper" class="relative flex flex-col md:flex-row items-stretch md:items-center gap-2 bg-zinc-900 p-2 rounded-2xl md:rounded-3xl border border-zinc-800 focus-within:border-[#10b981]/50 transition-colors">
+                <div class="flex flex-1 gap-1">
+                    <select id="search-mode" onchange="clearAutocomplete()" class="bg-zinc-800 text-white px-3 py-3 rounded-xl border border-zinc-700 text-xs md:text-sm font-bold">
+                        <option value="artist">👤 아티스트</option>
+                        <option value="track">🎵 곡명</option>
+                    </select>
+                    <input type="text" id="search-input" placeholder="검색어를 입력하세요..." autocomplete="off" class="flex-1 bg-transparent text-white px-3 py-3 focus:outline-none text-base md:text-lg">
+                </div>
+                <div id="autocomplete-dropdown" class="hidden"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-center mb-10">
+            <div class="bg-zinc-900/50 p-1 rounded-xl flex border border-zinc-800 w-full max-w-sm">
+                <button id="tab-search" onclick="switchTab('search')" class="flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg transition-all">디스코그래피</button>
+                <button id="tab-fav" onclick="switchTab('fav')" class="flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500 transition-all">☁️ 커스텀 보관함</button>
+            </div>
+        </div>
+
+        <div id="status-message" class="text-center text-[#10b981] mb-8 hidden font-mono text-xs animate-pulse tracking-widest font-bold">ANALYZING DATABASE...</div>
+
+        <div id="artist-selection-container" class="max-w-6xl mx-auto mb-10 hidden">
+            <div id="artist-selection-grid" class="grid grid-cols-2 md:flex md:flex-wrap justify-center gap-4 md:gap-6"></div>
+        </div>
+
+        <div id="results-controls" class="hidden flex flex-col gap-3 mb-10 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800">
+            <div class="flex w-full gap-2">
+                <input type="text" id="local-search-input" oninput="handleLocalSearch()" onkeypress="if(event.key==='Enter') startDeepSessionSearch()" placeholder="앨범 제목 또는 세션명 검색..." class="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#10b981]">
+                <button onclick="startDeepSessionSearch()" class="bg-[#10b981] text-black px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-transform hover:scale-105 shadow-lg active:scale-95 flex items-center gap-1 shrink-0">
+                    🎯 스나이퍼 서치
+                </button>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+                    <button id="view-grid-btn" onclick="setViewMode('grid')" class="view-toggle-btn active">⊞ 그리드</button>
+                    <button id="view-timeline-btn" onclick="setViewMode('timeline')" class="view-toggle-btn">≡ 타임라인</button>
+                </div>
+                <!-- 세션 랭킹 버튼 완전 삭제 -->
+                <select id="album-sort-select" onchange="applyAlbumSort()" class="ml-auto bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold border border-zinc-800 cursor-pointer">
+                    <option value="desc">📅 최신순</option>
+                    <option value="asc">⏳ 과거순</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="sniper-active-banner" class="hidden mb-6 flex items-center justify-between gap-4 bg-[#10b981]/10 border border-[#10b981]/30 px-5 py-3 rounded-2xl">
+            <div class="flex items-center gap-3 min-w-0">
+                <span class="text-lg flex-shrink-0">🎯</span>
+                <div class="min-w-0">
+                    <p class="text-[#10b981] font-black text-sm">스나이퍼 모드 활성</p>
+                    <p id="sniper-active-label" class="text-zinc-400 text-xs mt-0.5 truncate"></p>
+                </div>
+            </div>
+            <button onclick="clearSniperMode()" class="flex-shrink-0 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold rounded-lg transition-colors">
+                ✕ 초기화
+            </button>
+        </div>
+
+        <div id="sections-container" class="space-y-16"></div>
+    </div>
 </div>
 
 <div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950/98 backdrop-blur-3xl transition-all duration-500 studio-view-exit flex flex-col">
-  <div id="studio-swipe-handle"></div>
-  <div id="digging-chain-bar" class="hidden"></div>
-  <button onclick="closeStudioView()" class="absolute top-3 right-4 md:top-4 md:right-8 p-2.5 bg-zinc-800 hover:bg-red-500 text-white rounded-full z-[160] shadow-2xl transition-transform hover:rotate-90"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg></button>
-  <div id="studio-inner" class="max-w-7xl mx-auto w-full p-6 md:p-10 flex flex-col lg:flex-row gap-10">
-    <div class="w-full lg:flex-1 flex flex-col lg:h-[calc(100vh-250px)] shrink-0">
-      <div class="flex items-center lg:items-end gap-5 md:gap-6 mb-8 shrink-0">
-        <img id="studio-cover" src="" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-28 h-28 md:w-56 md:h-56 rounded-2xl shadow-2xl object-cover border border-zinc-800">
-        <div class="flex-1 min-w-0 pb-1">
-          <h2 id="studio-title" class="text-2xl md:text-5xl font-black text-white truncate mb-1 leading-tight tracking-tighter">앨범 제목</h2>
-          <p id="studio-artist" class="text-sm md:text-2xl text-[#10b981] font-bold truncate opacity-80">아티스트</p>
-          <div class="flex flex-wrap gap-2 mt-3">
-            <button onclick="copyDeepLink()" class="bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold flex items-center gap-1.5 transition-colors"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg> 링크 복사</button>
-            <button id="open-apple-music-btn" class="bg-[#fa243c] text-white hover:bg-[#ff4d64] px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all shadow-lg hidden">🍎 Apple</button>
-            <button id="open-spotify-btn" class="bg-[#1DB954] text-white hover:bg-[#1ed760] px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all shadow-lg">🟢 Spotify</button>
-            <button id="open-youtube-music-btn" class="bg-[#FF0000] text-white hover:bg-[#cc0000] px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all shadow-lg">🔴 YouTube</button>
-          </div>
+    <div id="studio-swipe-handle"></div>
+    <div id="digging-chain-bar" class="hidden"></div>
+    <button onclick="closeStudioView()" class="absolute top-3 right-4 md:top-4 md:right-8 p-2.5 bg-zinc-800 hover:bg-red-500 text-white rounded-full z-[160] shadow-2xl transition-transform hover:rotate-90">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
+    </button>
+
+    <div id="studio-inner" class="max-w-7xl mx-auto w-full p-6 md:p-10 flex flex-col lg:flex-row gap-10">
+        <div class="w-full lg:flex-1 flex flex-col lg:h-[calc(100vh-250px)] shrink-0">
+            <div class="flex items-center lg:items-end gap-5 md:gap-6 mb-8 shrink-0">
+                <img id="studio-cover" src="" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-28 h-28 md:w-56 md:h-56 rounded-2xl shadow-2xl object-cover border border-zinc-800">
+                <div class="flex-1 min-w-0 pb-1">
+                    <h2 id="studio-title" class="text-2xl md:text-5xl font-black text-white truncate mb-1 leading-tight tracking-tighter">앨범 제목</h2>
+                    <p id="studio-artist" class="text-sm md:text-2xl text-[#10b981] font-bold truncate opacity-80">아티스트</p>
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        <button onclick="copyDeepLink()" class="bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold flex items-center gap-1.5 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg> 링크 복사
+                        </button>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="open-apple-music-btn" class="bg-[#fa243c] text-white hover:bg-[#ff4d64] px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all shadow-lg hidden">🍎 Apple</button>
+                            <button id="open-spotify-btn" class="bg-[#1DB954] text-white hover:bg-[#1ed760] px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all shadow-lg">🟢 Spotify</button>
+                            <button id="open-youtube-music-btn" class="bg-[#FF0000] text-white hover:bg-[#cc0000] px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all shadow-lg">🔴 YouTube</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="track-hint-banner" class="track-hint-banner mb-3">🎵 트랙을 클릭하면 <span>트랙별 세션 크레딧</span>이 오른쪽에 표시됩니다</div>
+            <div id="studio-track-list" class="lg:overflow-y-auto pr-2 space-y-1 lg:scrollbar-thin"></div>
         </div>
-      </div>
-      <div id="track-hint-banner" class="track-hint-banner mb-3">🎵 트랙을 클릭하면 <span>트랙별 세션 크레딧</span>이 오른쪽에 표시됩니다</div>
-      <div id="studio-track-list" class="lg:overflow-y-auto pr-2 space-y-1 lg:scrollbar-thin"></div>
+        
+        <div class="w-full lg:flex-1 flex flex-col lg:h-[calc(100vh-250px)] border-t lg:border-t-0 lg:border-l border-zinc-800 pt-8 lg:pt-0 lg:pl-10">
+            <h3 class="text-2xl font-black text-white mb-8 shrink-0 flex items-center gap-3">📓 Digging Notes</h3>
+            <div class="lg:overflow-y-auto pr-3 space-y-10 lg:scrollbar-thin pb-24 md:pb-0">
+                <section id="discogs-track-credits-container" class="hidden bg-[#10b981]/5 p-6 rounded-3xl border border-[#10b981]/20">
+                    <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-3">
+                        <h5 id="discogs-track-title" class="text-white font-bold text-base md:text-lg truncate">🎵 트랙 제목</h5>
+                        <span class="text-[10px] text-[#10b981] font-black uppercase tracking-widest bg-[#10b981]/10 px-2 py-1 rounded flex-shrink-0 ml-2">TRACK CREDITS</span>
+                    </div>
+                    <div id="discogs-track-data-ui" class="text-sm font-mono space-y-1"></div>
+                </section>
+
+                <section>
+                    <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Encyclopedia & Trivia</h4>
+                    <p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium"></p>
+                </section>
+
+                <section>
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em]">Full Session Credits</h4>
+                        <div id="credit-count-badge" class="hidden text-[10px] text-zinc-500 font-bold bg-zinc-900 border border-zinc-800 px-2 py-1 rounded"></div>
+                    </div>
+                    <div id="credit-filter-tabs" class="hidden flex flex-wrap gap-2 mb-5"></div>
+                    <div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-1"></div>
+                </section>
+
+                <section id="memo-section">
+                    <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4">📝 내 메모</h4>
+                    <div id="memo-login-prompt" class="hidden text-zinc-600 text-xs font-bold py-4 text-center">로그인 후 메모를 남길 수 있습니다</div>
+                    <div id="memo-form" class="hidden space-y-3">
+                        <div class="flex items-center gap-1" id="star-rating">
+                            <button class="star-btn" data-val="1">★</button><button class="star-btn" data-val="2">★</button><button class="star-btn" data-val="3">★</button><button class="star-btn" data-val="4">★</button><button class="star-btn" data-val="5">★</button>
+                            <span id="memo-rating-label" class="text-zinc-600 text-[10px] font-bold ml-2">평점 없음</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2" id="memo-tags-row">
+                            <span class="memo-tag" data-tag="명반">명반</span><span class="memo-tag" data-tag="재발견">재발견</span><span class="memo-tag" data-tag="세션맛집">세션맛집</span><span class="memo-tag" data-tag="디깅추천">디깅추천</span><span class="memo-tag" data-tag="희귀반">희귀반</span>
+                        </div>
+                        <textarea id="memo-textarea" placeholder="이 앨범에 대한 메모를 남겨보세요..."></textarea>
+                        <div class="flex items-center gap-2">
+                            <button onclick="saveMemo()" class="px-4 py-2 bg-[#10b981] text-black text-xs font-black rounded-xl hover:bg-[#0ea472] transition-colors">저장</button>
+                            <button onclick="deleteMemo()" id="memo-delete-btn" class="hidden px-4 py-2 bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black rounded-xl transition-colors">삭제</button>
+                            <span id="memo-saved-indicator" class="text-[#10b981] text-[10px] font-bold hidden">✓ 저장됨</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
     </div>
-    <div class="w-full lg:flex-1 flex flex-col lg:h-[calc(100vh-250px)] border-t lg:border-t-0 lg:border-l border-zinc-800 pt-8 lg:pt-0 lg:pl-10">
-      <h3 class="text-2xl font-black text-white mb-8 shrink-0 flex items-center gap-3">📓 Digging Notes</h3>
-      <div class="lg:overflow-y-auto pr-3 space-y-10 lg:scrollbar-thin pb-24 md:pb-0">
-        <section id="discogs-track-credits-container" class="hidden bg-[#10b981]/5 p-6 rounded-3xl border border-[#10b981]/20">
-          <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-3">
-            <h5 id="discogs-track-title" class="text-white font-bold text-base md:text-lg truncate">🎵 트랙 제목</h5>
-            <span class="text-[10px] text-[#10b981] font-black uppercase tracking-widest bg-[#10b981]/10 px-2 py-1 rounded flex-shrink-0 ml-2">TRACK CREDITS</span>
-          </div>
-          <div id="discogs-track-data-ui" class="text-sm font-mono space-y-1"></div>
-        </section>
-        <section>
-          <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Encyclopedia & Trivia</h4>
-          <p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium"></p>
-        </section>
-        <section>
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em]">Full Session Credits</h4>
-            <div id="credit-count-badge" class="hidden text-[10px] text-zinc-500 font-bold bg-zinc-900 border border-zinc-800 px-2 py-1 rounded"></div>
-          </div>
-          <div id="credit-filter-tabs" class="hidden flex flex-wrap gap-2 mb-5"></div>
-          <div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-1"></div>
-        </section>
-        <section id="memo-section">
-          <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4">📝 내 메모</h4>
-          <div id="memo-login-prompt" class="hidden text-zinc-600 text-xs font-bold py-4 text-center">로그인 후 메모를 남길 수 있습니다</div>
-          <div id="memo-form" class="hidden space-y-3">
-            <div class="flex items-center gap-1" id="star-rating">
-              <button class="star-btn" data-val="1">★</button><button class="star-btn" data-val="2">★</button><button class="star-btn" data-val="3">★</button><button class="star-btn" data-val="4">★</button><button class="star-btn" data-val="5">★</button>
-              <span id="memo-rating-label" class="text-zinc-600 text-[10px] font-bold ml-2">평점 없음</span>
-            </div>
-            <div class="flex flex-wrap gap-2" id="memo-tags-row">
-              <span class="memo-tag" data-tag="명반">명반</span><span class="memo-tag" data-tag="재발견">재발견</span><span class="memo-tag" data-tag="세션맛집">세션맛집</span><span class="memo-tag" data-tag="디깅추천">디깅추천</span><span class="memo-tag" data-tag="희귀반">희귀반</span>
-            </div>
-            <textarea id="memo-textarea" placeholder="이 앨범에 대한 메모를 남겨보세요..."></textarea>
-            <div class="flex items-center gap-2">
-              <button onclick="saveMemo()" class="px-4 py-2 bg-[#10b981] text-black text-xs font-black rounded-xl hover:bg-[#0ea472] transition-colors">저장</button>
-              <button onclick="deleteMemo()" id="memo-delete-btn" class="hidden px-4 py-2 bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black rounded-xl transition-colors">삭제</button>
-              <span id="memo-saved-indicator" class="text-[#10b981] text-[10px] font-bold hidden">✓ 저장됨</span>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  </div>
 </div>
 
 <div id="global-player" class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl z-[120] transition-transform duration-500 translate-y-full flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-  <audio id="audio-element" src="" crossorigin="anonymous"></audio>
-  <input type="range" id="progress-bar" value="0" min="0" max="100" class="w-full bg-zinc-800 h-1 md:h-1.5 appearance-none cursor-pointer accent-[#10b981] outline-none m-0 border-none transition-none">
-  <div class="max-w-7xl mx-auto w-full px-4 py-3 md:py-4 flex items-center justify-between gap-4 md:gap-6">
-    <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0 md:w-1/3 cursor-pointer group" onclick="openStudioView()">
-      <img id="player-cover" src="" onerror="this.src='https://placehold.co/100x100/18181b/10b981?text=No+Cover'" class="w-10 h-10 md:w-14 md:h-14 object-cover rounded shadow-lg border border-zinc-800">
-      <div class="min-w-0"><h4 id="player-title" class="text-white font-bold truncate text-[11px] md:text-sm">곡 제목</h4><p id="player-artist" class="text-[#10b981] text-[10px] md:text-xs font-bold truncate">아티스트 <span id="aura-badge" class="hidden ml-2 bg-black/50 px-1.5 py-0.5 rounded text-[8px] border border-zinc-700"></span></p></div>
+    <audio id="audio-element" src="" crossorigin="anonymous"></audio>
+    <input type="range" id="progress-bar" value="0" min="0" max="100" class="w-full bg-zinc-800 h-1 md:h-1.5 appearance-none cursor-pointer accent-[#10b981] outline-none m-0 border-none transition-none">
+    <div class="max-w-7xl mx-auto w-full px-4 py-3 md:py-4 flex items-center justify-between gap-4 md:gap-6">
+        <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0 md:w-1/3 cursor-pointer group" onclick="openStudioView()">
+            <img id="player-cover" src="" onerror="this.src='https://placehold.co/100x100/18181b/10b981?text=No+Cover'" class="w-10 h-10 md:w-14 md:h-14 object-cover rounded shadow-lg border border-zinc-800">
+            <div class="min-w-0"><h4 id="player-title" class="text-white font-bold truncate text-[11px] md:text-sm">곡 제목</h4><p id="player-artist" class="text-[#10b981] text-[10px] md:text-xs font-bold truncate">아티스트 <span id="aura-badge" class="hidden ml-2 bg-black/50 px-1.5 py-0.5 rounded text-[8px] border border-zinc-700"></span></p></div>
+        </div>
+        <div class="flex items-center gap-5 md:gap-8 shrink-0">
+            <button onclick="playPrevTrack()" class="hidden md:block"><svg class="w-6 h-6 fill-zinc-500 hover:fill-white" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+            <button onclick="togglePlay()" class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white flex items-center justify-center shadow-xl active:scale-90"><svg id="play-icon" class="w-5 h-5 md:w-7 md:h-7 fill-black ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="pause-icon" class="w-5 h-5 md:w-7 md:h-7 hidden fill-black" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+            <button onclick="playNextTrack()"><svg class="w-6 h-6 fill-zinc-500 hover:fill-white" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+        </div>
+        <div class="hidden md:flex flex-1 justify-end items-center w-1/3"><button onclick="closePlayerEntirely()" class="p-3 text-zinc-600 hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg></button></div>
     </div>
-    <div class="flex items-center gap-5 md:gap-8 shrink-0">
-      <button onclick="playPrevTrack()" class="hidden md:block"><svg class="w-6 h-6 fill-zinc-500 hover:fill-white" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-      <button onclick="togglePlay()" class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white flex items-center justify-center shadow-xl active:scale-90"><svg id="play-icon" class="w-5 h-5 md:w-7 md:h-7 fill-black ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><svg id="pause-icon" class="w-5 h-5 md:w-7 md:h-7 hidden fill-black" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
-      <button onclick="playNextTrack()"><svg class="w-6 h-6 fill-zinc-500 hover:fill-white" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-    </div>
-    <div class="hidden md:flex flex-1 justify-end items-center w-1/3"><button onclick="closePlayerEntirely()" class="p-3 text-zinc-600 hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M6 18L18 6M6 6l12 12"/></svg></button></div>
-  </div>
 </div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyAhqMdOeEw8Z5lwuVebUkMeMsAzEWT2DDQ", authDomain: "owb-digging.firebaseapp.com", databaseURL: "https://owb-digging-default-rtdb.firebaseio.com", projectId: "owb-digging", storageBucket: "owb-digging.firebasestorage.app", messagingSenderId: "96150663418", appId: "1:96150663418:web:c17b3b61e18c670fa31943", measurementId: "G-NGH9PQSPRD" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(), db = firebase.firestore();
+
+    let currentUser = null, favorites = [];
+    let currentArtist = null, currentArtistId = null, isFavoritesTab = false;
+    let albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] };
+    let fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
+    let currentAlbumTracks = [], currentTrackIndex = 0, currentAlbumCover = "", currentDiscogsReleaseData = null;
+    let playingQueue = [], playingIndex = 0, playingCover = "";
+    let albumSortOrder = 'desc', currentFavFolder = '전체 보관함';
+    let allFetchedFeatures = [], featureFetchCount = 0;
+    let pendingFavItem = null, pendingFavType = null;
+    let activeCreditFilter = 'ALL';
+
+    window.discogsCache = window.discogsCache || {}; 
+    const CACHE_TTL = 5 * 60 * 1000; 
+    function cacheGet(key) { const entry = window.discogsCache[key]; if (!entry) return null; if (Date.now() - entry.ts > CACHE_TTL) { delete window.discogsCache[key]; return null; } return entry.data; }
+    function cacheSet(key, data) { window.discogsCache[key] = { data, ts: Date.now() }; }
+    
+    let sessionSearchQuery = "";
+    let isDeepSearching = false;
+    let sessionPanelCurrentName = "";
+    let sessionPanelCurrentRole = "";
+    let diggingChain = [];
+    let currentViewMode = 'grid'; 
+    let memoCurrentAlbumId = null;
+    let memoCurrentRating = 0;
+    let memoSelectedTags = new Set();
+    let allUserMemos = {}; 
+
+    function superCleanTitle(title) { return !title ? "" : cleanTitleForSearch(title).toLowerCase().replace(/[^a-z0-9가-힣]/g, ''); }
+    function cleanTitleForSearch(title) { if (!title) return ""; return title.replace(/\s*[\(\[].*?(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*?[\)\]]/gi, '').replace(/\s*-\s*(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*$/gi, '').trim(); }
+    function isStrictMatch(targetStr, queryStr) { if (!targetStr || !queryStr) return false; return targetStr.toLowerCase().includes(queryStr.toLowerCase()); }
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    document.addEventListener('click', () => { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
+
+    function playRetroSound(type) { if (!document.body.classList.contains('pixel-theme')) return; if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') { audioCtx.resume().then(() => triggerSound(type)); } else { triggerSound(type); } }
+    function triggerSound(type) { const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(), now = audioCtx.currentTime; osc.connect(gain); gain.connect(audioCtx.destination); if (type === 'toggle') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(600, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3); } else if (type === 'coin') { osc.type = 'square'; osc.frequency.setValueAtTime(987.77, now); osc.frequency.setValueAtTime(1318.51, now + 0.1); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); } else if (type === 'click') { osc.type = 'triangle'; osc.frequency.setValueAtTime(800, now); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05); osc.start(now); osc.stop(now + 0.05); } }
+    document.addEventListener('click', (e) => { if (document.body.classList.contains('pixel-theme')) { if (e.target.closest('button') || e.target.closest('.cursor-pointer') || e.target.closest('select') || e.target.closest('input') || e.target.id === 'progress-bar') { if (e.target.closest('#pixel-toggle-btn')) return; playRetroSound('click'); } } });
+    window.togglePixelTheme = function() { document.body.classList.toggle('pixel-theme'); const btn = document.getElementById('pixel-toggle-btn'); playRetroSound('toggle'); if (document.body.classList.contains('pixel-theme')) { btn.innerHTML = '🎨 HD MODE'; btn.classList.add('border-[#10b981]', 'text-[#10b981]'); btn.classList.remove('text-white'); showToast("8-BIT 모드 가동됨!", "success"); } else { btn.innerHTML = '👾 8-BIT'; btn.classList.remove('border-[#10b981]', 'text-[#10b981]'); btn.classList.add('text-white'); } };
+
+    function loadJSONP(url) { const scriptId = 'jsonp-' + Math.random().toString(36).substr(2, 9); const s = document.createElement('script'); s.id = scriptId; s.src = url; s.onload = () => { const el = document.getElementById(scriptId); if(el) el.remove(); }; s.onerror = () => { const el = document.getElementById(scriptId); if(el) el.remove(); }; document.body.appendChild(s); }
+    window.copyDeepLink = function() { navigator.clipboard.writeText(window.location.href).then(() => showToast("앨범 링크가 복사되었습니다! 🔗", "success")); };
+    window.openInAppleMusic = function(albumId) { if (!albumId) return; window.open(`https://music.apple.com/kr/album/${albumId}`, '_blank'); };
+    window.openInAppleMusicSearch = function(title, artist) { const query = encodeURIComponent(`${artist} ${title}`); const appUrl = `music://search?term=${query}`; const webUrl = `https://music.apple.com/kr/search?term=${query}`; window.location.href = appUrl; setTimeout(() => { if (document.hasFocus()) window.open(webUrl, '_blank'); }, 500); };
+    window.openInSpotify = function(title, artist) { const query = encodeURIComponent(`${artist} ${title}`); window.open(`https://open.spotify.com/search/${query}`, '_blank'); };
+    window.openInYouTubeMusic = function(title, artist) { const query = encodeURIComponent(`${artist} ${title}`); window.open(`https://music.youtube.com/search?q=${query}`, '_blank'); };
+
+    function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    function signOut() { auth.signOut(); }
+    auth.onAuthStateChanged(u => { const lb = document.getElementById('login-btn'), up = document.getElementById('user-profile'); if (u) { currentUser = u; lb.classList.add('hidden'); up.classList.remove('hidden'); document.getElementById('user-photo').src = u.photoURL; document.getElementById('user-name').textContent = u.displayName; loadFavoritesFromCloud(); } else { currentUser = null; favorites = []; lb.classList.remove('hidden'); up.classList.add('hidden'); } });
+    async function loadFavoritesFromCloud() { if (!currentUser) return; const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); favorites = []; snap.forEach(d => favorites.push(d.data())); await loadAllMemos(); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
+    async function toggleFavorite(e, item, type) { e.stopPropagation(); if (!currentUser) return showToast("로그인 후 하트를 눌러보세요!", "error"); const itemId = `${type}_${item.id}`, idx = favorites.findIndex(f => f.dbId === itemId); if (idx > -1) { favorites.splice(idx, 1); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).delete(); showToast("보관함 삭제", "info"); if (isFavoritesTab) renderFavorites(); else renderAllSections(); } else { pendingFavItem = item; pendingFavType = type; openFolderModal(); } }
+    function openFolderModal() { const m = document.getElementById('folder-modal'), list = document.getElementById('folder-list'); const existingFolders = [...new Set(favorites.map(f => f.folderName || '기본 보관함'))]; list.innerHTML = existingFolders.map(f => `<button onclick="document.getElementById('new-folder-input').value='${f}'" class="block w-full text-left px-4 py-2.5 hover:bg-zinc-800 rounded-lg text-sm text-zinc-300 font-bold transition-colors">${f}</button>`).join(''); m.classList.remove('hidden'); document.getElementById('new-folder-input').focus(); }
+    function closeFolderModal() { document.getElementById('folder-modal').classList.add('hidden'); document.getElementById('new-folder-input').value = ''; pendingFavItem = null; }
+    async function saveToFolder() { if(!pendingFavItem) return; let folderName = document.getElementById('new-folder-input').value.trim() || '기본 보관함'; const itemId = `${pendingFavType}_${pendingFavItem.id}`; const newItem = { ...pendingFavItem, dbId: itemId, itemType: pendingFavType, artistNameCache: currentArtist || pendingFavItem.artist?.name, folderName: folderName }; favorites.push(newItem); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).set(JSON.parse(JSON.stringify(newItem))); showToast(`[${folderName}] 에 저장됨 📁`, "success"); closeFolderModal(); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
+
+    let autocompleteDebounce; let autocompleteResults = []; let autocompleteActive = -1;
+    const searchInput = document.getElementById('search-input'), dropdown = document.getElementById('autocomplete-dropdown');
+    
+    // ✅ FIX 1: 레이스 컨디션 방지 (일반 input 이벤트에서 initSearch 호출 삭제, 자동완성만 처리)
+    searchInput.addEventListener('input', (e) => { 
+        clearTimeout(autocompleteDebounce); 
+        const val = e.target.value.trim(); 
+        if (val.length < 2) { clearAutocomplete(); return; } 
+        autocompleteDebounce = setTimeout(() => { fetchAutocomplete(val); }, 300); 
+    });
+    
+    searchInput.addEventListener('keydown', (e) => { 
+        if (e.key === 'ArrowDown') { 
+            e.preventDefault(); 
+            if (!dropdown.classList.contains('hidden')) { autocompleteActive = Math.min(autocompleteActive + 1, autocompleteResults.length - 1); highlightAutocompleteItem(); } 
+        } else if (e.key === 'ArrowUp') { 
+            e.preventDefault(); 
+            if (!dropdown.classList.contains('hidden')) { autocompleteActive = Math.max(autocompleteActive - 1, -1); highlightAutocompleteItem(); } 
+        } else if (e.key === 'Enter') { 
+            e.preventDefault(); 
+            if (!dropdown.classList.contains('hidden') && autocompleteActive >= 0) { 
+                selectAutocompleteItem(autocompleteActive); 
+            } else { 
+                clearAutocomplete(); 
+                initSearch(); // ✅ 엔터를 쳤을 때만 강제 검색 실행
+            } 
+        } else if (e.key === 'Escape') { 
+            clearAutocomplete(); 
+        } 
+    });
+    
+    document.addEventListener('click', (e) => { if (!e.target.closest('#search-wrapper')) clearAutocomplete(); });
+    
+    function fetchAutocomplete(q) { const mode = document.getElementById('search-mode').value; if (mode === 'artist') { const cbName = `handleAC_${Date.now()}`; window[cbName] = (d) => { renderAutocomplete(d.data || [], 'artist'); delete window[cbName]; }; loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=7&output=jsonp&callback=${cbName}`); } else { const cbName = `handleAC_${Date.now()}`; window[cbName] = (d) => { renderAutocomplete(d.data || [], 'track'); delete window[cbName]; }; loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=7&output=jsonp&callback=${cbName}`); } }
+    function renderAutocomplete(data, type) { autocompleteResults = data; autocompleteActive = -1; if (!data.length) { clearAutocomplete(); return; } dropdown.innerHTML = ''; data.forEach((item, i) => { const div = document.createElement('div'); div.className = `autocomplete-item ${type === 'track' ? 'track-item' : ''}`; div.dataset.index = i; if (type === 'artist') { div.innerHTML = `<img src="${item.picture_small || 'https://placehold.co/40x40/18181b/10b981?text=?'}" onerror="this.src='https://placehold.co/40x40/18181b/10b981?text=?'"><div class="meta"><div class="meta-name">${item.name}</div><div class="meta-sub">${item.nb_album ? item.nb_album + ' albums' : 'Artist'}</div></div><span class="play-badge">디스코그래피</span>`; } else { div.innerHTML = `<img src="${item.album?.cover_small || 'https://placehold.co/40x40/18181b/10b981?text=?'}" onerror="this.src='https://placehold.co/40x40/18181b/10b981?text=?'"><div class="meta"><div class="meta-name">${item.title}</div><div class="meta-sub">${item.artist?.name || ''}</div></div><span class="play-badge">▶ 재생</span>`; } div.addEventListener('click', () => selectAutocompleteItem(i)); dropdown.appendChild(div); }); dropdown.classList.remove('hidden'); }
+    function highlightAutocompleteItem() { const items = dropdown.querySelectorAll('.autocomplete-item'); items.forEach((el, i) => el.classList.toggle('active', i === autocompleteActive)); if (autocompleteActive >= 0 && autocompleteResults[autocompleteActive]) { const item = autocompleteResults[autocompleteActive]; searchInput.value = item.name || item.title || ''; } }
+    function selectAutocompleteItem(i) { const item = autocompleteResults[i]; const mode = document.getElementById('search-mode').value; clearAutocomplete(); if (mode === 'artist') { searchInput.value = item.name; selectArtist(item.id, item.name); } else { searchInput.value = item.title; playMedia('album', item.album.id, item.album.cover_medium, item.album.title, item.artist.name, true, 'deezer'); window._pendingTrackTitle = item.title; } }
+    function clearAutocomplete() { dropdown.classList.add('hidden'); dropdown.innerHTML = ''; autocompleteResults = []; autocompleteActive = -1; }
+    window.clearAutocomplete = clearAutocomplete;
+
+    function initSearch() {
+        const q = document.getElementById('search-input').value.trim(); if (!q) return;
+        const mode = document.getElementById('search-mode').value; document.getElementById('sections-container').innerHTML = ''; document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden');
+        albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false }; 
+        window.itunesAlbums = []; window.deezerUniqueFeatures = []; sessionSearchQuery = ""; 
+        loadJSONP(`https://api.deezer.com/search/${mode === 'artist' ? 'artist' : ''}?q=${encodeURIComponent(q)}&limit=12&output=jsonp&callback=${mode === 'artist' ? 'handleArtistSearch' : 'handleTrackGlobalSearch'}`);
+    }
+
+    window.handleArtistSearch = function(d) { document.getElementById('status-message').classList.add('hidden'); const grid = document.getElementById('artist-selection-grid'); grid.innerHTML = ''; document.getElementById('artist-selection-container').classList.remove('hidden'); if(!d.data) return; d.data.forEach(a => { const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; div.onclick = () => selectArtist(a.id, a.name); div.innerHTML = `<img src="${a.picture_medium}" onerror="this.src='https://placehold.co/200x200/18181b/10b981?text=No+Img'" class="w-20 h-20 md:w-28 md:h-28 rounded-full mb-3 shadow-lg border border-zinc-700 object-cover"><h4 class="text-white text-center font-bold text-xs md:text-sm truncate w-full">${a.name}</h4>`; grid.appendChild(div); }); };
+    window.handleTrackGlobalSearch = function(d) { document.getElementById('status-message').classList.add('hidden'); const grid = document.getElementById('artist-selection-grid'); grid.innerHTML = ''; document.getElementById('artist-selection-container').classList.remove('hidden'); if(!d.data) return; d.data.forEach(t => { const div = document.createElement('div'); div.className = "flex flex-col items-center bg-zinc-900/50 p-4 md:p-6 rounded-3xl cursor-pointer hover:bg-zinc-800 transition-colors"; div.onclick = () => { playMedia('album', t.album.id, t.album.cover_medium, t.album.title, t.artist.name, true, 'deezer'); window._pendingTrackTitle = t.title; }; div.innerHTML = `<img src="${t.album.cover_medium}" onerror="this.src='https://placehold.co/200x200/18181b/10b981?text=No+Img'" class="w-20 h-20 md:w-28 md:h-28 rounded-2xl mb-3 shadow-lg border border-zinc-700 object-cover"><h4 class="text-white text-center text-xs md:text-sm font-bold truncate w-full">${t.title}</h4><p class="text-zinc-500 text-[10px] mt-1">${t.artist.name}</p>`; grid.appendChild(div); }); };
+
+    let _fetchEpoch = 0;
+    window.selectArtist = function(id, name) { 
+        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
+        sessionSearchQuery = ""; document.getElementById('local-search-input').value = ''; clearSniperMode();
+        const epoch = ++_fetchEpoch;
+        document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); showSkeletonCards();
+        const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) ? 'KR' : 'US';
+        
+        const itCb = `_it_${epoch}`; window[itCb] = (d) => { delete window[itCb]; if (epoch !== _fetchEpoch) return; if (d.results) window.itunesAlbums = d.results; fetchState.itunesDone = true; tryRenderAll(epoch); }; loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(name)}&entity=album&limit=200&country=${countryCode}&callback=${itCb}`);
+        const albumCb = `_alb_${epoch}`; window[albumCb] = function self(d) { if (epoch !== _fetchEpoch) { delete window[albumCb]; return; } if (d.data) window.allFetchedAlbums.push(...d.data); if (d.next) { loadJSONP(d.next + `&output=jsonp&callback=${albumCb}`); } else { delete window[albumCb]; fetchState.albumsDone = true; tryRenderAll(epoch); } }; loadJSONP(`https://api.deezer.com/artist/${id}/albums?limit=100&output=jsonp&callback=${albumCb}`);
+        
+        featureFetchCount = 0; const featCb = `_feat_${epoch}`; window[featCb] = function self(d) {
+            if (epoch !== _fetchEpoch) { delete window[featCb]; return; }
+            if (d.data) { 
+                // 🔥 FIX 2: 피처링 동명이인 엄격 차단 필터
+                const strictFeatures = d.data.filter(t => {
+                    if (t.artist.id === currentArtistId) return false; // 본인 앨범은 당연히 제외
+                    
+                    const cArtistLower = currentArtist.toLowerCase();
+                    const tArtistLower = t.artist.name.toLowerCase();
+                    const titleLower = t.title.toLowerCase();
+
+                    // 1. 동명이인 스팸 차단: 메인 아티스트 이름이 검색어와 완전히 똑같은 경우 (ID는 다른 AI나 커버 밴드)
+                    if (tArtistLower === cArtistLower) return false;
+
+                    // 2. 피처링 엄격 검증: 다른 아티스트 명의에 검색어가 피처링으로 명확히 적혀있는가?
+                    const isCollaborator = tArtistLower.includes(cArtistLower);
+                    const isTitleFeature = titleLower.includes(`feat. ${cArtistLower}`) || titleLower.includes(`ft. ${cArtistLower}`) || titleLower.includes(`featuring ${cArtistLower}`) || titleLower.includes(`with ${cArtistLower}`);
+
+                    return isCollaborator || isTitleFeature;
+                });
+                allFetchedFeatures.push(...strictFeatures); 
+            }
+            featureFetchCount++;
+            if (d.next && featureFetchCount < 4) { loadJSONP(d.next + `&output=jsonp&callback=${featCb}`); }
+            else { delete window[featCb]; const uniqueFeatures = []; const seenAlbums = new Set(); allFetchedFeatures.forEach(t => { if (!seenAlbums.has(t.album.id)) { seenAlbums.add(t.album.id); uniqueFeatures.push(t); } }); window.deezerUniqueFeatures = uniqueFeatures; fetchState.featuresDone = true; tryRenderAll(epoch); }
+        }; loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=${featCb}`);
+    };
+
+    function tryRenderAll(epoch) {
+        if (epoch !== undefined && epoch !== _fetchEpoch) return;
+        if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return; 
+        document.getElementById('status-message').classList.add('hidden'); document.getElementById('results-controls').classList.remove('hidden'); document.getElementById('reset-btn').classList.remove('hidden');
+        const seenTitles = new Set(); albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; 
+        const deezerTypeMap = new Map();
+        window.allFetchedAlbums.forEach(a => { const tl = cleanTitleForSearch(a.title).toLowerCase(); if(!deezerTypeMap.has(tl)) deezerTypeMap.set(tl, a.record_type); });
+
+        if (window.itunesAlbums) {
+            window.itunesAlbums.forEach(a => {
+                const tl = cleanTitleForSearch(a.collectionName).toLowerCase();
+                if (!seenTitles.has(tl)) { 
+                    seenTitles.add(tl);
+                    const itunesAlbum = { id: a.collectionId, title: a.collectionName, cover_medium: a.artworkUrl100 ? a.artworkUrl100.replace('100x100bb', '600x600bb') : '', release_date: a.releaseDate, record_type: 'itunes', artist: { name: a.artistName }, source: 'itunes', trackCount: a.trackCount };
+                    const artistNameLower = a.artistName.toLowerCase(); const searchArtistLower = currentArtist ? currentArtist.toLowerCase() : '';
+                    
+                    if (searchArtistLower && !artistNameLower.includes(searchArtistLower)) { 
+                        // iTunes의 엉성한 피처링 결과(컬렉션 이름 기반)는 동명이인 스팸 방지를 위해 차단
+                        if (isStrictMatch(a.collectionName, searchArtistLower)) {
+                            albumsData.features.push(itunesAlbum); 
+                        }
+                    }
+                    else if (tl.includes('live')) albumsData.live.push(itunesAlbum);
+                    else if (tl.includes('best of') || tl.includes('greatest hits') || tl.includes('anthology')) albumsData.compilation.push(itunesAlbum);
+                    else {
+                        const deezerType = deezerTypeMap.get(tl);
+                        if (deezerType === 'ep' || deezerType === 'single') albumsData.ep.push(itunesAlbum);
+                        else if (deezerType === 'album') albumsData.regular.push(itunesAlbum);
+                        else {
+                            if (tl.match(/\b(ep|single|album - ep|album - single)\b/) || a.trackCount <= 1) albumsData.ep.push(itunesAlbum);
+                            else albumsData.regular.push(itunesAlbum);
+                        }
+                    }
+                }
+            });
+        }
+        window.allFetchedAlbums.forEach(a => { 
+            const tl = cleanTitleForSearch(a.title).toLowerCase(); 
+            if (!seenTitles.has(tl)) { 
+                seenTitles.add(tl); a.source = 'deezer';
+                if (a.record_type === 'compile' || tl.includes('best of')) albumsData.compilation.push(a); 
+                else if (tl.includes('live')) albumsData.live.push(a); 
+                else if (a.record_type === 'ep' || a.record_type === 'single') albumsData.ep.push(a); 
+                else albumsData.regular.push(a); 
+            }
+        });
+        if (window.deezerUniqueFeatures) {
+            window.deezerUniqueFeatures.forEach(t => {
+                const tl = cleanTitleForSearch(t.album.title).toLowerCase();
+                if (!seenTitles.has(tl)) {
+                    seenTitles.add(tl);
+                    albumsData.features.push({ id: t.album.id, title: t.album.title, cover_medium: t.album.cover_medium, release_date: t.album.release_date || '', record_type: 'deezer', artist: { name: t.artist.name }, source: 'deezer' });
+                }
+            });
+        }
+        renderAllSections();
+    }
+
+    window.startDeepSessionSearch = async function() {
+        const q = document.getElementById('local-search-input').value.toLowerCase().trim();
+        if (!q) return showToast("검색창에 찾고 싶은 세션 멤버의 이름을 입력하세요!", "error");
+        if (isDeepSearching) return showToast("현재 통신 중입니다. 잠시만 기다려주세요.", "error");
+
+        sessionSearchQuery = q; isDeepSearching = true;
+        const targetAlbums = isFavoritesTab ? favorites : [...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features];
+        
+        const statusMsg = document.getElementById('status-message');
+        statusMsg.classList.remove('hidden'); statusMsg.textContent = `SNIPER SEARCHING... 단일 스캔 중 🎯`;
+
+        targetAlbums.forEach(a => a.sessionMatched = false);
+
+        try {
+            const r = await fetch(`/api/getDiscogs?deepSearch=true&artistName=${encodeURIComponent(currentArtist)}&sessionName=${encodeURIComponent(q)}`);
+            const d = await r.json();
+            let matchCount = 0;
+            if (d.matchedTitles && d.matchedTitles.length > 0) {
+                const snipedTitles = d.matchedTitles.map(t => superCleanTitle(t));
+                targetAlbums.forEach(album => {
+                    const albTitle = superCleanTitle(album.title);
+                    const isMatch = snipedTitles.some(st => albTitle.includes(st) || st.includes(albTitle));
+                    if (isMatch) { album.sessionMatched = true; matchCount++; }
+                });
+            }
+            statusMsg.classList.add('hidden'); 
+            if (matchCount === 0) { showToast(`"${q}" 의 참여 기록을 찾지 못했습니다 🔍`, "error"); sessionSearchQuery = ""; document.getElementById('sniper-active-banner').classList.add('hidden'); } 
+            else { showToast(`스나이퍼 서치 완료! 타겟 앨범 ${matchCount}장을 찾았습니다.`, "success"); if (document.body.classList.contains('pixel-theme')) playRetroSound('coin'); const banner = document.getElementById('sniper-active-banner'); banner.classList.remove('hidden'); document.getElementById('sniper-active-label').textContent = `"${q}" 참여 앨범 ${matchCount}장 · ${currentArtist}`; }
+        } catch (e) {
+            statusMsg.classList.add('hidden'); showToast("서버 통신 중 오류가 발생했습니다.", "error"); sessionSearchQuery = "";
+        }
+        isDeepSearching = false; if(isFavoritesTab) renderFavorites(); else renderAllSections();
+    };
+
+    function handleLocalSearch() { 
+        const q = document.getElementById('local-search-input').value.toLowerCase().trim();
+        if (q !== sessionSearchQuery) { sessionSearchQuery = ""; document.getElementById('sniper-active-banner').classList.add('hidden'); } 
+        if(isFavoritesTab) renderFavorites(); else renderAllSections(); 
+    }
+    
+    function applyAlbumSort() { albumSortOrder = document.getElementById('album-sort-select').value; renderAllSections(); }
+    
+    window.setViewMode = function(mode) { currentViewMode = mode; document.getElementById('view-grid-btn').classList.toggle('active', mode === 'grid'); document.getElementById('view-timeline-btn').classList.toggle('active', mode === 'timeline'); renderAllSections(); };
+
+    function renderTimelineView(allItems) {
+        const c = document.getElementById('sections-container'); c.innerHTML = '';
+        const filtered = allItems.filter(it => { const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g,''); if (!q) return true; const searchQ = sessionSearchQuery.replace(/\s/g,''); const t = it.title.toLowerCase().replace(/\s/g,''); if (searchQ === q) return it.sessionMatched || t.includes(q); return t.includes(q); });
+        if (!filtered.length) { c.innerHTML = '<div class="text-center py-20 text-zinc-600 font-bold">검색 결과가 없습니다</div>'; return; }
+        const byYear = {}; filtered.forEach(it => { const y = it.release_date ? it.release_date.split('-')[0] : '연도 미상'; if (!byYear[y]) byYear[y] = []; byYear[y].push(it); });
+        const years = Object.keys(byYear).sort((a, b) => albumSortOrder === 'desc' ? b - a : a - b );
+        const wrap = document.createElement('div'); wrap.className = 'timeline-wrap';
+        years.forEach(year => {
+            const group = document.createElement('div'); group.className = 'timeline-group';
+            const header = document.createElement('div'); header.className = 'timeline-group-header'; header.innerHTML = `<div class="timeline-year-dot"></div><span class="timeline-year-label">${year}</span><span class="text-zinc-700 text-[10px] font-bold ml-1">${byYear[year].length}장</span>`; group.appendChild(header);
+            byYear[year].forEach(it => {
+                const card = document.createElement('div'); card.className = `timeline-card${it.sessionMatched ? ' tc-matched' : ''}`; const hasMemo = allUserMemos[String(it.id)];
+                card.innerHTML = `<img src="${it.cover_medium}" onerror="this.src='https://placehold.co/48x48/18181b/10b981?text=?'"><div class="tc-info flex-1 min-w-0"><div class="tc-title">${it.title}</div><div class="tc-meta">${it.artist?.name || currentArtist || ''} ${it.source === 'itunes' ? '· 🍎' : ''}${hasMemo ? ' · <span style="color:#a238ff">📝</span>' : ''}</div></div>${it.sessionMatched ? '<span style="color:#10b981;font-size:11px;flex-shrink:0;font-weight:900;">🎯</span>' : ''}<svg class="w-4 h-4 flex-shrink-0" style="color:#3f3f46" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>`;
+                card.onclick = () => playMedia('album', it.id, it.cover_medium, it.title, (it.artistNameCache || currentArtist) || it.artist?.name, true, it.source);
+                group.appendChild(card);
+            });
+            wrap.appendChild(group);
+        });
+        c.appendChild(wrap);
+    }
+
+    function switchTab(t) { 
+        isFavoritesTab = (t === 'fav'); const ts = document.getElementById('tab-search'), tf = document.getElementById('tab-fav');
+        ts.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500" : "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg";
+        tf.className = isFavoritesTab ? "flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg" : "flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500";
+        renderAllSections(); 
+    }
+
+    function renderAllSections() {
+        const c = document.getElementById('sections-container'); c.innerHTML = ''; if (isFavoritesTab) { renderFavorites(); return; }
+        
+        const f = (it) => { 
+            const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g, ''); 
+            if (!q) return true; 
+            
+            const searchQ = sessionSearchQuery.replace(/\s/g, '');
+            const targetTitle = it.title.toLowerCase().replace(/\s/g, '');
+            
+            if (searchQ === q) return it.sessionMatched || targetTitle.includes(q);
+            return targetTitle.includes(q); 
+        }; 
+        
+        const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date || 0) - new Date(a.release_date || 0) : new Date(a.release_date || 0) - new Date(b.release_date || 0));
+        if (currentViewMode === 'timeline') { const all = sort([...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features].filter(f)); renderTimelineView(all); return; }
+        renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album'); renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album'); renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album'); renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album'); renderSection('🤝 피처링 참여곡', albumsData.features.filter(f), 'album');
+    }
+
+    function renderFavorites() {
+        const c = document.getElementById('sections-container'); c.innerHTML = '';
+        const allFolders = ['전체 보관함', ...new Set(favorites.map(f => f.folderName || '기본 보관함'))];
+        let tabsHtml = `<div id="fav-folder-tabs" class="flex flex-wrap gap-2 mb-8 px-4 md:px-0">`;
+        allFolders.forEach(f => { const active = currentFavFolder === f; const safeF = f.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); tabsHtml += `<button data-folder="${safeF}" class="fav-folder-btn px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${active ? 'bg-[#10b981] text-black shadow-lg scale-105' : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'}">${safeF}</button>`; });
+        tabsHtml += `</div>`; c.innerHTML = tabsHtml;
+
+        document.getElementById('fav-folder-tabs').addEventListener('click', e => { const btn = e.target.closest('.fav-folder-btn'); if (btn) window.setFavFolder(btn.dataset.folder); });
+
+        const fItems = favorites.filter(it => {
+            const folderMatch = (currentFavFolder === '전체 보관함' || (it.folderName || '기본 보관함') === currentFavFolder);
+            if (!folderMatch) return false;
+            
+            const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g, ''); 
+            if (!q) return true;
+            
+            const searchQ = sessionSearchQuery.replace(/\s/g, '');
+            const targetTitle = it.title.toLowerCase().replace(/\s/g, '');
+            
+            if (searchQ === q) return it.sessionMatched || targetTitle.includes(q);
+            return targetTitle.includes(q);
+        });
+        if(!fItems.length) { c.innerHTML += "<div class='text-center py-20 text-zinc-600 font-bold'>폴더가 비어있습니다 ☁️</div>"; return; }
+        renderSection(`📁 ${currentFavFolder}`, fItems, 'mixed');
+    }
+    
+    window.setFavFolder = function(f) { currentFavFolder = f; renderFavorites(); };
+
+    function renderSection(title, items, sectionType) {
+        if (!items.length) return; const c = document.getElementById('sections-container'), sh = document.createElement('div');
+        sh.innerHTML = `<h3 class="text-xl md:text-2xl font-black mb-6 border-l-4 border-[#10b981] pl-4 md:pl-5">${title} <span class="text-zinc-600 text-xs md:text-sm ml-2">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-8 px-4 md:px-0"></div>`; c.appendChild(sh); const g = sh.querySelector('div');
+        items.forEach(it => {
+            const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = it.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : ''; const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
+            const card = document.createElement('div'); 
+            
+            const matchedClass = it.sessionMatched ? 'border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'border-zinc-800/50';
+            
+            card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; 
+            card.setAttribute('data-memo-id', it.id);
+            card.onclick = () => playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
+            const safeIt = JSON.stringify(it).replace(/"/g, '&quot;'); const hasMemo = allUserMemos[String(it.id)];
+            card.innerHTML = `${hasMemo ? '<div class="memo-dot"></div>' : ''}<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
+            ${it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>' : ''}
+            <button onclick="toggleFavorite(event, ${JSON.stringify(it).replace(/"/g, '&quot;')}, '${type}')" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`; g.appendChild(card);
+        });
+    }
+
+    // ==========================================
+    // 7. 디테일 뷰 (스튜디오 뷰 & 재생기)
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const type = params.get('type'), id = params.get('id'), source = params.get('source') || 'deezer';
+        if (type && id) { 
+            if(source === 'itunes') { loadJSONP(`https://itunes.apple.com/lookup?id=${id}&callback=handleItunesDeepLink`); } 
+            else { loadJSONP(`https://api.deezer.com/${type}/${id}?output=jsonp&callback=handleDeepLinkInit`); }
+        }
+    });
+
+    window.handleItunesDeepLink = function(d) { if(d.results && d.results.length > 0) { const a = d.results[0]; playMedia('album', a.collectionId, a.artworkUrl100?.replace('100x100bb','600x600bb')||'', a.collectionName, a.artistName, false, 'itunes'); } };
+    window.handleDeepLinkInit = function(d) { if(d && !d.error) { const cover = d.cover_medium || (d.album && d.album.cover_medium); playMedia(d.record_type ? 'album' : 'track', d.id, cover, d.title, d.artist?.name, false, 'deezer'); } };
+
+    window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); }
+    window.closeStudioView = function() {
+        document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit');
+        window.history.pushState({}, '', window.location.pathname);
+        if (diggingChain.length > 0) { currentArtist = diggingChain[0].artist; }
+        diggingChain = []; renderChainBar();
+    };
+
+    window.playMedia = function(type, id, cover, title, artist, updateUrl = true, source = 'deezer', chainPush = false, chainJump = -1) {
+        if(updateUrl) { const url = new URL(window.location); url.searchParams.set('type', type); url.searchParams.set('id', id); url.searchParams.set('source', source); window.history.pushState({}, '', url); }
+        if (chainJump >= 0) { diggingChain = diggingChain.slice(0, chainJump + 1); } else if (chainPush) { diggingChain.push({ artist, albumTitle: title, albumId: id, cover, source, type }); } else { diggingChain = [{ artist, albumTitle: title, albumId: id, cover, source, type }]; }
+        currentArtist = artist; currentAlbumCover = cover; currentDiscogsReleaseData = null; currentTrackIndex = 0; 
+        
+        const cover_el = document.getElementById('studio-cover'); cover_el.src = cover; cover_el.classList.remove('chain-loaded'); void cover_el.offsetWidth; cover_el.classList.add('chain-loaded');
+        document.getElementById('studio-title').textContent = title; document.getElementById('studio-artist').textContent = artist; document.getElementById('discogs-track-credits-container').classList.add('hidden'); document.getElementById('track-hint-banner').style.display = 'flex';
+        
+        const appleBtn = document.getElementById('open-apple-music-btn'); appleBtn.classList.remove('hidden'); appleBtn.onclick = () => { if (source === 'itunes') openInAppleMusic(id); else openInAppleMusicSearch(title, artist); };
+        document.getElementById('open-spotify-btn').onclick = () => openInSpotify(title, artist);
+        document.getElementById('open-youtube-music-btn').onclick = () => openInYouTubeMusic(title, artist);
+
+        renderChainBar(); openStudioView(); loadMemo(id); 
+        const trackList = document.getElementById('studio-track-list'); const notesPane = trackList?.closest('.lg\\:flex-1')?.nextElementSibling?.querySelector('.lg\\:overflow-y-auto');
+        if (trackList) trackList.scrollTop = 0; if (notesPane) notesPane.scrollTop = 0;
+
+        const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(artist) ? 'KR' : 'US';
+        if (source === 'itunes') loadJSONP(`https://itunes.apple.com/lookup?id=${id}&entity=song&country=${countryCode}&callback=handleItunesTracks`); 
+        else loadJSONP(`https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`);
+        
+        const cleanTitle = cleanTitleForSearch(title); fetchAlbumWikiStory(cleanTitle, artist); fetchDiscogsCreditsFromServer(cleanTitle, artist);
+    };
+
+    function renderChainBar() {
+        const bar = document.getElementById('digging-chain-bar');
+        if (diggingChain.length <= 1) { bar.classList.add('hidden'); return; }
+        bar.classList.remove('hidden'); bar.innerHTML = '';
+        diggingChain.forEach((node, i) => {
+            const isCurrent = (i === diggingChain.length - 1); const nodeEl = document.createElement('div'); nodeEl.className = `chain-node ${isCurrent ? 'chain-current' : ''}`;
+            nodeEl.innerHTML = `<img src="${node.cover || ''}" onerror="this.style.display='none'" style="margin-right:5px;"><span class="chain-label">${node.artist}</span>`;
+            if (!isCurrent) { nodeEl.onclick = () => { playMedia(node.type, node.albumId, node.cover, node.albumTitle, node.artist, true, node.source, false, i); }; }
+            bar.appendChild(nodeEl);
+            if (!isCurrent) { const arrow = document.createElement('span'); arrow.className = 'chain-arrow'; arrow.textContent = '›'; bar.appendChild(arrow); }
+        });
+        setTimeout(() => { bar.scrollLeft = bar.scrollWidth; }, 50);
+    }
+
+    window.handleItunesTracks = function(d) { if (!d.results) return; handleTracks({ data: d.results.filter(t => t.wrapperType === 'track').map(t => ({ id: t.trackId, title: t.trackName, preview: t.previewUrl, artist: { name: t.artistName } })) }); };
+    
+    window.handleTracks = function(d) { 
+        currentAlbumTracks = d.data || [d]; const list = document.getElementById('studio-track-list'); list.innerHTML = ''; 
+        currentAlbumTracks.forEach((t, i) => { 
+            const div = document.createElement('div'); div.id = `track-item-${i}`; div.className = `p-3 md:p-4 hover:bg-white/5 cursor-pointer rounded-xl flex items-center gap-4 ${!t.preview?'opacity-30':''}`; 
+            div.onclick = () => t.preview ? playSpecificTrack(i) : showToast("미리듣기가 없는 트랙입니다", "error");
+            div.innerHTML = `<span class="track-num text-zinc-600 font-mono w-6 text-center text-sm">${i+1}</span><span class="font-bold flex-1 truncate text-sm">${t.title}</span>${t.preview ? '<svg class="w-4 h-4 text-zinc-700 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' : ''}`; list.appendChild(div); 
+        }); 
+        if (window._pendingTrackTitle) { const pending = window._pendingTrackTitle.toLowerCase(); const matchIdx = currentAlbumTracks.findIndex(t => t.title.toLowerCase().includes(pending) || pending.includes(t.title.toLowerCase())); if (matchIdx >= 0 && currentAlbumTracks[matchIdx].preview) { setTimeout(() => playSpecificTrack(matchIdx), 300); } window._pendingTrackTitle = null; }
+        if (currentDiscogsReleaseData && currentAlbumTracks.length > 0) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title);
+    };
+
+    const audio = document.getElementById('audio-element'), pI = document.getElementById('play-icon'), psI = document.getElementById('pause-icon');
+    function playSpecificTrack(i) { currentTrackIndex = i; playingQueue = [...currentAlbumTracks]; playingIndex = i; playingCover = currentAlbumCover; document.getElementById('track-hint-banner').style.display = 'none'; loadTrack(); }
+    
+    function loadTrack() { 
+        const t = playingQueue[playingIndex]; if(!t?.preview) return; currentTrackIndex = playingIndex;
+        document.querySelectorAll('[id^="track-item-"]').forEach((el, idx) => { el.classList.remove('track-playing'); const numEl = el.querySelector('.track-num'); if (numEl && numEl.querySelector('.playing-dot')) { numEl.textContent = idx + 1; } });
+        const currentEl = document.getElementById(`track-item-${playingIndex}`);
+        if (currentEl) { currentEl.classList.add('track-playing'); const numEl = currentEl.querySelector('.track-num'); if (numEl) numEl.innerHTML = '<span class="playing-dot"></span>'; currentEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+        document.getElementById('global-player').classList.remove('translate-y-full'); document.getElementById('player-title').textContent = t.title; document.getElementById('player-artist').textContent = t.artist.name; document.getElementById('player-cover').src = playingCover; 
+        audio.src = t.preview.replace(/^http:\/\//i, 'https://'); audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); updateTrackSpecificCredits(t.title); fetchBpm(t.id); 
+        
+        if ('mediaSession' in navigator) { navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist.name, album: document.getElementById('studio-title').textContent, artwork: [{ src: playingCover, sizes: '512x512', type: 'image/jpeg' }] }); navigator.mediaSession.setActionHandler('previoustrack', playPrevTrack); navigator.mediaSession.setActionHandler('nexttrack', playNextTrack); navigator.mediaSession.setActionHandler('play', () => { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); }); navigator.mediaSession.setActionHandler('pause', () => { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); }); }
+    }
+
+    function togglePlay() { if(audio.paused) { audio.play(); pI.classList.add('hidden'); psI.classList.remove('hidden'); } else { audio.pause(); pI.classList.remove('hidden'); psI.classList.add('hidden'); } }
+    function playNextTrack() { if (!playingQueue.length) return; playingIndex = (playingIndex+1)%playingQueue.length; loadTrack(); }
+    function playPrevTrack() { if (!playingQueue.length) return; playingIndex = (playingIndex-1+playingQueue.length)%playingQueue.length; loadTrack(); }
+    function closePlayerEntirely() { audio.pause(); document.getElementById('global-player').classList.add('translate-y-full'); closeStudioView(); }
+
+    function fetchBpm(id) { 
+        const cbName = `_bpm_${id}`;
+        window[cbName] = (d) => { 
+            delete window[cbName];
+            const b = document.getElementById('aura-badge'), p = document.getElementById('global-player'); 
+            if(d.bpm) { b.textContent = `${d.bpm} BPM`; b.classList.remove('hidden'); p.className = `fixed bottom-0 left-0 right-0 bg-black/95 z-[120] transition-all duration-500 border-t border-zinc-900 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col ${d.bpm < 95 ? 'aura-chill' : d.bpm <= 125 ? 'aura-groove' : 'aura-hype'}`; } else b.classList.add('hidden'); 
+        }; 
+        loadJSONP(`https://api.deezer.com/track/${id}?output=jsonp&callback=${cbName}`); 
+    }
+
+    // ==========================================
+    // 8. 디스코그스 캐싱 & 백그라운드 지식 로직
+    // ==========================================
+    const ROLE_GROUPS = { '프로덕션': ['producer', 'produced', 'executive producer', 'co-producer', 'associate producer', 'music producer'], '드럼 / 퍼커션': ['drums', 'drum', 'percussion', 'congas', 'bongos', 'tambourine', 'shaker', 'cymbals', 'beatbox'], '베이스': ['bass', 'upright bass', 'fretless bass', 'electric bass', 'bass guitar'], '기타': ['guitar', 'guitars', 'acoustic guitar', 'electric guitar', 'rhythm guitar', 'lead guitar', 'twelve-string guitar', 'slide guitar', 'classical guitar', 'nylon guitar'], '건반 / 피아노': ['piano', 'keyboards', 'organ', 'synthesizer', 'wurlitzer', 'rhodes', 'clavinet', 'accordion', 'harpsichord', 'mellotron', 'moog'], '현악기': ['strings', 'violin', 'viola', 'cello', 'double bass', 'string arrangement', 'string section', 'orchestration'], '관악기': ['trumpet', 'trombone', 'saxophone', 'sax', 'flute', 'clarinet', 'oboe', 'french horn', 'brass', 'horn', 'baritone', 'tenor', 'alto sax'], '보컬': ['vocals', 'voice', 'background vocals', 'backing vocals', 'lead vocals', 'choir', 'harmony', 'chorus', 'rap', 'rapper'], '믹싱 / 마스터링': ['mixed', 'mixing', 'mastered', 'mastering', 'recorded', 'recording', 'engineer', 'engineering', 'assisted', 'technician'], '편곡': ['arranged', 'arrangement', 'arranger', 'orchestrated', 'conductor'], '작사·작곡': ['written', 'composed', 'lyrics', 'music by', 'words by'], '아트워크': ['artwork', 'photography', 'design', 'art direction', 'cover design', 'liner notes'] };
+    function getRoleGroup(roleStr) { const lower = roleStr.toLowerCase(); for (const [group, keywords] of Object.entries(ROLE_GROUPS)) { if (keywords.some(k => lower.includes(k))) return group; } return '기타 크레딧'; }
+    function groupCredits(artists) { const groups = {}; artists.forEach(ar => { const group = getRoleGroup(ar.role || ''); if (!groups[group]) groups[group] = []; groups[group].push(ar); }); return groups; }
+
+    function renderGroupedCredits(container, artists, showFilter = false) {
+        container.innerHTML = '';
+        if (!artists || !artists.length) { container.innerHTML = "<span class='text-zinc-500 font-bold'>세션 데이터가 없습니다.</span>"; return; }
+        const groups = groupCredits(artists); const groupKeys = Object.keys(groups);
+        const filterContainer = document.getElementById('credit-filter-tabs'); const countBadge = document.getElementById('credit-count-badge');
+        if (showFilter && filterContainer) {
+            filterContainer.classList.remove('hidden'); filterContainer.innerHTML = '';
+            const allBtn = document.createElement('button'); allBtn.className = `px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${activeCreditFilter === 'ALL' ? 'bg-[#10b981] text-black' : 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white'}`; allBtn.textContent = `전체 (${artists.length})`; allBtn.onclick = () => { activeCreditFilter = 'ALL'; renderGroupedCredits(container, artists, true); }; filterContainer.appendChild(allBtn);
+            groupKeys.forEach(group => { const btn = document.createElement('button'); btn.className = `px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${activeCreditFilter === group ? 'bg-[#10b981] text-black' : 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white'}`; btn.textContent = `${group} (${groups[group].length})`; btn.onclick = () => { activeCreditFilter = group; renderGroupedCredits(container, artists, true); }; filterContainer.appendChild(btn); });
+            if (countBadge) { countBadge.classList.remove('hidden'); countBadge.textContent = `총 ${artists.length}명`; }
+        }
+        const filteredGroups = activeCreditFilter === 'ALL' ? groups : { [activeCreditFilter]: groups[activeCreditFilter] || [] };
+        Object.entries(filteredGroups).forEach(([group, members]) => {
+            if (!members.length) return; const groupEl = document.createElement('div'); groupEl.className = 'credit-group'; groupEl.innerHTML = `<div class="credit-group-label">${group}</div>`;
+            members.forEach(ar => { const cleanName = ar.name.replace(/\s\(\d+\)$/, ''); const roleText = ar.role || '–'; const item = document.createElement('div'); item.className = 'credit-item'; item.innerHTML = `<span class="role-pill" title="${roleText.replace(/"/g,'&quot;')}">${roleText}</span><button class="session-trigger" data-name="${cleanName.replace(/"/g,'&quot;')}" data-role="${roleText.replace(/"/g,'&quot;')}">${cleanName}</button>`; groupEl.appendChild(item); }); container.appendChild(groupEl);
+        });
+    }
+
+    window.searchSessionFromPanel = function() { closeSessionPanel(); const searchInput = document.getElementById('search-input'), searchMode = document.getElementById('search-mode'); if (searchInput && searchMode) { searchMode.value = 'artist'; searchInput.value = sessionPanelCurrentName; clearAutocomplete(); window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => { initSearch(); }, 400); } };
+    document.getElementById('studio-view').addEventListener('click', function(e) { const trigger = e.target.closest('.session-trigger'); if (trigger) { const name = trigger.getAttribute('data-name'); const role = trigger.getAttribute('data-role'); openSessionPanel(name, role); } });
+
+    function openSessionPanel(name, role) { sessionPanelCurrentName = name; sessionPanelCurrentRole = role; document.getElementById('session-panel-name').textContent = name; document.getElementById('session-panel-role').textContent = role || 'SESSION MUSICIAN'; document.getElementById('session-panel-content').innerHTML = ''; document.getElementById('session-panel-stats').classList.add('hidden'); document.getElementById('session-panel-loading').classList.remove('hidden'); document.getElementById('session-panel').classList.add('open'); document.getElementById('session-panel-backdrop').classList.add('open'); fetchSessionMusicianAlbums(name); }
+    function closeSessionPanel() { document.getElementById('session-panel').classList.remove('open'); document.getElementById('session-panel-backdrop').classList.remove('open'); }
+    window.closeSessionPanel = closeSessionPanel;
+
+    async function fetchSessionMusicianAlbums(name) {
+        const content = document.getElementById('session-panel-content'); const loading = document.getElementById('session-panel-loading'); const stats = document.getElementById('session-panel-stats');
+        const currentAlbumTitle = document.getElementById('studio-title').textContent; const contextBadge = currentAlbumTitle && currentAlbumTitle !== '앨범 제목' ? `<div class="context-badge mb-3"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19l-7-7 7-7m5 14l7-7-7-7"/></svg>발견: ${currentAlbumTitle}</div>` : '';
+        try {
+            const cbName = `handleSession_${Date.now()}`;
+            await new Promise((resolve) => {
+                window[cbName] = (d) => {
+                    loading.classList.add('hidden'); const results = d.data || [];
+                    if (!results.length) { content.innerHTML = `${contextBadge}<div class="text-center py-8 text-zinc-600"><p class="font-bold text-sm">Deezer에서 찾을 수 없습니다</p><p class="text-xs mt-2">디스코그래피 검색을 시도해보세요</p></div>`; resolve(); return; }
+                    const exactMatch = results.find(a => a.name.toLowerCase() === name.toLowerCase()); const artist = exactMatch || results[0];
+                    stats.classList.remove('hidden'); stats.innerHTML = `<div class="col-span-2 flex items-center gap-3 bg-zinc-900/50 p-3 rounded-xl border border-zinc-800"><img src="${artist.picture_medium || artist.picture_small || ''}" onerror="this.style.display='none'" class="w-12 h-12 rounded-full border border-zinc-700 object-cover"><div><div class="font-black text-white text-sm">${artist.name}</div>${artist.nb_fan ? `<div class="text-zinc-500 text-[10px] mt-0.5">${(artist.nb_fan/1000).toFixed(0)}K fans</div>` : ''}</div></div>`;
+                    const albumCb = `handleSessionAlbums_${Date.now()}`;
+                    window[albumCb] = (albumData) => {
+                        const albums = (albumData.data || []).slice(0, 20); content.innerHTML = contextBadge;
+                        if (!albums.length) { content.innerHTML += `<p class="text-zinc-500 text-sm text-center py-4">앨범 정보가 없습니다</p>`; delete window[albumCb]; resolve(); return; }
+                        const header = document.createElement('div'); header.className = 'text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-3 mt-1'; header.textContent = `디스코그래피 (${albums.length}+)`; content.appendChild(header);
+                        albums.forEach(album => {
+                            const card = document.createElement('div'); card.className = 'session-album-card'; const year = album.release_date ? album.release_date.split('-')[0] : '';
+                            card.innerHTML = `<img src="${album.cover_medium || album.cover_small || ''}" onerror="this.src='https://placehold.co/52x52/18181b/10b981?text=?'"><div class="info"><div class="info-title">${album.title}</div><div class="info-meta">${year}${album.record_type ? ' · ' + album.record_type.toUpperCase() : ''}</div></div><svg class="w-4 h-4 text-zinc-700 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+                            card.onclick = () => { closeSessionPanel(); playMedia('album', album.id, album.cover_medium || album.cover_small || '', album.title, artist.name, true, 'deezer', true); }; content.appendChild(card);
+                        });
+                        delete window[albumCb]; resolve();
+                    };
+                    loadJSONP(`https://api.deezer.com/artist/${artist.id}/albums?limit=20&output=jsonp&callback=${albumCb}`); delete window[cbName];
+                };
+                loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=5&output=jsonp&callback=${cbName}`);
+            });
+        } catch(e) { loading.classList.add('hidden'); content.innerHTML = `<p class="text-rose-400 text-sm text-center py-4">로드 실패: ${e.message}</p>`; }
+    }
+
+    let _discogsAbort = null; let _wikiAbort = null;
+    async function fetchDiscogsCreditsFromServer(title, artist) { 
+        if (_discogsAbort) _discogsAbort.abort(); _discogsAbort = new AbortController(); const signal = _discogsAbort.signal;
+        const out = document.getElementById('discogs-credit-text'); out.innerHTML = "<span class='animate-pulse text-zinc-500 text-xs'>Vercel 서버와 통신 중... 🌐</span>"; 
+        activeCreditFilter = 'ALL'; const filterTabs = document.getElementById('credit-filter-tabs'); if (filterTabs) { filterTabs.classList.add('hidden'); filterTabs.innerHTML = ''; } const countBadge = document.getElementById('credit-count-badge'); if (countBadge) countBadge.classList.add('hidden');
+        const cacheKey = `${cleanTitleForSearch(title)}_${artist}`;
+
+        try { 
+            let d = cacheGet(cacheKey);
+            if (!d) {
+                const r = await fetch(`/api/getDiscogs?albumTitle=${encodeURIComponent(title)}&artistName=${encodeURIComponent(artist)}`, { signal }); 
+                if (!r.ok) { const errorDetail = await r.text(); throw new Error(`HTTP ${r.status} | ${errorDetail}`); }
+                d = await r.json(); cacheSet(cacheKey, d); 
+            }
+            if (signal.aborted) return; currentDiscogsReleaseData = d; 
+            if (d.extraartists?.length) { renderGroupedCredits(out, d.extraartists, true); } else { out.innerHTML = "<span class='text-zinc-500 font-bold text-sm'>세션 데이터가 없습니다.</span>"; }
+            
+            if (currentAlbumTracks && currentAlbumTracks.length > 0 && currentAlbumTracks[currentTrackIndex]) updateTrackSpecificCredits(currentAlbumTracks[currentTrackIndex].title); 
+        } catch (e) { if (e.name === 'AbortError') return; out.innerHTML = `<div class="bg-rose-500/10 p-3 rounded-lg border border-rose-500/30"><span class='text-rose-500 font-bold text-xs'>백엔드 에러 발생! 👇</span><br><span class='text-zinc-300 text-[10px] break-all'>${e.message}</span></div>`; } 
+    }
+
+    function updateTrackSpecificCredits(title) { 
+        const cont = document.getElementById('discogs-track-credits-container'), dataUi = document.getElementById('discogs-track-data-ui'); 
+        if (!currentDiscogsReleaseData?.tracklist || !title) return cont.classList.add('hidden'); 
+        const cleanTarget = cleanTitleForSearch(title).toLowerCase();
+        const track = currentDiscogsReleaseData.tracklist.find(tr => { if (!tr.title) return false; const cleanSource = cleanTitleForSearch(tr.title).toLowerCase(); return cleanSource.includes(cleanTarget) || cleanTarget.includes(cleanSource); }); 
+        if (track?.extraartists?.length) { document.getElementById('discogs-track-title').textContent = `🎵 ${track.title}`; renderGroupedCredits(dataUi, track.extraartists, false); cont.classList.remove('hidden'); document.getElementById('track-hint-banner').style.display = 'none'; } else { cont.classList.add('hidden'); } 
+    }
+
+    async function fetchAlbumWikiStory(title, artist) {
+        if (_wikiAbort) _wikiAbort.abort(); _wikiAbort = new AbortController(); const signal = _wikiAbort.signal;
+        const wikiUI = document.getElementById('wiki-credit-text'); wikiUI.innerHTML = "<span class='animate-pulse text-zinc-500 text-xs'>데이터베이스 검색 중... 🔍</span>";
+        try {
+            let extract = await fetchWikiExtract('ko', title, signal);
+            if (!extract || extract.length < 20) extract = await fetchWikiExtract('en', title, signal);
+            if (!extract || extract.length < 20) extract = await fetchWikiExtract('en', `${title} ${artist}`, signal);
+            if (signal.aborted) return;
+            if (extract && extract.length > 20) { renderWikiText(wikiUI, extract); return; }
+            const LAST_FM_API_KEY = "bc6dfd44dfc503c39ec41ade07e02778"; const lastFmRes = await fetch(`https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${LAST_FM_API_KEY}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(title)}&format=json`, { signal });
+            if (signal.aborted) return; const lastFmData = await lastFmRes.json();
+            if (lastFmData.album?.wiki?.summary) { const rawSummary = lastFmData.album.wiki.summary; const cleanSummary = rawSummary.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim(); wikiUI.innerHTML = `<span class="text-[#10b981] font-bold text-[10px] bg-[#10b981]/20 px-2 py-1 rounded mb-2 inline-block">Last.fm Trivia</span><br>`; const p = document.createElement('span'); p.className = 'text-sm text-zinc-400 leading-relaxed'; p.textContent = cleanSummary; wikiUI.appendChild(p); } else { wikiUI.innerHTML = "<span class='text-zinc-600 text-sm'>트리비아가 없습니다 💿</span>"; }
+        } catch(e) { if (e.name === 'AbortError') return; wikiUI.innerHTML = "<span class='text-zinc-600 text-sm'>로드 실패</span>"; }
+    }
+
+    async function fetchWikiExtract(lang, query, signal) { try { const res = await fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exsentences=5&explaintext=true&origin=*&titles=${encodeURIComponent(query)}`, { signal }); const data = await res.json(); const pageId = Object.keys(data.query.pages)[0]; if (pageId === '-1') return null; const page = data.query.pages[pageId]; if (!page.extract || page.extract.includes('may refer to') || page.extract.includes('다음을 가리킬 수')) return null; return page.extract; } catch { return null; } }
+    function renderWikiText(el, text) { const LIMIT = 220; if (!text || text.length <= LIMIT) { el.innerHTML = text || ''; return; } const short = text.slice(0, LIMIT).trimEnd(); el.innerHTML = `<span class="wiki-preview">${short}…</span><span class="wiki-full hidden">${text}</span><button onclick="toggleWikiExpand(this)" class="mt-2 block text-[10px] text-[#10b981] font-black hover:underline">더 보기 ▾</button>`; }
+    window.toggleWikiExpand = function(btn) { const preview = btn.previousElementSibling; const full = preview.previousElementSibling; if (full.classList.contains('hidden')) { full.classList.remove('hidden'); preview.classList.add('hidden'); btn.textContent = '접기 ▴'; } else { full.classList.add('hidden'); preview.classList.remove('hidden'); btn.textContent = '더 보기 ▾'; } };
+
+    // ==========================================
+    // 9. 메모 시스템
+    // ==========================================
+    async function loadMemo(albumId) {
+        memoCurrentAlbumId = albumId; memoCurrentRating = 0; memoSelectedTags = new Set();
+        const form = document.getElementById('memo-form'); const prompt = document.getElementById('memo-login-prompt');
+        if (!currentUser) { form.classList.add('hidden'); prompt.classList.remove('hidden'); return; }
+        prompt.classList.add('hidden'); form.classList.remove('hidden');
+        document.getElementById('memo-textarea').value = ''; document.getElementById('memo-delete-btn').classList.add('hidden'); document.getElementById('memo-saved-indicator').classList.add('hidden'); updateStarUI(0); document.querySelectorAll('.memo-tag').forEach(t => t.classList.remove('selected'));
+        const cached = allUserMemos[albumId]; if (cached) { applyMemoData(cached); return; }
+        try { const snap = await db.collection('users').doc(currentUser.uid).collection('memos').doc(String(albumId)).get(); if (snap.exists) { allUserMemos[albumId] = snap.data(); applyMemoData(snap.data()); } } catch {}
+    }
+    function applyMemoData(data) { if (!data) return; memoCurrentRating = data.rating || 0; updateStarUI(memoCurrentRating); document.getElementById('memo-textarea').value = data.text || ''; memoSelectedTags = new Set(data.tags || []); memoSelectedTags.forEach(tag => { const el = document.querySelector(`.memo-tag[data-tag="${tag}"]`); if (el) el.classList.add('selected'); }); if (data.rating || data.text || data.tags?.length) { document.getElementById('memo-delete-btn').classList.remove('hidden'); } }
+    function updateStarUI(val) { const ratingLabels = ['평점 없음', '★ 별로', '★★ 그냥저냥', '★★★ 괜찮음', '★★★★ 좋음', '★★★★★ 명반']; document.querySelectorAll('.star-btn').forEach((btn, i) => { btn.classList.toggle('lit', i < val); }); document.getElementById('memo-rating-label').textContent = ratingLabels[val] || '평점 없음'; }
+    document.getElementById('star-rating').addEventListener('click', e => { const btn = e.target.closest('.star-btn'); if (!btn) return; const val = parseInt(btn.dataset.val); memoCurrentRating = (memoCurrentRating === val) ? 0 : val; updateStarUI(memoCurrentRating); });
+    document.getElementById('memo-tags-row').addEventListener('click', e => { const tag = e.target.closest('.memo-tag'); if (!tag) return; const t = tag.dataset.tag; if (memoSelectedTags.has(t)) { memoSelectedTags.delete(t); tag.classList.remove('selected'); } else { memoSelectedTags.add(t); tag.classList.add('selected'); } });
+    window.saveMemo = async function() { if (!currentUser || !memoCurrentAlbumId) return; const data = { albumId: memoCurrentAlbumId, albumTitle: document.getElementById('studio-title').textContent, artist: document.getElementById('studio-artist').textContent, rating: memoCurrentRating, tags: [...memoSelectedTags], text: document.getElementById('memo-textarea').value.trim(), updatedAt: Date.now() }; allUserMemos[memoCurrentAlbumId] = data; await db.collection('users').doc(currentUser.uid).collection('memos').doc(String(memoCurrentAlbumId)).set(data); document.getElementById('memo-delete-btn').classList.remove('hidden'); const indicator = document.getElementById('memo-saved-indicator'); indicator.classList.remove('hidden'); setTimeout(() => indicator.classList.add('hidden'), 2000); refreshMemoDotsOnCards(); showToast('메모가 저장되었습니다 📝', 'success'); };
+    window.deleteMemo = async function() { if (!currentUser || !memoCurrentAlbumId) return; delete allUserMemos[memoCurrentAlbumId]; await db.collection('users').doc(currentUser.uid).collection('memos').doc(String(memoCurrentAlbumId)).delete(); document.getElementById('memo-textarea').value = ''; memoCurrentRating = 0; updateStarUI(0); memoSelectedTags = new Set(); document.querySelectorAll('.memo-tag').forEach(t => t.classList.remove('selected')); document.getElementById('memo-delete-btn').classList.add('hidden'); refreshMemoDotsOnCards(); showToast('메모가 삭제되었습니다', 'info'); };
+    function refreshMemoDotsOnCards() { document.querySelectorAll('.memo-dot').forEach(d => d.remove()); Object.keys(allUserMemos).forEach(id => { const cards = document.querySelectorAll(`[data-memo-id="${id}"]`); cards.forEach(card => { if (!card.querySelector('.memo-dot')) { const dot = document.createElement('div'); dot.className = 'memo-dot'; card.style.position = 'relative'; card.appendChild(dot); } }); }); }
+    async function loadAllMemos() { if (!currentUser) return; try { const snap = await db.collection('users').doc(currentUser.uid).collection('memos').get(); snap.forEach(d => { allUserMemos[d.id] = d.data(); }); refreshMemoDotsOnCards(); } catch {} }
+
+    function showSkeletonCards() { const c = document.getElementById('sections-container'); c.innerHTML = ''; for (let s = 0; s < 2; s++) { const section = document.createElement('div'); section.innerHTML = `<div class="h-6 w-32 skeleton mb-6 rounded-lg"></div><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-8 px-4 md:px-0">${Array(6).fill(0).map(() => `<div class="skeleton-card"><div class="sk-img skeleton"></div><div class="sk-line1 skeleton"></div><div class="sk-line2 skeleton"></div></div>`).join('')}</div>`; c.appendChild(section); } }
+
+    (function initSwipeClose() { const studioView = document.getElementById('studio-view'); let touchStartY = 0, touchStartTime = 0, isDragging = false; studioView.addEventListener('touchstart', (e) => { if (e.target.closest('#studio-track-list, .lg\\:overflow-y-auto, #session-panel')) return; touchStartY = e.touches[0].clientY; touchStartTime = Date.now(); isDragging = true; }, { passive: true }); studioView.addEventListener('touchmove', (e) => { if (!isDragging) return; const dy = e.touches[0].clientY - touchStartY; if (dy > 0) { studioView.style.transform = `translateY(${Math.min(dy * 0.4, 120)}px)`; studioView.style.transition = 'none'; } }, { passive: true }); studioView.addEventListener('touchend', (e) => { if (!isDragging) return; isDragging = false; const dy = e.changedTouches[0].clientY - touchStartY; const dt = Date.now() - touchStartTime; studioView.style.transition = ''; studioView.style.transform = ''; if (dy > 120 || (dy > 60 && dt < 200)) { closeStudioView(); } }, { passive: true }); })();
+
+    audio.addEventListener('error', () => { pI.classList.remove('hidden'); psI.classList.add('hidden'); showToast("미리듣기를 불러올 수 없습니다 😞", "error"); }); audio.addEventListener('stalled', () => { showToast("스트리밍이 지연되고 있습니다...", "error"); });
+    document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (document.getElementById('session-panel').classList.contains('open')) { closeSessionPanel(); } else if (document.getElementById('studio-view').classList.contains('studio-view-enter')) { closeStudioView(); } });
+
+    window.resetApp = function() { currentArtist = null; currentArtistId = null; albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false }; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; sessionSearchQuery = ""; diggingChain = []; document.getElementById('search-input').value = ''; document.getElementById('local-search-input').value = ''; document.getElementById('sections-container').innerHTML = ''; document.getElementById('results-controls').classList.add('hidden'); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.add('hidden'); document.getElementById('reset-btn').classList.add('hidden'); setViewMode('grid'); clearAutocomplete(); renderChainBar(); };
+</script>
+
+</body>
+</html>
