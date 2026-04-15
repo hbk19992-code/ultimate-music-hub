@@ -1,4 +1,4 @@
-// /api/getDiscogs.js  V5 — Title Sanitizer (Remastered 방어) Edition
+// /api/getDiscogs.js  V5.1 — Cache Disabled Edition (Test)
 
 const TOKEN = process.env.DISCOGS_TOKEN;
 const TOKEN_Q = TOKEN ? `&token=${TOKEN}` : '';
@@ -73,7 +73,6 @@ function scoreRelease(rel) {
   return score;
 }
 
-// ⭐ 추가된 핵심 함수: 앨범 제목에서 꼬리표를 깔끔하게 제거하는 강력한 정규식
 function sanitizeTitle(title) {
   if (!title) return "";
   return title
@@ -103,13 +102,11 @@ export default async function handler(req, res) {
       );
       const artistId = (exactMatch || artistSearch.results[0]).id;
 
-      // 과거 명반 추적을 위해 검색 범위 100개로 유지
       const rData = await fetchJson(
         `https://api.discogs.com/artists/${artistId}/releases?per_page=100&sort=year&sort_order=desc${TOKEN_Q}`
       );
       if (!rData?.releases) return res.json({ matchedTitles: [] });
 
-      // 다중 공백 및 앞뒤 공백 제거 정규화
       const sessionLower = sessionName.toLowerCase().trim().replace(/\s+/g, ' ');
       
       const toCheck = rData.releases
@@ -117,7 +114,7 @@ export default async function handler(req, res) {
         .slice(0, 100); 
 
       const matchedTitles = new Set();
-      const chunkSize = 4; // 한 번에 4개씩만 요청하여 API 부하 분산
+      const chunkSize = 4; 
 
       for (let i = 0; i < toCheck.length; i += chunkSize) {
         const chunk = toCheck.slice(i, i + chunkSize);
@@ -146,11 +143,11 @@ export default async function handler(req, res) {
         
         results.forEach(r => { if (r.status === 'fulfilled' && r.value) matchedTitles.add(r.value); });
         
-        // Rate Limit 회피용 1초 대기 
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-      res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
+      // [버전 1] 테스트를 위해 캐시 비활성화
+      // res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=3600');
       return res.json({ matchedTitles: Array.from(matchedTitles) });
     } catch (e) {
       return res.status(500).json({ error: e.message, matchedTitles: [] });
@@ -163,10 +160,7 @@ export default async function handler(req, res) {
   if (!albumTitle || !artistName) return res.status(400).json({ error: 'Required params missing' });
 
   try {
-    // ⭐ 앨범 제목 렌즈 클리닝: (Remastered) 등의 꼬리표를 이 단계에서 완전히 제거
     const cleanAlbumTitle = sanitizeTitle(albumTitle);
-
-    // 아티스트명과 1차 클리닝된 앨범명을 통합 검색어로 생성 (더 정확한 매칭)
     const queryStr = encodeURIComponent(`${artistName} ${cleanAlbumTitle}`);
     const masterSearch = await fetchJson(
       `https://api.discogs.com/database/search?q=${queryStr}&type=master&per_page=5${TOKEN_Q}`
@@ -206,7 +200,8 @@ export default async function handler(req, res) {
 
     const primary = [...validReleases].sort((a, b) => (b.extraartists?.length || 0) - (a.extraartists?.length || 0))[0];
     
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+    // [버전 1] 테스트를 위해 캐시 비활성화
+    // res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
     return res.json({
       ...primary,
       extraartists: mergeArtists(validReleases.flatMap(r => r.extraartists || [])),
