@@ -46,12 +46,7 @@
         body.pixel-theme .toast-animate { border: 4px solid #fff !important; background: #000 !important; color: #fff !important; font-family: 'Galmuri11', sans-serif !important; box-shadow: 6px 6px 0px rgba(0,0,0,0.8) !important; border-radius: 0 !important; padding: 16px 24px !important; letter-spacing: 1px; }
 
         /* 자동완성 드롭다운 */
-        #autocomplete-dropdown {
-            position: absolute; top: calc(100% + 8px); left: 0; right: 0;
-            background: #111; border: 1px solid #27272a; border-radius: 16px;
-            z-index: 200; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-            max-height: 320px; overflow-y: auto;
-        }
+        #autocomplete-dropdown { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #111; border: 1px solid #27272a; border-radius: 16px; z-index: 200; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-height: 320px; overflow-y: auto; }
         .autocomplete-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; }
         .autocomplete-item:hover, .autocomplete-item.active { background: #1a1a1a; }
         .autocomplete-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #333; flex-shrink: 0; }
@@ -212,7 +207,7 @@
     <div class="max-w-7xl mx-auto pt-16 md:pt-20 px-4 md:px-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-6xl font-black mb-3 tracking-tighter"><span class="text-gradient">Can you dig it?</span></h1>
-            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Feature Strict Filter V26.1</p>
+            <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Strict Filter & Lightweight V26.2</p>
         </header>
 
         <div id="search-section" class="max-w-3xl mx-auto mb-8">
@@ -222,8 +217,7 @@
                         <option value="artist">👤 아티스트</option>
                         <option value="track">🎵 곡명</option>
                     </select>
-                    <input type="text" id="search-input" placeholder="검색어를 입력하세요..." autocomplete="off"
-                        class="flex-1 bg-transparent text-white px-3 py-3 focus:outline-none text-base md:text-lg">
+                    <input type="text" id="search-input" placeholder="검색어를 입력하세요..." autocomplete="off" class="flex-1 bg-transparent text-white px-3 py-3 focus:outline-none text-base md:text-lg">
                 </div>
                 <div id="autocomplete-dropdown" class="hidden"></div>
             </div>
@@ -254,6 +248,7 @@
                     <button id="view-grid-btn" onclick="setViewMode('grid')" class="view-toggle-btn active">⊞ 그리드</button>
                     <button id="view-timeline-btn" onclick="setViewMode('timeline')" class="view-toggle-btn">≡ 타임라인</button>
                 </div>
+                <!-- 세션 랭킹 버튼 완전 삭제 -->
                 <select id="album-sort-select" onchange="applyAlbumSort()" class="ml-auto bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold border border-zinc-800 cursor-pointer">
                     <option value="desc">📅 최신순</option>
                     <option value="asc">⏳ 과거순</option>
@@ -394,9 +389,9 @@
     const CACHE_TTL = 5 * 60 * 1000; 
     function cacheGet(key) { const entry = window.discogsCache[key]; if (!entry) return null; if (Date.now() - entry.ts > CACHE_TTL) { delete window.discogsCache[key]; return null; } return entry.data; }
     function cacheSet(key, data) { window.discogsCache[key] = { data, ts: Date.now() }; }
+    
     let sessionSearchQuery = "";
     let isDeepSearching = false;
-
     let sessionPanelCurrentName = "";
     let sessionPanelCurrentRole = "";
     let diggingChain = [];
@@ -408,7 +403,6 @@
 
     function superCleanTitle(title) { return !title ? "" : cleanTitleForSearch(title).toLowerCase().replace(/[^a-z0-9가-힣]/g, ''); }
     function cleanTitleForSearch(title) { if (!title) return ""; return title.replace(/\s*[\(\[].*?(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*?[\)\]]/gi, '').replace(/\s*-\s*(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*$/gi, '').trim(); }
-    
     function isStrictMatch(targetStr, queryStr) { if (!targetStr || !queryStr) return false; return targetStr.toLowerCase().includes(queryStr.toLowerCase()); }
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -438,9 +432,37 @@
 
     let autocompleteDebounce; let autocompleteResults = []; let autocompleteActive = -1;
     const searchInput = document.getElementById('search-input'), dropdown = document.getElementById('autocomplete-dropdown');
-    searchInput.addEventListener('input', (e) => { clearTimeout(autocompleteDebounce); const val = e.target.value.trim(); if (val.length < 2) { clearAutocomplete(); return; } autocompleteDebounce = setTimeout(() => { fetchAutocomplete(val); }, 300); });
-    searchInput.addEventListener('keydown', (e) => { if (dropdown.classList.contains('hidden')) return; if (e.key === 'ArrowDown') { e.preventDefault(); autocompleteActive = Math.min(autocompleteActive + 1, autocompleteResults.length - 1); highlightAutocompleteItem(); } else if (e.key === 'ArrowUp') { e.preventDefault(); autocompleteActive = Math.max(autocompleteActive - 1, -1); highlightAutocompleteItem(); } else if (e.key === 'Enter') { if (autocompleteActive >= 0) { e.preventDefault(); selectAutocompleteItem(autocompleteActive); } else { clearAutocomplete(); initSearch(); } } else if (e.key === 'Escape') { clearAutocomplete(); } });
+    
+    // ✅ FIX 1: 레이스 컨디션 방지 (일반 input 이벤트에서 initSearch 호출 삭제, 자동완성만 처리)
+    searchInput.addEventListener('input', (e) => { 
+        clearTimeout(autocompleteDebounce); 
+        const val = e.target.value.trim(); 
+        if (val.length < 2) { clearAutocomplete(); return; } 
+        autocompleteDebounce = setTimeout(() => { fetchAutocomplete(val); }, 300); 
+    });
+    
+    searchInput.addEventListener('keydown', (e) => { 
+        if (e.key === 'ArrowDown') { 
+            e.preventDefault(); 
+            if (!dropdown.classList.contains('hidden')) { autocompleteActive = Math.min(autocompleteActive + 1, autocompleteResults.length - 1); highlightAutocompleteItem(); } 
+        } else if (e.key === 'ArrowUp') { 
+            e.preventDefault(); 
+            if (!dropdown.classList.contains('hidden')) { autocompleteActive = Math.max(autocompleteActive - 1, -1); highlightAutocompleteItem(); } 
+        } else if (e.key === 'Enter') { 
+            e.preventDefault(); 
+            if (!dropdown.classList.contains('hidden') && autocompleteActive >= 0) { 
+                selectAutocompleteItem(autocompleteActive); 
+            } else { 
+                clearAutocomplete(); 
+                initSearch(); // ✅ 엔터를 쳤을 때만 강제 검색 실행
+            } 
+        } else if (e.key === 'Escape') { 
+            clearAutocomplete(); 
+        } 
+    });
+    
     document.addEventListener('click', (e) => { if (!e.target.closest('#search-wrapper')) clearAutocomplete(); });
+    
     function fetchAutocomplete(q) { const mode = document.getElementById('search-mode').value; if (mode === 'artist') { const cbName = `handleAC_${Date.now()}`; window[cbName] = (d) => { renderAutocomplete(d.data || [], 'artist'); delete window[cbName]; }; loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=7&output=jsonp&callback=${cbName}`); } else { const cbName = `handleAC_${Date.now()}`; window[cbName] = (d) => { renderAutocomplete(d.data || [], 'track'); delete window[cbName]; }; loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=7&output=jsonp&callback=${cbName}`); } }
     function renderAutocomplete(data, type) { autocompleteResults = data; autocompleteActive = -1; if (!data.length) { clearAutocomplete(); return; } dropdown.innerHTML = ''; data.forEach((item, i) => { const div = document.createElement('div'); div.className = `autocomplete-item ${type === 'track' ? 'track-item' : ''}`; div.dataset.index = i; if (type === 'artist') { div.innerHTML = `<img src="${item.picture_small || 'https://placehold.co/40x40/18181b/10b981?text=?'}" onerror="this.src='https://placehold.co/40x40/18181b/10b981?text=?'"><div class="meta"><div class="meta-name">${item.name}</div><div class="meta-sub">${item.nb_album ? item.nb_album + ' albums' : 'Artist'}</div></div><span class="play-badge">디스코그래피</span>`; } else { div.innerHTML = `<img src="${item.album?.cover_small || 'https://placehold.co/40x40/18181b/10b981?text=?'}" onerror="this.src='https://placehold.co/40x40/18181b/10b981?text=?'"><div class="meta"><div class="meta-name">${item.title}</div><div class="meta-sub">${item.artist?.name || ''}</div></div><span class="play-badge">▶ 재생</span>`; } div.addEventListener('click', () => selectAutocompleteItem(i)); dropdown.appendChild(div); }); dropdown.classList.remove('hidden'); }
     function highlightAutocompleteItem() { const items = dropdown.querySelectorAll('.autocomplete-item'); items.forEach((el, i) => el.classList.toggle('active', i === autocompleteActive)); if (autocompleteActive >= 0 && autocompleteResults[autocompleteActive]) { const item = autocompleteResults[autocompleteActive]; searchInput.value = item.name || item.title || ''; } }
@@ -473,16 +495,18 @@
         featureFetchCount = 0; const featCb = `_feat_${epoch}`; window[featCb] = function self(d) {
             if (epoch !== _fetchEpoch) { delete window[featCb]; return; }
             if (d.data) { 
+                // 🔥 FIX 2: 피처링 동명이인 엄격 차단 필터
                 const strictFeatures = d.data.filter(t => {
-                    if (t.artist.id === currentArtistId) return false;
+                    if (t.artist.id === currentArtistId) return false; // 본인 앨범은 당연히 제외
+                    
                     const cArtistLower = currentArtist.toLowerCase();
                     const tArtistLower = t.artist.name.toLowerCase();
                     const titleLower = t.title.toLowerCase();
 
-                    // 1. 동명이인 스팸 차단: 검색한 아티스트와 이름이 완전히 같으나 ID가 다른 경우 (AI 음악)
+                    // 1. 동명이인 스팸 차단: 메인 아티스트 이름이 검색어와 완전히 똑같은 경우 (ID는 다른 AI나 커버 밴드)
                     if (tArtistLower === cArtistLower) return false;
 
-                    // 2. 피처링 엄격 검증: 아티스트 문자열에 공동으로 적혀있거나, 곡 제목에 명시된 경우만 인정
+                    // 2. 피처링 엄격 검증: 다른 아티스트 명의에 검색어가 피처링으로 명확히 적혀있는가?
                     const isCollaborator = tArtistLower.includes(cArtistLower);
                     const isTitleFeature = titleLower.includes(`feat. ${cArtistLower}`) || titleLower.includes(`ft. ${cArtistLower}`) || titleLower.includes(`featuring ${cArtistLower}`) || titleLower.includes(`with ${cArtistLower}`);
 
@@ -513,7 +537,10 @@
                     const artistNameLower = a.artistName.toLowerCase(); const searchArtistLower = currentArtist ? currentArtist.toLowerCase() : '';
                     
                     if (searchArtistLower && !artistNameLower.includes(searchArtistLower)) { 
-                        // iTunes의 엉성한 피처링 검색 결과(컬렉션 이름 기반)는 신뢰하지 않음. Deezer의 엄격한 데이터만 사용.
+                        // iTunes의 엉성한 피처링 결과(컬렉션 이름 기반)는 동명이인 스팸 방지를 위해 차단
+                        if (isStrictMatch(a.collectionName, searchArtistLower)) {
+                            albumsData.features.push(itunesAlbum); 
+                        }
                     }
                     else if (tl.includes('live')) albumsData.live.push(itunesAlbum);
                     else if (tl.includes('best of') || tl.includes('greatest hits') || tl.includes('anthology')) albumsData.compilation.push(itunesAlbum);
@@ -676,14 +703,16 @@
         items.forEach(it => {
             const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = it.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : ''; const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
             const card = document.createElement('div'); 
+            
             const matchedClass = it.sessionMatched ? 'border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'border-zinc-800/50';
+            
             card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; 
             card.setAttribute('data-memo-id', it.id);
             card.onclick = () => playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
             const safeIt = JSON.stringify(it).replace(/"/g, '&quot;'); const hasMemo = allUserMemos[String(it.id)];
             card.innerHTML = `${hasMemo ? '<div class="memo-dot"></div>' : ''}<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
             ${it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>' : ''}
-            <button onclick="toggleFavorite(event, JSON.parse(this.dataset.item), '${type}')" data-item="${safeIt}" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`; g.appendChild(card);
+            <button onclick="toggleFavorite(event, ${JSON.stringify(it).replace(/"/g, '&quot;')}, '${type}')" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}</p></div>`; g.appendChild(card);
         });
     }
 
