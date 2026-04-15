@@ -311,6 +311,20 @@
         </select>
     </div>
 
+    <!-- ✅ SNIPER FIX 4: 스나이퍼 모드 활성 배너 -->
+    <div id="sniper-active-banner" class="hidden mb-6 flex items-center justify-between gap-4 bg-[#10b981]/10 border border-[#10b981]/30 px-5 py-3 rounded-2xl">
+        <div class="flex items-center gap-3 min-w-0">
+            <span class="text-lg flex-shrink-0">🎯</span>
+            <div class="min-w-0">
+                <p class="text-[#10b981] font-black text-sm">스나이퍼 모드 활성</p>
+                <p id="sniper-active-label" class="text-zinc-400 text-xs mt-0.5 truncate"></p>
+            </div>
+        </div>
+        <button onclick="clearSniperMode()" class="flex-shrink-0 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold rounded-lg transition-colors">
+            ✕ 초기화
+        </button>
+    </div>
+
     <div id="sections-container" class="space-y-16"></div>
 </div>
 ```
@@ -676,6 +690,11 @@
         allFetchedFeatures = []; featureFetchCount = 0;
         fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
 
+        // ✅ SNIPER FIX 2: 새 아티스트 선택 시 이전 스나이퍼 쿼리 완전 초기화
+        sessionSearchQuery = "";
+        document.getElementById('local-search-input').value = '';
+        clearSniperMode();
+
         const epoch = ++_fetchEpoch; // 이 요청의 고유 번호
 
         document.getElementById('artist-selection-container').classList.add('hidden');
@@ -772,33 +791,79 @@
         renderAllSections();
     }
 
+    // ✅ SNIPER FIX 4: 스나이퍼 모드 초기화 함수
+    function clearSniperMode() {
+        sessionSearchQuery = "";
+        const allAlbums = [...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features, ...favorites];
+        allAlbums.forEach(a => a.sessionMatched = false);
+        document.getElementById('sniper-active-banner').classList.add('hidden');
+        document.getElementById('local-search-input').value = '';
+        if (isFavoritesTab) renderFavorites(); else renderAllSections();
+    }
+    window.clearSniperMode = clearSniperMode;
+
     // 스나이퍼 서치
     window.startDeepSessionSearch = async function() {
         const q = document.getElementById('local-search-input').value.toLowerCase().trim();
-        if (!q) return showToast("검색창에 찾고 싶은 세션 멤버의 이름을 입력하세요!", "error");
+        if (!q) return showToast("찾고 싶은 세션 멤버의 이름을 입력하세요!", "error");
         if (isDeepSearching) return showToast("현재 통신 중입니다. 잠시만 기다려주세요.", "error");
+        if (!currentArtist) return showToast("먼저 아티스트를 검색해주세요!", "error");
+
         sessionSearchQuery = q; isDeepSearching = true;
         const targetAlbums = isFavoritesTab ? favorites : [...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features];
         const statusMsg = document.getElementById('status-message');
-        statusMsg.classList.remove('hidden'); statusMsg.textContent = `SNIPER SEARCHING... 🎯`;
+        statusMsg.classList.remove('hidden'); statusMsg.textContent = `SNIPER SEARCHING "${q.toUpperCase()}"... 🎯`;
         targetAlbums.forEach(a => a.sessionMatched = false);
+
         try {
             const r = await fetch(`/api/getDiscogs?deepSearch=true&artistName=${encodeURIComponent(currentArtist)}&sessionName=${encodeURIComponent(q)}`);
-            const d = await r.json(); let matchCount = 0;
+            const d = await r.json();
+            let matchCount = 0;
+
             if (d.matchedTitles?.length) {
                 const snipedTitles = d.matchedTitles.map(t => superCleanTitle(t));
-                targetAlbums.forEach(album => { const albTitle = superCleanTitle(album.title); if (snipedTitles.some(st => albTitle.includes(st) || st.includes(albTitle))) { album.sessionMatched = true; matchCount++; } });
+                targetAlbums.forEach(album => {
+                    const albTitle = superCleanTitle(album.title);
+                    if (snipedTitles.some(st => albTitle.includes(st) || st.includes(albTitle))) {
+                        album.sessionMatched = true; matchCount++;
+                    }
+                });
             }
-            statusMsg.classList.add('hidden'); showToast(`스나이퍼 서치 완료! 타겟 앨범 ${matchCount}장을 찾았습니다.`, "success");
-            if (document.body.classList.contains('pixel-theme')) playRetroSound('coin');
-        } catch (e) { statusMsg.classList.add('hidden'); showToast("서버 통신 중 오류가 발생했습니다.", "error"); }
-        isDeepSearching = false; if(isFavoritesTab) renderFavorites(); else renderAllSections();
+
+            statusMsg.classList.add('hidden');
+
+            // ✅ SNIPER FIX 3: 0개 결과 처리
+            if (matchCount === 0) {
+                showToast(`"${q}" 의 참여 기록을 찾지 못했습니다 🔍`, "error");
+                // 스나이퍼 모드 해제 — 빈 화면 방지
+                sessionSearchQuery = "";
+                document.getElementById('sniper-active-banner').classList.add('hidden');
+            } else {
+                showToast(`스나이퍼 서치 완료! ${matchCount}장의 앨범에서 발견됐습니다 🎯`, "success");
+                if (document.body.classList.contains('pixel-theme')) playRetroSound('coin');
+                // ✅ SNIPER FIX 4: 활성 배너 표시
+                const banner = document.getElementById('sniper-active-banner');
+                banner.classList.remove('hidden');
+                document.getElementById('sniper-active-label').textContent =
+                    `"${q}" 참여 앨범 ${matchCount}장 · ${currentArtist}`;
+            }
+        } catch (e) {
+            statusMsg.classList.add('hidden');
+            showToast("서버 통신 중 오류가 발생했습니다.", "error");
+            sessionSearchQuery = "";
+        }
+
+        isDeepSearching = false;
+        if (isFavoritesTab) renderFavorites(); else renderAllSections();
     };
 
     function handleLocalSearch() {
         const q = document.getElementById('local-search-input').value.toLowerCase().trim();
-        if (q !== sessionSearchQuery) sessionSearchQuery = "";
-        if(isFavoritesTab) renderFavorites(); else renderAllSections();
+        if (q !== sessionSearchQuery) {
+            sessionSearchQuery = "";
+            document.getElementById('sniper-active-banner').classList.add('hidden');
+        }
+        if (isFavoritesTab) renderFavorites(); else renderAllSections();
     }
 
     function applyAlbumSort() { albumSortOrder = document.getElementById('album-sort-select').value; renderAllSections(); }
@@ -891,7 +956,10 @@
     window.closeStudioView = function() {
         document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit');
         window.history.pushState({}, '', window.location.pathname);
-        // 체인 초기화 — 스튜디오 완전히 닫을 때
+        // ✅ SNIPER FIX 1: 체인 초기화 + currentArtist 원래 아티스트로 복원
+        if (diggingChain.length > 0) {
+            currentArtist = diggingChain[0].artist; // 체인의 출발점 아티스트로 복원
+        }
         diggingChain = [];
         renderChainBar();
     };
