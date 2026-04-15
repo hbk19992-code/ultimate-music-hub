@@ -1,24 +1,20 @@
-// /api/getDiscogs.js  V6 — Ultimate Stable Edition
+// /api/getDiscogs.js  V7 — One-Shot Sniper & Title Sanitizer Edition
 
 const TOKEN = process.env.DISCOGS_TOKEN;
 const TOKEN_Q = TOKEN ? `&token=${TOKEN}` : '';
 const HEADERS = { 'User-Agent': 'CanYouDigIt/1.0 +https://owb-digging.app' };
 
 // ---------- Helpers ----------
-async function fetchJson(url, timeoutMs = 10000) {
+async function fetchJson(url, timeoutMs = 8000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(url, { headers: HEADERS, signal: ctrl.signal });
     clearTimeout(t);
-    if (!r.ok) {
-      console.error(`🚨 [Discogs API Error] ${r.status}: ${url}`);
-      return null;
-    }
+    if (!r.ok) return null;
     return await r.json();
   } catch (error) {
     clearTimeout(t);
-    console.error(`🚨 [Fetch Failed] ${error.message}`);
     return null;
   }
 }
@@ -73,7 +69,7 @@ function scoreRelease(rel) {
   return score;
 }
 
-// 괄호, 리마스터 등 꼬리표를 깔끔하게 제거하는 제목 정제 함수
+// 괄호, 리마스터 등 꼬리표를 깔끔하게 제거하는 제목 정제기
 function sanitizeTitle(title) {
   if (!title) return "";
   return title
@@ -89,102 +85,42 @@ export default async function handler(req, res) {
   const { albumTitle, artistName, deepSearch, sessionName } = req.query;
 
   // ============================================================
-  // MODE 1: Deep Session Search (스나이퍼 서치)
+  // MODE 1: Deep Session Search (One-Shot 스나이퍼 혁신)
   // ============================================================
   if (deepSearch === 'true' && artistName && sessionName) {
     try {
-      const artistSearch = await fetchJson(
-        `https://api.discogs.com/database/search?q=${encodeURIComponent(artistName)}&type=artist${TOKEN_Q}`
-      );
-      if (!artistSearch?.results?.length) return res.json({ matchedTitles: [] });
-
-      const exactMatch = artistSearch.results.find(r =>
-        r.title?.toLowerCase() === artistName.toLowerCase()
-      );
-      const artistId = (exactMatch || artistSearch.results[0]).id;
-
-      // 과거 명반 추적을 위해 검색 범위 100개 유지
-      const rData = await fetchJson(
-        `https://api.discogs.com/artists/${artistId}/releases?per_page=100&sort=year&sort_order=desc${TOKEN_Q}`
-      );
+      // 100번 반복하는 대신, Discogs DB 검색에 '아티스트'와 '세션명'을 동시에 던집니다.
+      // 이렇게 하면 Discogs가 알아서 세션 크레딧이 포함된 앨범만 추려서 보내줍니다.
+      const sniperUrl = `https://api.discogs.com/database/search?artist=${encodeURIComponent(artistName)}&q=${encodeURIComponent(sessionName)}&type=release&per_page=100${TOKEN_Q}`;
       
-      if (!rData?.releases) return res.json({ matchedTitles: [] });
-
-      const sessionLower = sessionName.toLowerCase().trim().replace(/\s+/g, ' ');
+      const searchRes = await fetchJson(sniperUrl);
       
-      const toCheck = rData.releases
-        .filter(r => r.role === 'Main' && r.title)
-        .slice(0, 100); 
-
-      const matchedTitles = new Set();
-      const chunkSize = 4; // API 부하 분산용 청크
-
-      for (let i = 0; i < toCheck.length; i += chunkSize) {
-        const chunk = toCheck.slice(i, i + chunkSize);
-        
-        const results = await Promise.allSettled(
-          chunk.map(async rel => {
-            try {
-              // 마스터 ID 누락 시 원래 ID로 우회하는 완벽한 폴백 처리
-              const targetReleaseId = (rel.type === 'master' && rel.main_release) ? rel.main_release : rel.id;
-              
-              if (!targetReleaseId) {
-                console.log(`[스나이퍼] 유효한 ID 없음 패스: ${rel.title}`);
-                return null;
-              }
-
-              const detail = await fetchJson(
-                `https://api.discogs.com/releases/${targetReleaseId}?${TOKEN_Q.slice(1)}`
-              );
-              
-              if (!detail) return null;
-              
-              const allCredits = [
-                ...(detail.extraartists || []),
-                ...((detail.tracklist || []).flatMap(t => t.extraartists || []))
-              ];
-              
-              const found = allCredits.some(ar => {
-                const cleanName = (ar.name || '').toLowerCase().replace(/\s\(\d+\)$/, '').trim();
-                return cleanName.includes(sessionLower);
-              });
-              
-              // 발견 시 프론트엔드와 매칭하기 쉽게 꼬리표를 뗀 제목으로 반환
-              return found ? sanitizeTitle(rel.title) : null;
-              
-            } catch (err) {
-              console.error(`[스나이퍼] ${rel.title} 처리 중 에러:`, err);
-              return null;
-            }
-          })
-        );
-        
-        results.forEach(r => { 
-          if (r.status === 'fulfilled' && r.value) {
-            matchedTitles.add(r.value); 
-          }
-        });
-        
-        // Rate Limit 회피를 위한 1.2초 대기
-        await new Promise(resolve => setTimeout(resolve, 1200));
+      if (!searchRes || !searchRes.results) {
+        return res.json({ matchedTitles: [] });
       }
 
-      // 스나이핑 결과는 빠르고 정확한 갱신을 위해 캐싱하지 않음
+      const matchedTitles = new Set();
+      
+      searchRes.results.forEach(r => {
+        // Discogs API의 title 결과는 "Brian Blade - Perceptual" 처럼 아티스트명이 붙어있으므로 분리
+        const rawTitle = r.title.includes(' - ') ? r.title.split(' - ').slice(1).join(' - ') : r.title;
+        // 괄호와 꼬리표를 제거한 깔끔한 제목만 저장
+        matchedTitles.add(sanitizeTitle(rawTitle));
+      });
+
       return res.json({ matchedTitles: Array.from(matchedTitles) });
       
     } catch (e) {
-      console.error("[스나이퍼] 전체 에러:", e);
       return res.status(500).json({ error: e.message, matchedTitles: [] });
     }
   }
 
   // ============================================================
-  // MODE 2: Album Credits (앨범 상세 크레딧)
+  // MODE 2: Album Credits (상세 크레딧)
   // ============================================================
   if (!albumTitle || !artistName) return res.status(400).json({ error: 'Required params missing' });
 
   try {
-    // 앨범 제목 렌즈 클리닝: (Remastered) 등의 꼬리표를 제거
     const cleanAlbumTitle = sanitizeTitle(albumTitle);
     const queryStr = encodeURIComponent(`${artistName} ${cleanAlbumTitle}`);
     
@@ -226,7 +162,7 @@ export default async function handler(req, res) {
 
     const primary = [...validReleases].sort((a, b) => (b.extraartists?.length || 0) - (a.extraartists?.length || 0))[0];
     
-    // 실전용 5분 캐시 적용 (앨범 크레딧 조회 최적화)
+    // 5분 캐시 적용
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     return res.json({
       ...primary,
@@ -234,7 +170,6 @@ export default async function handler(req, res) {
       tracklist: mergeTracklists(validReleases.map(r => r.tracklist || []))
     });
   } catch (e) {
-    console.error("[앨범 크레딧] 전체 에러:", e);
     return res.status(500).json({ error: e.message });
   }
 }
