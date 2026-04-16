@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -28,154 +29,157 @@
         @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
         .toast-animate { animation: slideUpFade 4s ease-in-out forwards; }
 
-    /* 👾 8-BIT RETRO THEME */
-    @keyframes crt-flicker { 0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; } }
-    body.pixel-theme { font-family: 'Galmuri11', 'Galmuri9', sans-serif !important; background-color: #000 !important; animation: crt-flicker 0.15s infinite; cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important; }
-    body.pixel-theme::after { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 9999; background-size: 100% 3px, 3px 100%; pointer-events: none; }
-    body.pixel-theme::before { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%); z-index: 9998; pointer-events: none; }
-    body.pixel-theme a, body.pixel-theme button, body.pixel-theme .cursor-pointer, body.pixel-theme select, body.pixel-theme input { cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer !important; }
-    body.pixel-theme * { border-radius: 0 !important; transition: none !important; }
-    body.pixel-theme img { image-rendering: pixelated !important; border: 2px solid #333 !important; }
-    body.pixel-theme .text-gradient { background: none !important; -webkit-text-fill-color: #10b981 !important; text-shadow: 3px 3px 0px #a238ff !important; }
-    body.pixel-theme .bg-zinc-900, body.pixel-theme .bg-zinc-800 { background-color: #111 !important; border: 2px solid #10b981 !important; }
-    body.pixel-theme .shadow-lg, body.pixel-theme .shadow-2xl, body.pixel-theme .group:hover { box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important; transform: translate(-2px, -2px) !important; }
-    body.pixel-theme input:not([type="range"]), body.pixel-theme select, body.pixel-theme button { border: 2px solid #444 !important; text-transform: uppercase; }
-    body.pixel-theme input:focus:not([type="range"]), body.pixel-theme select:focus { border-color: #a238ff !important; }
-    body.pixel-theme input[type="range"] { border: none !important; height: 6px !important; background: #333 !important; padding: 0 !important; }
-    body.pixel-theme input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; background: #10b981; border: 2px solid #fff; border-radius: 0; cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer; }
-    body.pixel-theme .toast-animate { border: 4px solid #fff !important; background: #000 !important; color: #fff !important; font-family: 'Galmuri11', sans-serif !important; box-shadow: 6px 6px 0px rgba(0,0,0,0.8) !important; border-radius: 0 !important; padding: 16px 24px !important; letter-spacing: 1px; }
+```
+/* 👾 8-BIT RETRO THEME */
+@keyframes crt-flicker { 0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; } }
+body.pixel-theme { font-family: 'Galmuri11', 'Galmuri9', sans-serif !important; background-color: #000 !important; animation: crt-flicker 0.15s infinite; cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important; }
+body.pixel-theme::after { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); z-index: 9999; background-size: 100% 3px, 3px 100%; pointer-events: none; }
+body.pixel-theme::before { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%); z-index: 9998; pointer-events: none; }
+body.pixel-theme a, body.pixel-theme button, body.pixel-theme .cursor-pointer, body.pixel-theme select, body.pixel-theme input { cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer !important; }
+body.pixel-theme * { border-radius: 0 !important; transition: none !important; }
+body.pixel-theme img { image-rendering: pixelated !important; border: 2px solid #333 !important; }
+body.pixel-theme .text-gradient { background: none !important; -webkit-text-fill-color: #10b981 !important; text-shadow: 3px 3px 0px #a238ff !important; }
+body.pixel-theme .bg-zinc-900, body.pixel-theme .bg-zinc-800 { background-color: #111 !important; border: 2px solid #10b981 !important; }
+body.pixel-theme .shadow-lg, body.pixel-theme .shadow-2xl, body.pixel-theme .group:hover { box-shadow: 4px 4px 0px rgba(16, 185, 129, 0.8) !important; transform: translate(-2px, -2px) !important; }
+body.pixel-theme input:not([type="range"]), body.pixel-theme select, body.pixel-theme button { border: 2px solid #444 !important; text-transform: uppercase; }
+body.pixel-theme input:focus:not([type="range"]), body.pixel-theme select:focus { border-color: #a238ff !important; }
+body.pixel-theme input[type="range"] { border: none !important; height: 6px !important; background: #333 !important; padding: 0 !important; }
+body.pixel-theme input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; background: #10b981; border: 2px solid #fff; border-radius: 0; cursor: url('https://cdn.custom-cursor.com/db/8221/32/pixel-pointer.png'), pointer; }
+body.pixel-theme .toast-animate { border: 4px solid #fff !important; background: #000 !important; color: #fff !important; font-family: 'Galmuri11', sans-serif !important; box-shadow: 6px 6px 0px rgba(0,0,0,0.8) !important; border-radius: 0 !important; padding: 16px 24px !important; letter-spacing: 1px; }
 
-    /* 자동완성 드롭다운 */
-    #autocomplete-dropdown {
-        position: absolute; top: calc(100% + 8px); left: 0; right: 0;
-        background: #111; border: 1px solid #27272a; border-radius: 16px;
-        z-index: 200; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-        max-height: 320px; overflow-y: auto;
-    }
-    .autocomplete-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; }
-    .autocomplete-item:hover, .autocomplete-item.active { background: #1a1a1a; }
-    .autocomplete-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #333; flex-shrink: 0; }
-    .autocomplete-item.track-item img { border-radius: 6px; }
-    .autocomplete-item .meta { flex: 1; min-width: 0; }
-    .autocomplete-item .meta-name { font-weight: 700; font-size: 13px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .autocomplete-item .meta-sub { font-size: 11px; color: #71717a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .autocomplete-item .play-badge { font-size: 10px; color: #10b981; font-weight: 700; background: #10b981/10; border: 1px solid #10b981/30; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+/* 자동완성 드롭다운 */
+#autocomplete-dropdown {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+    background: #111; border: 1px solid #27272a; border-radius: 16px;
+    z-index: 200; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    max-height: 320px; overflow-y: auto;
+}
+.autocomplete-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; }
+.autocomplete-item:hover, .autocomplete-item.active { background: #1a1a1a; }
+.autocomplete-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #333; flex-shrink: 0; }
+.autocomplete-item.track-item img { border-radius: 6px; }
+.autocomplete-item .meta { flex: 1; min-width: 0; }
+.autocomplete-item .meta-name { font-weight: 700; font-size: 13px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.autocomplete-item .meta-sub { font-size: 11px; color: #71717a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.autocomplete-item .play-badge { font-size: 10px; color: #10b981; font-weight: 700; background: #10b981/10; border: 1px solid #10b981/30; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
 
-    /* 크레딧 역할 그룹 */
-    .credit-group { margin-bottom: 20px; }
-    .credit-group-label { font-size: 9px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; color: #52525b; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #18181b; }
-    .credit-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 10px; transition: background 0.15s; margin-bottom: 4px; }
-    .credit-item:hover { background: rgba(16,185,129,0.05); }
-    .credit-item .role-pill { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 7px; font-size: 9px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: flex-start; }
-    .session-trigger { font-size: 13px; font-weight: 800; color: #fff; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; background: none; border: none; padding: 0; cursor: pointer; }
-    .session-trigger:hover { color: #10b981; }
+/* 크레딧 역할 그룹 */
+.credit-group { margin-bottom: 20px; }
+.credit-group-label { font-size: 9px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; color: #52525b; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #18181b; }
+.credit-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 10px; transition: background 0.15s; margin-bottom: 4px; }
+.credit-item:hover { background: rgba(16,185,129,0.05); }
+.credit-item .role-pill { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 7px; font-size: 9px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: flex-start; }
+.session-trigger { font-size: 13px; font-weight: 800; color: #fff; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; background: none; border: none; padding: 0; cursor: pointer; }
+.session-trigger:hover { color: #10b981; }
 
-    /* 세션 뮤지션 사이드패널 */
-    #session-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 420px; background: #0a0a0a; border-left: 1px solid #1a1a1a; z-index: 500; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; box-shadow: -20px 0 60px rgba(0,0,0,0.8); }
-    #session-panel.open { transform: translateX(0); }
-    #session-panel-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 499; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-    #session-panel-backdrop.open { opacity: 1; pointer-events: auto; }
-    .session-panel-header { padding: 24px 20px 16px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-    .session-panel-body { flex: 1; overflow-y: auto; padding: 16px; }
-    .session-album-card { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; cursor: pointer; transition: background 0.15s; margin-bottom: 4px; border: 1px solid transparent; }
-    .session-album-card:hover { background: #111; border-color: #27272a; }
-    .session-album-card img { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid #333; flex-shrink: 0; }
-    .session-album-card .info { flex: 1; min-width: 0; }
-    .session-album-card .info-title { font-weight: 700; font-size: 12px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .session-album-card .info-meta { font-size: 10px; color: #71717a; margin-top: 2px; }
+/* 세션 뮤지션 사이드패널 */
+#session-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 420px; background: #0a0a0a; border-left: 1px solid #1a1a1a; z-index: 500; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; box-shadow: -20px 0 60px rgba(0,0,0,0.8); }
+#session-panel.open { transform: translateX(0); }
+#session-panel-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 499; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+#session-panel-backdrop.open { opacity: 1; pointer-events: auto; }
+.session-panel-header { padding: 24px 20px 16px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.session-panel-body { flex: 1; overflow-y: auto; padding: 16px; }
+.session-album-card { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; cursor: pointer; transition: background 0.15s; margin-bottom: 4px; border: 1px solid transparent; }
+.session-album-card:hover { background: #111; border-color: #27272a; }
+.session-album-card img { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid #333; flex-shrink: 0; }
+.session-album-card .info { flex: 1; min-width: 0; }
+.session-album-card .info-title { font-weight: 700; font-size: 12px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.session-album-card .info-meta { font-size: 10px; color: #71717a; margin-top: 2px; }
 
-    /* 트랙 힌트 배너 */
-    .track-hint-banner { background: linear-gradient(135deg, rgba(162,56,255,0.08), rgba(16,185,129,0.08)); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 12px 16px; font-size: 11px; color: #a1a1aa; text-align: center; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .track-hint-banner span { color: #10b981; font-weight: 700; }
+/* 트랙 힌트 배너 */
+.track-hint-banner { background: linear-gradient(135deg, rgba(162,56,255,0.08), rgba(16,185,129,0.08)); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 12px 16px; font-size: 11px; color: #a1a1aa; text-align: center; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.track-hint-banner span { color: #10b981; font-weight: 700; }
 
-    #search-wrapper { position: relative; }
-    .track-playing { background: rgba(16,185,129,0.08) !important; }
-    .track-playing .track-num { color: #10b981 !important; }
+#search-wrapper { position: relative; }
+.track-playing { background: rgba(16,185,129,0.08) !important; }
+.track-playing .track-num { color: #10b981 !important; }
 
-    @keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-    .playing-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse-green 1s infinite; display: inline-block; }
+@keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.playing-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulse-green 1s infinite; display: inline-block; }
 
-    /* Chain Digging 브레드크럼 */
-    #digging-chain-bar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 0; overflow-x: auto; overflow-y: hidden; background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0)); padding: 12px 70px 16px 16px; z-index: 155; scrollbar-width: none; -webkit-overflow-scrolling: touch; min-height: 52px; }
-    #digging-chain-bar::-webkit-scrollbar { display: none; }
-    #digging-chain-bar.hidden { display: none; }
-    .chain-node { display: flex; align-items: center; gap: 6px; flex-shrink: 0; cursor: pointer; padding: 4px 8px; border-radius: 20px; transition: background 0.15s; max-width: 140px; }
-    .chain-node:hover { background: rgba(255,255,255,0.07); }
-    .chain-node.chain-current { background: rgba(16,185,129,0.12); cursor: default; }
-    .chain-node img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
-    .chain-node .chain-label { font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
-    .chain-node.chain-current .chain-label { color: #10b981; }
-    .chain-node:not(.chain-current) .chain-label { color: #71717a; }
-    .chain-node:not(.chain-current):hover .chain-label { color: #a1a1aa; }
-    .chain-arrow { color: #3f3f46; font-size: 10px; flex-shrink: 0; padding: 0 2px; }
-    @keyframes chainSlideIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
-    .chain-loaded { animation: chainSlideIn 0.25s ease-out; }
-    .context-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 6px; padding: 4px 8px; font-size: 10px; color: #10b981; font-weight: 700; margin-bottom: 12px; }
-    @media (prefers-reduced-motion: reduce) { body.pixel-theme { animation: none !important; } .chain-loaded { animation: none !important; } }
+/* Chain Digging 브레드크럼 */
+#digging-chain-bar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 0; overflow-x: auto; overflow-y: hidden; background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0)); padding: 12px 70px 16px 16px; z-index: 155; scrollbar-width: none; -webkit-overflow-scrolling: touch; min-height: 52px; }
+#digging-chain-bar::-webkit-scrollbar { display: none; }
+#digging-chain-bar.hidden { display: none; }
+.chain-node { display: flex; align-items: center; gap: 6px; flex-shrink: 0; cursor: pointer; padding: 4px 8px; border-radius: 20px; transition: background 0.15s; max-width: 140px; }
+.chain-node:hover { background: rgba(255,255,255,0.07); }
+.chain-node.chain-current { background: rgba(16,185,129,0.12); cursor: default; }
+.chain-node img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+.chain-node .chain-label { font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+.chain-node.chain-current .chain-label { color: #10b981; }
+.chain-node:not(.chain-current) .chain-label { color: #71717a; }
+.chain-node:not(.chain-current):hover .chain-label { color: #a1a1aa; }
+.chain-arrow { color: #3f3f46; font-size: 10px; flex-shrink: 0; padding: 0 2px; }
+@keyframes chainSlideIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+.chain-loaded { animation: chainSlideIn 0.25s ease-out; }
+.context-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 6px; padding: 4px 8px; font-size: 10px; color: #10b981; font-weight: 700; margin-bottom: 12px; }
+@media (prefers-reduced-motion: reduce) { body.pixel-theme { animation: none !important; } .chain-loaded { animation: none !important; } }
 
-    /* 스켈레톤 로딩 */
-    @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
-    .skeleton { background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%); background-size: 800px 100%; animation: shimmer 1.4s infinite linear; border-radius: 12px; }
-    .skeleton-card { background: #111; border-radius: 16px; overflow: hidden; border: 1px solid #1a1a1a; }
-    .skeleton-card .sk-img { aspect-ratio: 1; width: 100%; }
-    .skeleton-card .sk-line1 { height: 12px; margin: 12px 12px 6px; border-radius: 6px; }
-    .skeleton-card .sk-line2 { height: 8px; margin: 0 12px 12px; width: 50%; border-radius: 4px; }
+/* 스켈레톤 로딩 */
+@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+.skeleton { background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%); background-size: 800px 100%; animation: shimmer 1.4s infinite linear; border-radius: 12px; }
+.skeleton-card { background: #111; border-radius: 16px; overflow: hidden; border: 1px solid #1a1a1a; }
+.skeleton-card .sk-img { aspect-ratio: 1; width: 100%; }
+.skeleton-card .sk-line1 { height: 12px; margin: 12px 12px 6px; border-radius: 6px; }
+.skeleton-card .sk-line2 { height: 8px; margin: 0 12px 12px; width: 50%; border-radius: 4px; }
 
-    /* 스와이프 핸들 */
-    #studio-swipe-handle { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); z-index: 161; cursor: grab; }
+/* 스와이프 핸들 */
+#studio-swipe-handle { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 36px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); z-index: 161; cursor: grab; }
 
-    /* 타임라인 뷰 */
-    .timeline-wrap { position: relative; padding-left: 36px; }
-    .timeline-wrap::before { content:''; position:absolute; left:12px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom,#10b981,rgba(162,56,255,0.15)); border-radius:2px; }
-    .timeline-group { margin-bottom: 48px; position: relative; }
-    .timeline-group-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-    .timeline-year-dot { width:12px; height:12px; border-radius:50%; background:#10b981; border:2px solid #050505; box-shadow:0 0 8px rgba(16,185,129,0.6); flex-shrink:0; position:absolute; left:-42px; }
-    .timeline-year-label { font-size:13px; font-weight:900; color:#10b981; letter-spacing:0.08em; }
-    .timeline-card { display:flex; align-items:center; gap:12px; background:#0d0d0d; border:1px solid #1a1a1a; border-radius:14px; padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
-    .timeline-card:hover { background:#141414; border-color:#10b981; transform:translateX(4px); }
-    .timeline-card:hover .tc-title { color:#10b981; }
-    .timeline-card img { width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid #2a2a2a; flex-shrink:0; }
-    .timeline-card .tc-title { font-weight:700; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .timeline-card .tc-meta { font-size:10px; color:#52525b; margin-top:2px; }
-    .timeline-card.tc-matched { border-color:#10b981; box-shadow:0 0 12px rgba(16,185,129,0.2); }
-    .view-toggle-btn { padding:6px 14px; font-size:11px; font-weight:700; border-radius:8px; cursor:pointer; border:none; transition:all 0.15s; }
-    .view-toggle-btn.active { background:#10b981; color:#000; }
-    .view-toggle-btn:not(.active) { background:#18181b; color:#71717a; border:1px solid #27272a; }
+/* 타임라인 뷰 */
+.timeline-wrap { position: relative; padding-left: 36px; }
+.timeline-wrap::before { content:''; position:absolute; left:12px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom,#10b981,rgba(162,56,255,0.15)); border-radius:2px; }
+.timeline-group { margin-bottom: 48px; position: relative; }
+.timeline-group-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.timeline-year-dot { width:12px; height:12px; border-radius:50%; background:#10b981; border:2px solid #050505; box-shadow:0 0 8px rgba(16,185,129,0.6); flex-shrink:0; position:absolute; left:-42px; }
+.timeline-year-label { font-size:13px; font-weight:900; color:#10b981; letter-spacing:0.08em; }
+.timeline-card { display:flex; align-items:center; gap:12px; background:#0d0d0d; border:1px solid #1a1a1a; border-radius:14px; padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
+.timeline-card:hover { background:#141414; border-color:#10b981; transform:translateX(4px); }
+.timeline-card:hover .tc-title { color:#10b981; }
+.timeline-card img { width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid #2a2a2a; flex-shrink:0; }
+.timeline-card .tc-title { font-weight:700; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.timeline-card .tc-meta { font-size:10px; color:#52525b; margin-top:2px; }
+.timeline-card.tc-matched { border-color:#10b981; box-shadow:0 0 12px rgba(16,185,129,0.2); }
+.view-toggle-btn { padding:6px 14px; font-size:11px; font-weight:700; border-radius:8px; cursor:pointer; border:none; transition:all 0.15s; }
+.view-toggle-btn.active { background:#10b981; color:#000; }
+.view-toggle-btn:not(.active) { background:#18181b; color:#71717a; border:1px solid #27272a; }
 
-    /* 앨범 메모 */
-    #memo-section { border-top:1px solid #18181b; padding-top:20px; margin-top:4px; }
-    .star-btn { font-size:22px; cursor:pointer; transition:transform 0.1s; line-height:1; background:none; border:none; padding:2px; opacity:0.35; }
-    .star-btn.lit, .star-btn:hover { opacity:1; transform:scale(1.15); }
-    #memo-textarea { width:100%; background:#0d0d0d; border:1px solid #27272a; border-radius:12px; color:#fff; padding:10px 12px; font-size:12px; font-family:inherit; resize:none; outline:none; min-height:72px; transition:border-color 0.2s; line-height:1.6; }
-    #memo-textarea:focus { border-color:#10b981; }
-    #memo-textarea::placeholder { color:#3f3f46; }
-    .memo-tag { display:inline-flex; align-items:center; gap:4px; background:#18181b; border:1px solid #27272a; border-radius:20px; padding:4px 11px; font-size:10px; font-weight:700; color:#71717a; cursor:pointer; transition:all 0.15s; user-select:none; }
-    .memo-tag.selected { background:rgba(16,185,129,0.12); border-color:#10b981; color:#10b981; }
-    .memo-dot { position:absolute; top:6px; left:6px; width:8px; height:8px; background:#a238ff; border-radius:50%; border:2px solid #050505; z-index:10; box-shadow:0 0 6px rgba(162,56,255,0.7); pointer-events:none; }
-    @keyframes memoPop { 0%{transform:scale(0)} 70%{transform:scale(1.3)} 100%{transform:scale(1)} }
-    .memo-dot { animation:memoPop 0.3s ease-out; }
+/* 앨범 메모 */
+#memo-section { border-top:1px solid #18181b; padding-top:20px; margin-top:4px; }
+.star-btn { font-size:22px; cursor:pointer; transition:transform 0.1s; line-height:1; background:none; border:none; padding:2px; opacity:0.35; }
+.star-btn.lit, .star-btn:hover { opacity:1; transform:scale(1.15); }
+#memo-textarea { width:100%; background:#0d0d0d; border:1px solid #27272a; border-radius:12px; color:#fff; padding:10px 12px; font-size:12px; font-family:inherit; resize:none; outline:none; min-height:72px; transition:border-color 0.2s; line-height:1.6; }
+#memo-textarea:focus { border-color:#10b981; }
+#memo-textarea::placeholder { color:#3f3f46; }
+.memo-tag { display:inline-flex; align-items:center; gap:4px; background:#18181b; border:1px solid #27272a; border-radius:20px; padding:4px 11px; font-size:10px; font-weight:700; color:#71717a; cursor:pointer; transition:all 0.15s; user-select:none; }
+.memo-tag.selected { background:rgba(16,185,129,0.12); border-color:#10b981; color:#10b981; }
+.memo-dot { position:absolute; top:6px; left:6px; width:8px; height:8px; background:#a238ff; border-radius:50%; border:2px solid #050505; z-index:10; box-shadow:0 0 6px rgba(162,56,255,0.7); pointer-events:none; }
+@keyframes memoPop { 0%{transform:scale(0)} 70%{transform:scale(1.3)} 100%{transform:scale(1)} }
+.memo-dot { animation:memoPop 0.3s ease-out; }
 
-    /* 세션 뮤지션 랭킹 */
-    #ranking-modal { position:fixed; inset:0; z-index:400; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; }
-    #ranking-modal.open { opacity:1; pointer-events:auto; }
-    #ranking-panel { background:#0a0a0a; border:1px solid #1f1f1f; border-radius:24px 24px 0 0; width:100%; max-width:700px; max-height:88vh; display:flex; flex-direction:column; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); overflow:hidden; }
-    #ranking-modal.open #ranking-panel { transform:translateY(0); }
-    .ranking-handle { width:36px; height:4px; background:#27272a; border-radius:2px; margin:12px auto 0; flex-shrink:0; }
-    .ranking-item { display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:12px; cursor:pointer; transition:background 0.15s; }
-    .ranking-item:hover { background:rgba(16,185,129,0.06); }
-    .ranking-rank { font-size:11px; font-weight:900; color:#3f3f46; width:26px; text-align:center; flex-shrink:0; }
-    .ranking-rank.top3 { color:#10b981; font-size:15px; }
-    .ranking-bar-wrap { flex:1; min-width:0; }
-    .ranking-name { font-weight:800; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
-    .ranking-role-tag { font-size:9px; color:#52525b; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
-    .ranking-bar-bg { height:3px; background:#1a1a1a; border-radius:2px; overflow:hidden; margin-top:5px; }
-    .ranking-bar-fill { height:100%; background:linear-gradient(90deg,#10b981,#a238ff); border-radius:2px; width:0; transition:width 0.7s ease-out; }
-    .ranking-count { font-size:12px; font-weight:900; color:#10b981; flex-shrink:0; min-width:28px; text-align:right; }
-    .ranking-album-chips { display:flex; gap:3px; margin-top:4px; flex-wrap:wrap; max-height:30px; overflow:hidden; }
-    .ranking-album-chip { font-size:9px; color:#52525b; background:#111; border:1px solid #1f1f1f; border-radius:4px; padding:1px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
-    .ranking-progress-bar { height:2px; background:#1a1a1a; overflow:hidden; }
-    .ranking-progress-fill { height:100%; background:linear-gradient(90deg,#10b981,#a238ff); transition:width 0.3s ease-out; width:0%; }
-    </style>
+/* 세션 뮤지션 랭킹 */
+#ranking-modal { position:fixed; inset:0; z-index:400; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+#ranking-modal.open { opacity:1; pointer-events:auto; }
+#ranking-panel { background:#0a0a0a; border:1px solid #1f1f1f; border-radius:24px 24px 0 0; width:100%; max-width:700px; max-height:88vh; display:flex; flex-direction:column; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); overflow:hidden; }
+#ranking-modal.open #ranking-panel { transform:translateY(0); }
+.ranking-handle { width:36px; height:4px; background:#27272a; border-radius:2px; margin:12px auto 0; flex-shrink:0; }
+.ranking-item { display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:12px; cursor:pointer; transition:background 0.15s; }
+.ranking-item:hover { background:rgba(16,185,129,0.06); }
+.ranking-rank { font-size:11px; font-weight:900; color:#3f3f46; width:26px; text-align:center; flex-shrink:0; }
+.ranking-rank.top3 { color:#10b981; font-size:15px; }
+.ranking-bar-wrap { flex:1; min-width:0; }
+.ranking-name { font-weight:800; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
+.ranking-role-tag { font-size:9px; color:#52525b; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+.ranking-bar-bg { height:3px; background:#1a1a1a; border-radius:2px; overflow:hidden; margin-top:5px; }
+.ranking-bar-fill { height:100%; background:linear-gradient(90deg,#10b981,#a238ff); border-radius:2px; width:0; transition:width 0.7s ease-out; }
+.ranking-count { font-size:12px; font-weight:900; color:#10b981; flex-shrink:0; min-width:28px; text-align:right; }
+.ranking-album-chips { display:flex; gap:3px; margin-top:4px; flex-wrap:wrap; max-height:30px; overflow:hidden; }
+.ranking-album-chip { font-size:9px; color:#52525b; background:#111; border:1px solid #1f1f1f; border-radius:4px; padding:1px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
+.ranking-progress-bar { height:2px; background:#1a1a1a; overflow:hidden; }
+.ranking-progress-fill { height:100%; background:linear-gradient(90deg,#10b981,#a238ff); transition:width 0.3s ease-out; width:0%; }
+</style>
+```
+
 </head>
 <body class="relative">
 
@@ -252,70 +256,73 @@
             <p class="text-zinc-500 text-[10px] md:text-sm font-medium uppercase tracking-[0.2em]">Sideman Hunter Edition V28</p>
         </header>
 
-    <div id="search-section" class="max-w-3xl mx-auto mb-8">
-        <div id="search-wrapper" class="relative flex flex-col md:flex-row items-stretch md:items-center gap-2 bg-zinc-900 p-2 rounded-2xl md:rounded-3xl border border-zinc-800 focus-within:border-[#10b981]/50 transition-colors">
-            <div class="flex flex-1 gap-1">
-                <select id="search-mode" onchange="clearAutocomplete()" class="bg-zinc-800 text-white px-3 py-3 rounded-xl border border-zinc-700 text-xs md:text-sm font-bold">
-                    <option value="artist">👤 아티스트</option>
-                    <option value="track">🎵 곡명</option>
-                </select>
-                <input type="text" id="search-input" placeholder="검색어를 입력하세요..." autocomplete="off"
-                    class="flex-1 bg-transparent text-white px-3 py-3 focus:outline-none text-base md:text-lg">
-            </div>
-            <div id="autocomplete-dropdown" class="hidden"></div>
-        </div>
-    </div>
-
-    <div class="flex justify-center mb-10">
-        <div class="bg-zinc-900/50 p-1 rounded-xl flex border border-zinc-800 w-full max-w-sm">
-            <button id="tab-search" onclick="switchTab('search')" class="flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg transition-all">디스코그래피</button>
-            <button id="tab-fav" onclick="switchTab('fav')" class="flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500 transition-all">☁️ 커스텀 보관함</button>
-        </div>
-    </div>
-
-    <div id="status-message" class="text-center text-[#10b981] mb-8 hidden font-mono text-xs animate-pulse tracking-widest font-bold">ANALYZING DATABASE...</div>
-
-    <div id="artist-selection-container" class="max-w-6xl mx-auto mb-10 hidden">
-        <div id="artist-selection-grid" class="grid grid-cols-2 md:flex md:flex-wrap justify-center gap-4 md:gap-6"></div>
-    </div>
-
-    <div id="results-controls" class="hidden flex flex-col gap-3 mb-10 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800">
-        <div class="flex w-full gap-2">
-            <input type="text" id="local-search-input" oninput="handleLocalSearch()" onkeypress="if(event.key==='Enter') startDeepSessionSearch()" placeholder="앨범 제목 또는 세션명 검색..." class="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#10b981]">
-            <button onclick="startDeepSessionSearch()" class="bg-[#10b981] text-black px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-transform hover:scale-105 shadow-lg active:scale-95 flex items-center gap-1 shrink-0">
-                🎯 스나이퍼 서치
-            </button>
-        </div>
-        <div class="flex items-center gap-2 flex-wrap">
-            <div class="flex gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
-                <button id="view-grid-btn" onclick="setViewMode('grid')" class="view-toggle-btn active">⊞ 그리드</button>
-                <button id="view-timeline-btn" onclick="setViewMode('timeline')" class="view-toggle-btn">≡ 타임라인</button>
-            </div>
-            <button onclick="openRankingModal()" class="flex items-center gap-1.5 px-3 py-2 bg-zinc-950 border border-zinc-800 hover:border-[#a238ff] text-zinc-400 hover:text-[#a238ff] rounded-lg text-xs font-bold transition-colors">
-                🎭 세션 랭킹
-            </button>
-            <select id="album-sort-select" onchange="applyAlbumSort()" class="ml-auto bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold border border-zinc-800 cursor-pointer">
-                <option value="desc">📅 최신순</option>
-                <option value="asc">⏳ 과거순</option>
+```
+<div id="search-section" class="max-w-3xl mx-auto mb-8">
+    <div id="search-wrapper" class="relative flex flex-col md:flex-row items-stretch md:items-center gap-2 bg-zinc-900 p-2 rounded-2xl md:rounded-3xl border border-zinc-800 focus-within:border-[#10b981]/50 transition-colors">
+        <div class="flex flex-1 gap-1">
+            <select id="search-mode" onchange="clearAutocomplete()" class="bg-zinc-800 text-white px-3 py-3 rounded-xl border border-zinc-700 text-xs md:text-sm font-bold">
+                <option value="artist">👤 아티스트</option>
+                <option value="track">🎵 곡명</option>
             </select>
+            <input type="text" id="search-input" placeholder="검색어를 입력하세요..." autocomplete="off"
+                class="flex-1 bg-transparent text-white px-3 py-3 focus:outline-none text-base md:text-lg">
         </div>
+        <div id="autocomplete-dropdown" class="hidden"></div>
     </div>
+</div>
 
-    <div id="sniper-active-banner" class="hidden mb-6 flex items-center justify-between gap-4 bg-[#10b981]/10 border border-[#10b981]/30 px-5 py-3 rounded-2xl">
-        <div class="flex items-center gap-3 min-w-0">
-            <span class="text-lg flex-shrink-0">🎯</span>
-            <div class="min-w-0">
-                <p class="text-[#10b981] font-black text-sm">스나이퍼 모드 활성</p>
-                <p id="sniper-active-label" class="text-zinc-400 text-xs mt-0.5 truncate"></p>
-            </div>
-        </div>
-        <button onclick="clearSniperMode()" class="flex-shrink-0 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold rounded-lg transition-colors">
-            ✕ 초기화
+<div class="flex justify-center mb-10">
+    <div class="bg-zinc-900/50 p-1 rounded-xl flex border border-zinc-800 w-full max-w-sm">
+        <button id="tab-search" onclick="switchTab('search')" class="flex-1 py-3 text-xs md:text-sm font-bold bg-zinc-800 text-white rounded-lg shadow-lg transition-all">디스코그래피</button>
+        <button id="tab-fav" onclick="switchTab('fav')" class="flex-1 py-3 text-xs md:text-sm font-bold text-zinc-500 transition-all">☁️ 커스텀 보관함</button>
+    </div>
+</div>
+
+<div id="status-message" class="text-center text-[#10b981] mb-8 hidden font-mono text-xs animate-pulse tracking-widest font-bold">ANALYZING DATABASE...</div>
+
+<div id="artist-selection-container" class="max-w-6xl mx-auto mb-10 hidden">
+    <div id="artist-selection-grid" class="grid grid-cols-2 md:flex md:flex-wrap justify-center gap-4 md:gap-6"></div>
+</div>
+
+<div id="results-controls" class="hidden flex flex-col gap-3 mb-10 bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800">
+    <div class="flex w-full gap-2">
+        <input type="text" id="local-search-input" oninput="handleLocalSearch()" onkeypress="if(event.key==='Enter') startDeepSessionSearch()" placeholder="앨범 제목 또는 세션명 검색..." class="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm outline-none focus:border-[#10b981]">
+        <button onclick="startDeepSessionSearch()" class="bg-[#10b981] text-black px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-transform hover:scale-105 shadow-lg active:scale-95 flex items-center gap-1 shrink-0">
+            🎯 스나이퍼 서치
         </button>
     </div>
-
-    <div id="sections-container" class="space-y-16"></div>
+    <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+            <button id="view-grid-btn" onclick="setViewMode('grid')" class="view-toggle-btn active">⊞ 그리드</button>
+            <button id="view-timeline-btn" onclick="setViewMode('timeline')" class="view-toggle-btn">≡ 타임라인</button>
+        </div>
+        <button onclick="openRankingModal()" class="flex items-center gap-1.5 px-3 py-2 bg-zinc-950 border border-zinc-800 hover:border-[#a238ff] text-zinc-400 hover:text-[#a238ff] rounded-lg text-xs font-bold transition-colors">
+            🎭 세션 랭킹
+        </button>
+        <select id="album-sort-select" onchange="applyAlbumSort()" class="ml-auto bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold border border-zinc-800 cursor-pointer">
+            <option value="desc">📅 최신순</option>
+            <option value="asc">⏳ 과거순</option>
+        </select>
     </div>
+</div>
+
+<div id="sniper-active-banner" class="hidden mb-6 flex items-center justify-between gap-4 bg-[#10b981]/10 border border-[#10b981]/30 px-5 py-3 rounded-2xl">
+    <div class="flex items-center gap-3 min-w-0">
+        <span class="text-lg flex-shrink-0">🎯</span>
+        <div class="min-w-0">
+            <p class="text-[#10b981] font-black text-sm">스나이퍼 모드 활성</p>
+            <p id="sniper-active-label" class="text-zinc-400 text-xs mt-0.5 truncate"></p>
+        </div>
+    </div>
+    <button onclick="clearSniperMode()" class="flex-shrink-0 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-bold rounded-lg transition-colors">
+        ✕ 초기화
+    </button>
+</div>
+
+<div id="sections-container" class="space-y-16"></div>
+</div>
+```
+
 </div>
 
 <div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950/98 backdrop-blur-3xl transition-all duration-500 studio-view-exit flex flex-col">
@@ -347,53 +354,56 @@
         <div id="track-hint-banner" class="track-hint-banner mb-3">🎵 트랙을 클릭하면 <span>트랙별 세션 크레딧</span>이 오른쪽에 표시됩니다</div>
         <div id="studio-track-list" class="lg:overflow-y-auto pr-2 space-y-1 lg:scrollbar-thin"></div>
     </div>
-    
-    <div class="w-full lg:flex-1 flex flex-col lg:h-[calc(100vh-250px)] border-t lg:border-t-0 lg:border-l border-zinc-800 pt-8 lg:pt-0 lg:pl-10">
-        <h3 class="text-2xl font-black text-white mb-8 shrink-0 flex items-center gap-3">📓 Digging Notes</h3>
-        <div class="lg:overflow-y-auto pr-3 space-y-10 lg:scrollbar-thin pb-24 md:pb-0">
-            <section id="discogs-track-credits-container" class="hidden bg-[#10b981]/5 p-6 rounded-3xl border border-[#10b981]/20">
-                <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-3">
-                    <h5 id="discogs-track-title" class="text-white font-bold text-base md:text-lg truncate">🎵 트랙 제목</h5>
-                    <span class="text-[10px] text-[#10b981] font-black uppercase tracking-widest bg-[#10b981]/10 px-2 py-1 rounded flex-shrink-0 ml-2">TRACK CREDITS</span>
-                </div>
-                <div id="discogs-track-data-ui" class="text-sm font-mono space-y-1"></div>
-            </section>
 
-            <section>
-                <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Encyclopedia & Trivia</h4>
-                <p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium"></p>
-            </section>
+```
+<div class="w-full lg:flex-1 flex flex-col lg:h-[calc(100vh-250px)] border-t lg:border-t-0 lg:border-l border-zinc-800 pt-8 lg:pt-0 lg:pl-10">
+    <h3 class="text-2xl font-black text-white mb-8 shrink-0 flex items-center gap-3">📓 Digging Notes</h3>
+    <div class="lg:overflow-y-auto pr-3 space-y-10 lg:scrollbar-thin pb-24 md:pb-0">
+        <section id="discogs-track-credits-container" class="hidden bg-[#10b981]/5 p-6 rounded-3xl border border-[#10b981]/20">
+            <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-3">
+                <h5 id="discogs-track-title" class="text-white font-bold text-base md:text-lg truncate">🎵 트랙 제목</h5>
+                <span class="text-[10px] text-[#10b981] font-black uppercase tracking-widest bg-[#10b981]/10 px-2 py-1 rounded flex-shrink-0 ml-2">TRACK CREDITS</span>
+            </div>
+            <div id="discogs-track-data-ui" class="text-sm font-mono space-y-1"></div>
+        </section>
 
-            <section>
-                <div class="flex items-center justify-between mb-4">
-                    <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em]">Full Session Credits</h4>
-                    <div id="credit-count-badge" class="hidden text-[10px] text-zinc-500 font-bold bg-zinc-900 border border-zinc-800 px-2 py-1 rounded"></div>
-                </div>
-                <div id="credit-filter-tabs" class="hidden flex flex-wrap gap-2 mb-5"></div>
-                <div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-1"></div>
-            </section>
+        <section>
+            <h4 class="text-zinc-500 font-black text-[10px] uppercase mb-4 tracking-[0.3em]">Encyclopedia & Trivia</h4>
+            <p id="wiki-credit-text" class="text-sm text-zinc-400 leading-relaxed font-medium"></p>
+        </section>
 
-            <section id="memo-section">
-                <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4">📝 내 메모</h4>
-                <div id="memo-login-prompt" class="hidden text-zinc-600 text-xs font-bold py-4 text-center">로그인 후 메모를 남길 수 있습니다</div>
-                <div id="memo-form" class="hidden space-y-3">
-                    <div class="flex items-center gap-1" id="star-rating">
-                        <button class="star-btn" data-val="1">★</button><button class="star-btn" data-val="2">★</button><button class="star-btn" data-val="3">★</button><button class="star-btn" data-val="4">★</button><button class="star-btn" data-val="5">★</button>
-                        <span id="memo-rating-label" class="text-zinc-600 text-[10px] font-bold ml-2">평점 없음</span>
-                    </div>
-                    <div class="flex flex-wrap gap-2" id="memo-tags-row">
-                        <span class="memo-tag" data-tag="명반">명반</span><span class="memo-tag" data-tag="재발견">재발견</span><span class="memo-tag" data-tag="세션맛집">세션맛집</span><span class="memo-tag" data-tag="디깅추천">디깅추천</span><span class="memo-tag" data-tag="희귀반">희귀반</span>
-                    </div>
-                    <textarea id="memo-textarea" placeholder="이 앨범에 대한 메모를 남겨보세요..."></textarea>
-                    <div class="flex items-center gap-2">
-                        <button onclick="saveMemo()" class="px-4 py-2 bg-[#10b981] text-black text-xs font-black rounded-xl hover:bg-[#0ea472] transition-colors">저장</button>
-                        <button onclick="deleteMemo()" id="memo-delete-btn" class="hidden px-4 py-2 bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black rounded-xl transition-colors">삭제</button>
-                        <span id="memo-saved-indicator" class="text-[#10b981] text-[10px] font-bold hidden">✓ 저장됨</span>
-                    </div>
+        <section>
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em]">Full Session Credits</h4>
+                <div id="credit-count-badge" class="hidden text-[10px] text-zinc-500 font-bold bg-zinc-900 border border-zinc-800 px-2 py-1 rounded"></div>
+            </div>
+            <div id="credit-filter-tabs" class="hidden flex flex-wrap gap-2 mb-5"></div>
+            <div id="discogs-credit-text" class="text-sm text-zinc-300 font-mono space-y-1"></div>
+        </section>
+
+        <section id="memo-section">
+            <h4 class="text-zinc-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4">📝 내 메모</h4>
+            <div id="memo-login-prompt" class="hidden text-zinc-600 text-xs font-bold py-4 text-center">로그인 후 메모를 남길 수 있습니다</div>
+            <div id="memo-form" class="hidden space-y-3">
+                <div class="flex items-center gap-1" id="star-rating">
+                    <button class="star-btn" data-val="1">★</button><button class="star-btn" data-val="2">★</button><button class="star-btn" data-val="3">★</button><button class="star-btn" data-val="4">★</button><button class="star-btn" data-val="5">★</button>
+                    <span id="memo-rating-label" class="text-zinc-600 text-[10px] font-bold ml-2">평점 없음</span>
                 </div>
-            </section>
-        </div>
+                <div class="flex flex-wrap gap-2" id="memo-tags-row">
+                    <span class="memo-tag" data-tag="명반">명반</span><span class="memo-tag" data-tag="재발견">재발견</span><span class="memo-tag" data-tag="세션맛집">세션맛집</span><span class="memo-tag" data-tag="디깅추천">디깅추천</span><span class="memo-tag" data-tag="희귀반">희귀반</span>
+                </div>
+                <textarea id="memo-textarea" placeholder="이 앨범에 대한 메모를 남겨보세요..."></textarea>
+                <div class="flex items-center gap-2">
+                    <button onclick="saveMemo()" class="px-4 py-2 bg-[#10b981] text-black text-xs font-black rounded-xl hover:bg-[#0ea472] transition-colors">저장</button>
+                    <button onclick="deleteMemo()" id="memo-delete-btn" class="hidden px-4 py-2 bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black rounded-xl transition-colors">삭제</button>
+                    <span id="memo-saved-indicator" class="text-[#10b981] text-[10px] font-bold hidden">✓ 저장됨</span>
+                </div>
+            </div>
+        </section>
     </div>
+</div>
+```
+
 </div>
 </div>
 
@@ -523,7 +533,7 @@
         const q = document.getElementById('search-input').value.trim(); if (!q) return;
         const mode = document.getElementById('search-mode').value;
         document.getElementById('sections-container').innerHTML = ''; document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden');
-        albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
+        albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false };
         window.itunesAlbums = []; window.deezerUniqueFeatures = []; sessionSearchQuery = '';
         if (mode === 'artist') { loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=12&output=jsonp&callback=handleArtistSearch`); } else { loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=12&output=jsonp&callback=handleTrackGlobalSearch`); }
     }
@@ -533,7 +543,7 @@
 
     let _fetchEpoch = 0;
     window.selectArtist = function(id, name) {
-        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false };
+        currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false };
         sessionSearchQuery = ""; document.getElementById('local-search-input').value = ''; clearSniperMode();
         const epoch = ++_fetchEpoch;
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); showSkeletonCards();
@@ -574,11 +584,50 @@
             }
         }; 
         loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(name)}&limit=100&output=jsonp&callback=${featCb}`);
+
+        // 🆕 "feat {name}" 전용 Deezer 검색 — 피처링 참여곡 전용 발굴
+        window.deezerFeatFeatures = [];
+        const featSearchQueries = [`feat ${name}`, `featuring ${name}`, `ft ${name}`];
+        let featSearchDone = 0;
+        const totalFeatSearches = featSearchQueries.length;
+        featSearchQueries.forEach((q, qi) => {
+            const fsCb = `_fs_${epoch}_${qi}`;
+            window[fsCb] = (d) => {
+                delete window[fsCb];
+                if (epoch !== _fetchEpoch) return;
+                if (d.data) {
+                    const cArtistLower = currentArtist.toLowerCase();
+                    d.data.forEach(t => {
+                        // 본인이 메인인 경우 제외
+                        if (t.artist.id === currentArtistId) return;
+                        if (t.artist.name.toLowerCase() === cArtistLower) return;
+                        // 아티스트명이 트랙 제목, 앨범 제목, 또는 아티스트 필드 안에 feat로 들어있는지 확인
+                        const combined = `${t.title} ${t.album.title} ${t.artist.name}`.toLowerCase();
+                        if (combined.includes(cArtistLower)) {
+                            window.deezerFeatFeatures.push(t);
+                        }
+                    });
+                }
+                featSearchDone++;
+                if (featSearchDone >= totalFeatSearches) {
+                    // 중복 제거
+                    const seen = new Set();
+                    window.deezerFeatFeatures = window.deezerFeatFeatures.filter(t => {
+                        if (seen.has(t.album.id)) return false;
+                        seen.add(t.album.id);
+                        return true;
+                    });
+                    fetchState.featDone = true;
+                    tryRenderAll(epoch);
+                }
+            };
+            loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=50&output=jsonp&callback=${fsCb}`);
+        });
     };
 
     function tryRenderAll(epoch) {
         if (epoch !== undefined && epoch !== _fetchEpoch) return;
-        if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone) return;
+        if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone || !fetchState.featDone) return;
         
         document.getElementById('status-message').classList.add('hidden'); document.getElementById('results-controls').classList.remove('hidden'); document.getElementById('reset-btn').classList.remove('hidden');
         
@@ -649,6 +698,16 @@
                 }
             });
         }
+        // 🆕 "feat" Deezer 검색 결과 병합
+        if (window.deezerFeatFeatures) {
+            window.deezerFeatFeatures.forEach(t => {
+                const tl = cleanTitleForSearch(t.album.title).toLowerCase();
+                if (!seenTitles.has(tl)) {
+                    seenTitles.add(tl);
+                    albumsData.features.push({ id: t.album.id, title: t.album.title, cover_medium: t.album.cover_medium, release_date: t.album.release_date || '', record_type: 'deezer', artist: { name: t.artist.name }, source: 'deezer', originBadge: 'FEAT' });
+                }
+            });
+        }
         renderAllSections();
 
         fetchDiscogsAppearances(currentArtist, epoch);
@@ -664,6 +723,7 @@
             const groupReleases = d.groupReleases || [];   
             const appearances = d.appearances || [];       
             const searchHits = d.searchHits || [];         
+            const featHits = d.featHits || [];             
             const groups = d.groups || [];                 
 
             const existingTitleIds = new Set();
@@ -675,7 +735,8 @@
             const candidates = [
                 ...groupReleases.map(x => ({ ...x, _origin: 'group', _badge: 'BAND' })),
                 ...appearances.map(x => ({ ...x, _origin: 'appearance', _badge: 'SIDEMAN' })),
-                ...searchHits.map(x => ({ ...x, _origin: 'search', _badge: 'SIDEMAN' }))
+                ...searchHits.map(x => ({ ...x, _origin: 'search', _badge: 'SIDEMAN' })),
+                ...featHits.map(x => ({ ...x, _origin: 'feat', _badge: 'FEAT' }))
             ];
 
             const seenTitles = new Set();
@@ -949,6 +1010,7 @@
             const safeIt = JSON.stringify(it).replace(/"/g, '"'); const hasMemo = allUserMemos[String(it.id)];
             let originBadgeHtml = '';
             if (it.originBadge === 'BAND') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-[#a238ff] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🎸 BAND</span>';
+            else if (it.originBadge === 'FEAT') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🎤 FEAT</span>';
             else if (it.originBadge === 'SIDEMAN' || it.discogsRole) originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-cyan-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">💎 SIDEMAN</span>';
             const sourceBadge = it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>'
                 : isDiscogsOnly ? '<span class="absolute top-2 left-2 bg-[#a238ff]/80 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🔍 Discogs</span>'
@@ -1363,7 +1425,8 @@
     audio.addEventListener('error', () => { pI.classList.remove('hidden'); psI.classList.add('hidden'); showToast("미리듣기를 불러올 수 없습니다 😞", "error"); }); audio.addEventListener('stalled', () => { showToast("스트리밍이 지연되고 있습니다...", "error"); });
     document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (document.getElementById('session-panel').classList.contains('open')) { closeSessionPanel(); } else if (document.getElementById('studio-view').classList.contains('studio-view-enter')) { closeStudioView(); } });
 
-    window.resetApp = function() { currentArtist = null; currentArtistId = null; albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false }; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; sessionSearchQuery = ""; diggingChain = []; document.getElementById('search-input').value = ''; document.getElementById('local-search-input').value = ''; document.getElementById('sections-container').innerHTML = ''; document.getElementById('results-controls').classList.add('hidden'); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.add('hidden'); document.getElementById('reset-btn').classList.add('hidden'); setViewMode('grid'); clearAutocomplete(); renderChainBar(); };
+    window.resetApp = function() { currentArtist = null; currentArtistId = null; albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false }; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; sessionSearchQuery = ""; diggingChain = []; document.getElementById('search-input').value = ''; document.getElementById('local-search-input').value = ''; document.getElementById('sections-container').innerHTML = ''; document.getElementById('results-controls').classList.add('hidden'); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.add('hidden'); document.getElementById('reset-btn').classList.add('hidden'); setViewMode('grid'); clearAutocomplete(); renderChainBar(); };
 </script>
+
 </body>
 </html>
