@@ -464,6 +464,11 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     let sessionSearchQuery = "";
     let isDeepSearching = false;
 
+    // 🆕 "더 찾아보기" 심층 검색 상태
+    let isDeepSearchRunning = false;
+    let deepSearchDone = false;
+    let deepSearchAddedCount = 0;
+
     let sessionPanelCurrentName = "";
     let sessionPanelCurrentRole = "";
     let diggingChain = [];
@@ -544,6 +549,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     let _fetchEpoch = 0;
     window.selectArtist = function(id, name) {
         currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false };
+        deepSearchDone = false; deepSearchAddedCount = 0; isDeepSearchRunning = false;
         sessionSearchQuery = ""; document.getElementById('local-search-input').value = ''; clearSniperMode();
         const epoch = ++_fetchEpoch;
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); showSkeletonCards();
@@ -854,6 +860,182 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         } catch(e) { console.warn('Appearances fetch failed:', e); }
     }
 
+    // 🆕 "더 찾아보기" - 사용자가 수동으로 트리거하는 심층 발굴
+    window.triggerDeepSearch = async function() {
+        if (isDeepSearchRunning) { showToast("이미 심층 검색 중입니다", "info"); return; }
+        if (!currentArtist) { showToast("먼저 아티스트를 검색해주세요", "error"); return; }
+
+        isDeepSearchRunning = true;
+        deepSearchAddedCount = 0;
+        deepSearchDone = false;
+        renderAllSections();
+        showToast("🕳️ Discogs 심층 발굴 시작 — 약 10~20초 소요", "info");
+
+        // 진행 상태 텍스트 업데이트
+        const statusEl = () => document.getElementById('deep-search-status');
+        const setStatus = (t) => { const el = statusEl(); if (el) el.textContent = t; };
+        setStatus("아티스트 릴리즈 심층 조회 중...");
+
+        const epochAtStart = _fetchEpoch;
+
+        try {
+            const r = await fetch(`/api/getDiscogsDeep?artistName=${encodeURIComponent(currentArtist)}`);
+            if (!r.ok) throw new Error("서버 응답 오류");
+            const d = await r.json();
+            if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
+
+            setStatus("발굴 결과 매칭 중...");
+
+            const appearances = d.appearances || [];
+            const searchHits = d.searchHits || [];
+            const compHits = d.compHits || [];
+            const featHits = d.featHits || [];
+            const keywordHits = d.keywordHits || [];
+
+            // 이미 존재하는 타이틀/ID 수집
+            const existingTitleIds = new Set();
+            [...albumsData.regular, ...albumsData.ep, ...albumsData.features,
+             ...albumsData.compilation, ...albumsData.live].forEach(a => {
+                existingTitleIds.add(superCleanTitle(a.title));
+            });
+            const existingIds = new Set([
+                ...albumsData.regular.map(f => f.id),
+                ...albumsData.ep.map(f => f.id),
+                ...albumsData.features.map(f => f.id),
+                ...albumsData.compilation.map(f => f.id),
+                ...albumsData.live.map(f => f.id)
+            ]);
+
+            // 통합 후보 리스트
+            const candidates = [
+                ...appearances.map(x => ({ ...x, _origin: 'appearance', _badge: 'SIDEMAN' })),
+                ...searchHits.map(x => ({ ...x, _origin: 'search', _badge: 'SIDEMAN' })),
+                ...compHits.map(x => ({ ...x, _origin: 'comp', _badge: 'V.A.' })),
+                ...featHits.map(x => ({ ...x, _origin: 'feat', _badge: 'FEAT' })),
+                ...keywordHits.map(x => ({ ...x, _origin: 'keyword', _badge: 'DEEP' }))
+            ];
+
+            const seenTitles = new Set();
+            const filtered = candidates.filter(c => {
+                const cid = superCleanTitle(c.title);
+                if (!cid || cid.length < 2) return false;
+                if (existingTitleIds.has(cid)) return false;
+                if (seenTitles.has(cid)) return false;
+                seenTitles.add(cid);
+                return true;
+            }).slice(0, 100); // 심층 모드는 최대 100장까지
+
+            if (!filtered.length) {
+                showToast("추가로 발굴된 참여작이 없습니다 😢", "info");
+                isDeepSearchRunning = false;
+                deepSearchDone = true;
+                renderAllSections();
+                return;
+            }
+
+            setStatus(`${filtered.length}장 Deezer 매칭 시도 중...`);
+
+            // Deezer에 매칭 시도
+            const matchPromises = filtered.map(app => new Promise(resolve => {
+                const cb = `_deep_${Math.random().toString(36).slice(2)}`;
+                let resolved = false;
+                window[cb] = (data) => {
+                    if (resolved) return;
+                    resolved = true;
+                    delete window[cb];
+                    const cleanAppTitle = superCleanTitle(app.title);
+                    const cleanAppArtist = (app.artist || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const results = data.data || [];
+
+                    let bestMatch = null, bestScore = 0;
+                    results.forEach(t => {
+                        const tTitle = superCleanTitle(t.album.title);
+                        const tArtist = t.artist.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        let score = 0;
+                        if (tTitle === cleanAppTitle) score += 10;
+                        else if (tTitle.includes(cleanAppTitle) || cleanAppTitle.includes(tTitle)) score += 6;
+                        else return;
+                        if (cleanAppArtist && tArtist.includes(cleanAppArtist.slice(0, Math.min(6, cleanAppArtist.length)))) score += 3;
+                        if (score > bestScore) { bestScore = score; bestMatch = t; }
+                    });
+                    if (bestMatch && bestScore >= 6) {
+                        resolve({
+                            id: bestMatch.album.id,
+                            title: bestMatch.album.title,
+                            cover_medium: bestMatch.album.cover_medium,
+                            release_date: app.year ? `${app.year}-01-01` : (bestMatch.album.release_date || ''),
+                            artist: { name: bestMatch.artist.name },
+                            source: 'deezer',
+                            discogsRole: app.role || app._badge,
+                            originBadge: app._badge
+                        });
+                    } else {
+                        resolve({
+                            id: `discogs_${app.discogsId || Math.random().toString(36).slice(2)}`,
+                            title: app.title,
+                            cover_medium: app.thumb || 'https://placehold.co/300x300/18181b/a238ff?text=Discogs',
+                            release_date: app.year ? `${app.year}-01-01` : '',
+                            artist: { name: app.artist || 'Various' },
+                            source: 'discogs-only',
+                            discogsRole: app.role || app._badge,
+                            originBadge: app._badge,
+                            discogsId: app.discogsId
+                        });
+                    }
+                };
+                const q = encodeURIComponent(`${app.artist || ''} ${app.title}`.trim());
+                loadJSONP(`https://api.deezer.com/search?q=${q}&limit=5&output=jsonp&callback=${cb}`);
+                setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        delete window[cb];
+                        resolve({
+                            id: `discogs_${app.discogsId || Math.random().toString(36).slice(2)}`,
+                            title: app.title,
+                            cover_medium: app.thumb || 'https://placehold.co/300x300/18181b/a238ff?text=Discogs',
+                            release_date: app.year ? `${app.year}-01-01` : '',
+                            artist: { name: app.artist || 'Various' },
+                            source: 'discogs-only',
+                            discogsRole: app.role || app._badge,
+                            originBadge: app._badge,
+                            discogsId: app.discogsId
+                        });
+                    }
+                }, 5000);
+            }));
+
+            const matched = (await Promise.all(matchPromises)).filter(Boolean);
+            if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
+
+            let addedCount = 0;
+            matched.forEach(m => {
+                const tid = superCleanTitle(m.title);
+                if (existingIds.has(m.id) || existingTitleIds.has(tid)) return;
+                albumsData.features.push(m);
+                existingIds.add(m.id);
+                existingTitleIds.add(tid);
+                addedCount++;
+            });
+
+            deepSearchAddedCount = addedCount;
+            deepSearchDone = true;
+            isDeepSearchRunning = false;
+
+            if (addedCount > 0) {
+                showToast(`🕳️ 심층 발굴 완료! 추가로 ${addedCount}장 발견`, "success");
+            } else {
+                showToast("추가로 발굴된 참여작이 없습니다 😢", "info");
+            }
+            renderAllSections();
+
+        } catch (e) {
+            console.warn('Deep search failed:', e);
+            showToast("심층 검색 중 오류가 발생했습니다", "error");
+            isDeepSearchRunning = false;
+            renderAllSections();
+        }
+    };
+
     function clearSniperMode() { sessionSearchQuery = ""; const allAlbums = [...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features, ...favorites]; allAlbums.forEach(a => a.sessionMatched = false); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('local-search-input').value = ''; if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
     window.clearSniperMode = clearSniperMode;
 
@@ -974,6 +1156,32 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date || 0) - new Date(a.release_date || 0) : new Date(a.release_date || 0) - new Date(b.release_date || 0));
         if (currentViewMode === 'timeline') { const all = sort([...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features].filter(f)); renderTimelineView(all); return; }
         renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album'); renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album'); renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album'); renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album'); renderSection('🤝 피처링 참여곡', albumsData.features.filter(f), 'album');
+
+        // 🆕 "더 찾아보기" 버튼 — 아티스트가 선택되어 있고 피처링 탭 기준으로 더 깊이 파고 싶을 때
+        if (currentArtist && !isDeepSearchRunning) {
+            const deepBtnWrap = document.createElement('div');
+            deepBtnWrap.className = 'mt-8 px-4 md:px-0 flex flex-col items-center gap-3';
+            deepBtnWrap.innerHTML = `
+                <button id="deep-search-btn" onclick="triggerDeepSearch()"
+                    class="group relative px-6 py-3.5 bg-gradient-to-r from-[#a238ff]/20 to-[#10b981]/20 border border-[#a238ff]/40 hover:border-[#a238ff] text-white rounded-2xl font-bold text-xs md:text-sm transition-all hover:scale-105 flex items-center gap-2.5">
+                    <span class="text-lg">🕳️</span>
+                    <span>더 찾아보기 (심층 발굴)</span>
+                    <span class="text-[10px] text-zinc-500 font-mono ml-1">V.A. · 세션 · 희귀 참여작</span>
+                </button>
+                ${deepSearchDone ? `<p class="text-[10px] text-zinc-600 font-bold">✓ ${deepSearchAddedCount}장 추가 발굴 완료 — 다시 누르면 재실행</p>` : `<p class="text-[10px] text-zinc-600 font-bold">Discogs 심층 검색 (10~20초 소요)</p>`}
+            `;
+            document.getElementById('sections-container').appendChild(deepBtnWrap);
+        } else if (isDeepSearchRunning) {
+            const loadingWrap = document.createElement('div');
+            loadingWrap.className = 'mt-8 px-4 md:px-0 flex flex-col items-center gap-3';
+            loadingWrap.innerHTML = `
+                <div class="px-6 py-3.5 bg-zinc-900 border border-[#a238ff]/60 rounded-2xl font-bold text-xs md:text-sm text-[#a238ff] flex items-center gap-2.5 animate-pulse">
+                    <span class="text-lg">🕳️</span>
+                    <span id="deep-search-status">심층 발굴 중...</span>
+                </div>
+            `;
+            document.getElementById('sections-container').appendChild(loadingWrap);
+        }
     }
 
     function renderFavorites() {
@@ -1011,6 +1219,8 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
             let originBadgeHtml = '';
             if (it.originBadge === 'BAND') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-[#a238ff] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🎸 BAND</span>';
             else if (it.originBadge === 'FEAT') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🎤 FEAT</span>';
+            else if (it.originBadge === 'V.A.') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-indigo-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">📀 V.A.</span>';
+            else if (it.originBadge === 'DEEP') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-fuchsia-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🕳️ DEEP</span>';
             else if (it.originBadge === 'SIDEMAN' || it.discogsRole) originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-cyan-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">💎 SIDEMAN</span>';
             const sourceBadge = it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>'
                 : isDiscogsOnly ? '<span class="absolute top-2 left-2 bg-[#a238ff]/80 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🔍 Discogs</span>'
@@ -1460,7 +1670,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     audio.addEventListener('error', () => { pI.classList.remove('hidden'); psI.classList.add('hidden'); showToast("미리듣기를 불러올 수 없습니다 😞", "error"); }); audio.addEventListener('stalled', () => { showToast("스트리밍이 지연되고 있습니다...", "error"); });
     document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (document.getElementById('session-panel').classList.contains('open')) { closeSessionPanel(); } else if (document.getElementById('studio-view').classList.contains('studio-view-enter')) { closeStudioView(); } });
 
-    window.resetApp = function() { currentArtist = null; currentArtistId = null; albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false }; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; sessionSearchQuery = ""; diggingChain = []; document.getElementById('search-input').value = ''; document.getElementById('local-search-input').value = ''; document.getElementById('sections-container').innerHTML = ''; document.getElementById('results-controls').classList.add('hidden'); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.add('hidden'); document.getElementById('reset-btn').classList.add('hidden'); setViewMode('grid'); clearAutocomplete(); renderChainBar(); };
+    window.resetApp = function() { currentArtist = null; currentArtistId = null; albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false }; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; sessionSearchQuery = ""; diggingChain = []; deepSearchDone = false; deepSearchAddedCount = 0; isDeepSearchRunning = false; document.getElementById('search-input').value = ''; document.getElementById('local-search-input').value = ''; document.getElementById('sections-container').innerHTML = ''; document.getElementById('results-controls').classList.add('hidden'); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.add('hidden'); document.getElementById('reset-btn').classList.add('hidden'); setViewMode('grid'); clearAutocomplete(); renderChainBar(); };
 </script>
 
 </body>
