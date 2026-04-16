@@ -1,50 +1,49 @@
-// /api/getDiscogsDeep.js  V3 - Hardened
-// 에러가 나더라도 반드시 JSON 응답을 반환하고, 어느 단계에서 실패했는지 추적 가능
-
-export const config = {
-maxDuration: 30  // Vercel Pro는 60, Hobby는 10 → 명시해서 최대치 요청
-};
+// /api/getDiscogsDeep.js  V4 - Vercel Hobby 10s 호환 버전
+//
+// V3 문제: 1번 호출에 13개 요청 → 10초 timeout 초과 (FUNCTION_INVOCATION_TIMEOUT)
+//
+// V4 해결: “stage” 파라미터로 한 번에 2~3개 요청만 처리.
+// 프론트엔드가 여러 번 호출하며 단계별로 누적. 각 호출은 3~5초에 끝남.
+//
+// 사용법:
+//   /api/getDiscogsDeep?artistName=X&stage=1  → 아티스트 ID + 디스코그래피 page 4
+//   /api/getDiscogsDeep?artistName=X&stage=2&artistId=123  → 디스코그래피 page 5, 6
+//   /api/getDiscogsDeep?artistName=X&stage=3  → V.A. Compilation 검색
+//   /api/getDiscogsDeep?artistName=X&stage=4  → 키워드 추가 페이지
+//   /api/getDiscogsDeep?artistName=X&stage=5  → summit/tribute/guest 키워드
 
 export default async function handler(req, res) {
-// 🔒 모든 에러를 잡아서 JSON으로 반환하는 최상위 래퍼
 try {
 return await mainHandler(req, res);
 } catch (topError) {
 console.error(’[getDiscogsDeep] TOP-LEVEL ERROR:’, topError);
 return res.status(500).json({
 error: `Top-level crash: ${topError?.message || String(topError)}`,
-stack: topError?.stack?.split(’\n’).slice(0, 3).join(’ | ’),
-appearances: [], searchHits: [], compHits: [], featHits: [], keywordHits: [], total: 0
+results: [], done: false
 });
 }
 }
 
 async function mainHandler(req, res) {
-const { artistName } = req.query;
+const { artistName, stage, artistId: artistIdParam } = req.query;
 if (!artistName) {
-return res.status(400).json({ error: ‘artistName is required’ });
+return res.status(400).json({ error: ‘artistName is required’, results: [], done: false });
 }
 
-// Node 18+ global fetch 존재 확인
 if (typeof fetch !== ‘function’) {
 return res.status(500).json({
-error: ‘fetch is not available on this Node runtime. Upgrade to Node 18+ in Vercel project settings.’,
-appearances: [], searchHits: [], compHits: [], featHits: [], keywordHits: [], total: 0
+error: ‘fetch unavailable. Upgrade to Node 18+.’,
+results: [], done: false
 });
 }
 
 const TOKEN = process.env.DISCOGS_TOKEN;
-const headers = {
-‘User-Agent’: ‘CanYouDigIt/1.0 +https://owb-digging.app’
-};
+const headers = { ‘User-Agent’: ‘CanYouDigIt/1.0 +https://owb-digging.app’ };
 const tokenQ = TOKEN ? `&token=${TOKEN}` : ‘’;
 const artistNameLower = artistName.toLowerCase();
-const debug = { steps: [] };
 
-// 안전한 fetch (4.5초 타임아웃, 에러 시 null 반환)
-const fetchJson = async (url, timeoutMs = 4500) => {
-let ctrl = null;
-let timeoutId = null;
+const fetchJson = async (url, timeoutMs = 3500) => {
+let ctrl = null, timeoutId = null;
 try {
 ctrl = new AbortController();
 timeoutId = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -52,40 +51,18 @@ const r = await fetch(url, { headers, signal: ctrl.signal });
 clearTimeout(timeoutId);
 if (r.status === 429) return { _rateLimited: true };
 if (!r.ok) return { _httpError: r.status };
-const txt = await r.text();
-try {
-return JSON.parse(txt);
-} catch (parseErr) {
-return { _parseError: true };
-}
+return await r.json();
 } catch (e) {
 if (timeoutId) clearTimeout(timeoutId);
 return { _fetchError: e?.message || ‘unknown’ };
 }
 };
 
-// 배치 처리 (동시 요청 제한)
-const batchFetch = async (urls, batchSize = 3) => {
-const all = [];
-let rateLimited = false;
-for (let i = 0; i < urls.length; i += batchSize) {
-const batch = urls.slice(i, i + batchSize);
-const results = await Promise.all(batch.map(u => fetchJson(u)));
-all.push(…results);
-if (results.some(r => r?._rateLimited)) {
-rateLimited = true;
-break;
-}
-}
-return { results: all, rateLimited };
-};
-
 const parseSearchResults = (rawResults, badge, role) => {
 const out = [];
 const seenIds = new Set();
 rawResults.forEach(d => {
-if (!d || d._rateLimited || d._httpError || d._fetchError || d._parseError) return;
-if (!d.results) return;
+if (!d || d._rateLimited || d._httpError || d._fetchError || !d.results) return;
 d.results.forEach(r => {
 if (!r.title || seenIds.has(r.id)) return;
 seenIds.add(r.id);
@@ -107,7 +84,7 @@ if (!fullTitle.includes(artistNameLower)) return;
       title: albumTitle,
       artist: albumArtist || 'Various',
       year: r.year || null,
-      role: role,
+      role,
       thumb: r.thumb || '',
       discogsId: r.id,
       _badge: badge
@@ -119,76 +96,16 @@ return out;
 
 };
 
-const dedup = (arr) => {
-const seen = new Set();
-return arr.filter(a => {
-const key = `${(a.title || '').toLowerCase()}_${(a.artist || '').toLowerCase()}`;
-if (seen.has(key)) return false;
-seen.add(key);
-return true;
-});
-};
-
-const sortByYear = (arr) =>
-arr.sort((a, b) => (b.year || 0) - (a.year || 0));
-
-// ================ STEP 1: 아티스트 ID ================
-debug.steps.push(‘step1_start’);
-let artistId = null;
-try {
-const sData = await fetchJson(
-`https://api.discogs.com/database/search?q=${encodeURIComponent(artistName)}&type=artist${tokenQ}`
-);
-debug.steps.push(`step1_response:${sData ? 'ok' : 'null'}`);
-if (!sData) throw new Error(‘step1 null’);
-if (sData._rateLimited) {
-return res.status(200).json({
-partialResults: true,
-warning: ‘Rate limit hit during artist lookup’,
-appearances: [], searchHits: [], compHits: [], featHits: [], keywordHits: [],
-total: 0, debug
-});
-}
-if (sData._httpError || sData._fetchError || sData._parseError) {
-throw new Error(`step1 failed: ${JSON.stringify(sData)}`);
-}
-if (!sData.results?.length) {
-return res.status(200).json({
-appearances: [], searchHits: [], compHits: [], featHits: [], keywordHits: [],
-total: 0, warning: ‘Artist not found on Discogs’, debug
-});
-}
-const exactMatch = sData.results.find(r => r.title?.toLowerCase() === artistName.toLowerCase());
-const artist = exactMatch || sData.results[0];
-artistId = artist.id;
-debug.steps.push(`step1_artistId:${artistId}`);
-} catch (e) {
-return res.status(500).json({
-error: `Step 1 failed: ${e.message}`,
-debug,
-appearances: [], searchHits: [], compHits: [], featHits: [], keywordHits: [], total: 0
-});
-}
-
-// ================ STEP 2: 디스코그래피 페이지 4-6 ================
-debug.steps.push(‘step2_start’);
-let appearances = [];
-let stopEarly = false;
-try {
-const pageUrls = [4, 5, 6].map(p =>
-`https://api.discogs.com/artists/${artistId}/releases?per_page=100&page=${p}&sort=year&sort_order=desc${tokenQ}`
-);
-const { results: pageResults, rateLimited } = await batchFetch(pageUrls, 3);
-if (rateLimited) stopEarly = true;
+const parseReleasePages = (pageResults) => {
+const out = [];
 const seen = new Set();
 pageResults.forEach(d => {
-if (!d || d._rateLimited || d._httpError || d._fetchError || d._parseError) return;
-if (!d.releases) return;
+if (!d || d._rateLimited || d._httpError || d._fetchError || !d.releases) return;
 d.releases.forEach(r => {
 if (seen.has(r.id)) return;
 seen.add(r.id);
 if (r.role && r.role !== ‘Main’ && r.artist && r.title) {
-appearances.push({
+out.push({
 title: r.title,
 artist: r.artist,
 year: r.year || null,
@@ -200,85 +117,112 @@ _badge: ‘SIDEMAN’
 }
 });
 });
-debug.steps.push(`step2_got:${appearances.length}`);
-} catch (e) {
-debug.steps.push(`step2_error:${e.message}`);
+return out;
+};
+
+const stageNum = parseInt(stage || ‘1’, 10);
+
+// =========== STAGE 1: Artist ID + Disco page 4 ===========
+if (stageNum === 1) {
+const sData = await fetchJson(
+`https://api.discogs.com/database/search?q=${encodeURIComponent(artistName)}&type=artist${tokenQ}`
+);
+if (!sData || sData._rateLimited || sData._httpError || sData._fetchError) {
+return res.status(200).json({
+error: sData?._rateLimited ? ‘Rate limit’ : ‘Artist lookup failed’,
+results: [], done: false, nextStage: null
+});
+}
+if (!sData.results?.length) {
+return res.status(200).json({
+error: ‘Artist not found’, results: [], done: true, nextStage: null
+});
+}
+const exactMatch = sData.results.find(r => r.title?.toLowerCase() === artistNameLower);
+const artist = exactMatch || sData.results[0];
+const artistId = artist.id;
+
+```
+// Disco page 4
+const pageData = await fetchJson(
+  `https://api.discogs.com/artists/${artistId}/releases?per_page=100&page=4&sort=year&sort_order=desc${tokenQ}`
+);
+const results = parseReleasePages([pageData]);
+
+return res.status(200).json({
+  results, done: false, nextStage: 2, artistId, stageLabel: '디스코그래피 4페이지'
+});
+```
+
 }
 
-// ================ STEP 3: V.A. 컴필레이션 ================
-let compHits = [];
-if (!stopEarly) {
-debug.steps.push(‘step3_start’);
-try {
-const compUrls = [1, 2].map(p =>
+// =========== STAGE 2: Disco page 5, 6 ===========
+if (stageNum === 2) {
+if (!artistIdParam) {
+return res.status(400).json({ error: ‘artistId required for stage 2’, results: [], done: false });
+}
+const urls = [5, 6].map(p =>
+`https://api.discogs.com/artists/${artistIdParam}/releases?per_page=100&page=${p}&sort=year&sort_order=desc${tokenQ}`
+);
+const pageResults = await Promise.all(urls.map(u => fetchJson(u)));
+const results = parseReleasePages(pageResults);
+
+```
+return res.status(200).json({
+  results, done: false, nextStage: 3, artistId: artistIdParam, stageLabel: '디스코그래피 5-6페이지'
+});
+```
+
+}
+
+// =========== STAGE 3: V.A. Compilation ===========
+if (stageNum === 3) {
+const urls = [1, 2].map(p =>
 `https://api.discogs.com/database/search?q=${encodeURIComponent(artistName)}&type=release&format=Compilation&per_page=100&page=${p}${tokenQ}`
 );
-const { results: compResults, rateLimited } = await batchFetch(compUrls, 2);
-if (rateLimited) stopEarly = true;
-compHits = parseSearchResults(compResults, ‘V.A.’, ‘V.A. Compilation’);
-debug.steps.push(`step3_got:${compHits.length}`);
-} catch (e) {
-debug.steps.push(`step3_error:${e.message}`);
-}
+const raw = await Promise.all(urls.map(u => fetchJson(u)));
+const results = parseSearchResults(raw, ‘V.A.’, ‘V.A. Compilation’);
+
+```
+return res.status(200).json({
+  results, done: false, nextStage: 4, artistId: artistIdParam, stageLabel: 'V.A. 컴필레이션'
+});
+```
+
 }
 
-// ================ STEP 4: 키워드 검색 페이지 2-3 ================
-let searchHits = [];
-if (!stopEarly) {
-debug.steps.push(‘step4_start’);
-try {
-const searchUrls = [2, 3].map(p =>
+// =========== STAGE 4: Keyword search pages 2-3 ===========
+if (stageNum === 4) {
+const urls = [2, 3].map(p =>
 `https://api.discogs.com/database/search?q=${encodeURIComponent(artistName)}&type=release&per_page=100&page=${p}${tokenQ}`
 );
-const { results: searchResults, rateLimited } = await batchFetch(searchUrls, 2);
-if (rateLimited) stopEarly = true;
-searchHits = parseSearchResults(searchResults, ‘SIDEMAN’, ‘Credit’);
-debug.steps.push(`step4_got:${searchHits.length}`);
-} catch (e) {
-debug.steps.push(`step4_error:${e.message}`);
-}
+const raw = await Promise.all(urls.map(u => fetchJson(u)));
+const results = parseSearchResults(raw, ‘SIDEMAN’, ‘Credit’);
+
+```
+return res.status(200).json({
+  results, done: false, nextStage: 5, artistId: artistIdParam, stageLabel: '키워드 확장 검색'
+});
+```
+
 }
 
-// ================ STEP 5: 키워드 조합 ================
-let keywordHits = [];
-if (!stopEarly) {
-debug.steps.push(‘step5_start’);
-try {
+// =========== STAGE 5: Special keyword combos ===========
+if (stageNum === 5) {
 const KEYWORDS = [‘summit’, ‘tribute’, ‘guest’];
-const keywordUrls = KEYWORDS.map(kw =>
+const urls = KEYWORDS.map(kw =>
 `https://api.discogs.com/database/search?q=${encodeURIComponent(artistName + ' ' + kw)}&type=release&per_page=50${tokenQ}`
 );
-const { results: keywordResults, rateLimited } = await batchFetch(keywordUrls, 3);
-if (rateLimited) stopEarly = true;
-keywordHits = parseSearchResults(keywordResults, ‘DEEP’, ‘Deep Search’);
-debug.steps.push(`step5_got:${keywordHits.length}`);
-} catch (e) {
-debug.steps.push(`step5_error:${e.message}`);
-}
-}
+const raw = await Promise.all(urls.map(u => fetchJson(u)));
+const results = parseSearchResults(raw, ‘DEEP’, ‘Deep Search’);
 
-// ================ 응답 조립 ================
-const result = {
-appearances: sortByYear(dedup(appearances)),
-searchHits: sortByYear(dedup(searchHits)),
-compHits: sortByYear(dedup(compHits)),
-featHits: [],
-keywordHits: sortByYear(dedup(keywordHits)),
-artistId,
-partialResults: stopEarly,
-total: 0,
-debug
-};
-result.total =
-result.appearances.length +
-result.searchHits.length +
-result.compHits.length +
-result.keywordHits.length;
+```
+return res.status(200).json({
+  results, done: true, nextStage: null, artistId: artistIdParam, stageLabel: '특수 키워드 검색'
+});
+```
 
-if (stopEarly) {
-result.warning = ‘Rate limit reached. Some results omitted.’;
 }
 
-res.setHeader(‘Cache-Control’, ‘s-maxage=3600, stale-while-revalidate=86400’);
-return res.status(200).json(result);
+return res.status(400).json({ error: `Unknown stage: ${stageNum}`, results: [], done: true });
 }
