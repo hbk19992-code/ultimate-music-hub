@@ -505,8 +505,8 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 
     function loadJSONP(url) { const scriptId = 'jsonp-' + Math.random().toString(36).substr(2, 9); const s = document.createElement('script'); s.id = scriptId; s.src = url; s.onload = () => { const el = document.getElementById(scriptId); if(el) el.remove(); }; s.onerror = () => { const el = document.getElementById(scriptId); if(el) el.remove(); }; document.body.appendChild(s); }
     window.copyDeepLink = function() { navigator.clipboard.writeText(window.location.href).then(() => showToast("앨범 링크가 복사되었습니다! 🔗", "success")); };
-    window.openInAppleMusic = function(albumId) { if (!albumId) return; window.open(`https://music.apple.com/kr/album/${albumId}`, '_blank'); };
-    window.openInAppleMusicSearch = function(title, artist) { const query = encodeURIComponent(`${artist} ${title}`); const appUrl = `music://search?term=${query}`; const webUrl = `https://music.apple.com/kr/search?term=${query}`; window.location.href = appUrl; setTimeout(() => { if (document.hasFocus()) window.open(webUrl, '_blank'); }, 500); };
+    window.openInAppleMusic = function(albumId) { if (!albumId) return; window.open(`https://music.apple.com/us/album/${albumId}`, '_blank'); };
+    window.openInAppleMusicSearch = function(title, artist) { const query = encodeURIComponent(`${artist} ${title}`); const appUrl = `music://search?term=${query}`; const webUrl = `https://music.apple.com/us/search?term=${query}`; window.location.href = appUrl; setTimeout(() => { if (document.hasFocus()) window.open(webUrl, '_blank'); }, 500); };
     window.openInSpotify = function(title, artist) { const query = encodeURIComponent(`${artist} ${title}`); window.open(`https://open.spotify.com/search/${query}`, '_blank'); };
     window.openInYouTubeMusic = function(title, artist) { const query = encodeURIComponent(`${artist} ${title}`); window.open(`https://music.youtube.com/search?q=${query}`, '_blank'); };
 
@@ -553,7 +553,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         sessionSearchQuery = ""; document.getElementById('local-search-input').value = ''; clearSniperMode();
         const epoch = ++_fetchEpoch;
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); showSkeletonCards();
-        const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(name) ? 'KR' : 'US';
+        const countryCode = 'US';
         
         const itCb = `_it_${epoch}`; window[itCb] = (d) => { 
             delete window[itCb]; if (epoch !== _fetchEpoch) return; 
@@ -628,6 +628,52 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
                 }
             };
             loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=50&output=jsonp&callback=${fsCb}`);
+        });
+
+        // 🆕 Apple Music (iTunes) 피처링 트랙 검색
+        //   song entity + attribute=songTerm 으로 검색하면 "Sandu (feat. Kurt Rosenwinkel)" 같은 트랙이 잘 잡힘
+        //   트랙 → collectionId로 앨범화 후 중복 제거 → window.itunesFeatFeatures 에 누적
+        window.itunesFeatFeatures = [];
+        const itunesFeatQueries = [name, `feat ${name}`, `featuring ${name}`];
+        let itunesFeatDone = 0;
+        const totalItunesFeatQueries = itunesFeatQueries.length;
+        itunesFeatQueries.forEach((q, qi) => {
+            const ifCb = `_if_${epoch}_${qi}`;
+            window[ifCb] = (d) => {
+                delete window[ifCb];
+                if (epoch !== _fetchEpoch) return;
+                if (d.results) {
+                    const cArtistLower = currentArtist.toLowerCase();
+                    d.results.forEach(t => {
+                        if (t.wrapperType !== 'track') return;
+                        if (!t.trackName || !t.collectionName) return;
+                        // 본인이 메인 아티스트인 경우 제외
+                        const trackArtistLower = (t.artistName || '').toLowerCase();
+                        if (trackArtistLower === cArtistLower) return;
+                        // 피처링 판정: 트랙명/앨범명/아티스트명 중 하나에 아티스트 이름이 들어있고,
+                        // 아티스트명이 본인이 아닌 경우
+                        const combined = `${t.trackName} ${t.collectionName} ${t.artistName}`.toLowerCase();
+                        if (!combined.includes(cArtistLower)) return;
+                        // 피처링 키워드 있는 것만 (트랙 제목에 feat/ft/with 포함)
+                        const trackNameLower = t.trackName.toLowerCase();
+                        const hasFeatKeyword = /\b(feat\.?|ft\.?|featuring|with)\b/.test(trackNameLower) 
+                                             || /\b(feat\.?|ft\.?|featuring)\b/.test((t.collectionName || '').toLowerCase());
+                        if (!hasFeatKeyword) return;
+                        window.itunesFeatFeatures.push(t);
+                    });
+                }
+                itunesFeatDone++;
+                if (itunesFeatDone >= totalItunesFeatQueries) {
+                    // 같은 collectionId는 하나의 앨범으로 합치기 (한 앨범 안 여러 트랙 → 앨범 한 장)
+                    const seenAlbums = new Set();
+                    window.itunesFeatFeatures = window.itunesFeatFeatures.filter(t => {
+                        if (seenAlbums.has(t.collectionId)) return false;
+                        seenAlbums.add(t.collectionId);
+                        return true;
+                    });
+                }
+            };
+            loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&attribute=songTerm&limit=100&country=${countryCode}&callback=${ifCb}`);
         });
     };
 
@@ -712,6 +758,29 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
                     seenTitles.add(tl);
                     albumsData.features.push({ id: t.album.id, title: t.album.title, cover_medium: t.album.cover_medium, release_date: t.album.release_date || '', record_type: 'deezer', artist: { name: t.artist.name }, source: 'deezer', originBadge: 'FEAT' });
                 }
+            });
+        }
+        // 🆕 Apple Music (iTunes) 피처링 트랙 결과를 앨범으로 병합
+        if (window.itunesFeatFeatures) {
+            window.itunesFeatFeatures.forEach(t => {
+                // 트랙 제목으로 매칭 (앨범 제목은 종종 일반명이라 중복 많음)
+                const tl = cleanTitleForSearch(t.trackName).toLowerCase();
+                const albumTl = cleanTitleForSearch(t.collectionName).toLowerCase();
+                // 이미 같은 앨범이 있으면 스킵
+                if (seenTitles.has(albumTl)) return;
+                seenTitles.add(albumTl);
+                albumsData.features.push({
+                    id: t.collectionId,
+                    title: t.trackName,  // 피처링 트랙 제목 그대로 표시 (예: "Sandu (feat. Kurt Rosenwinkel)")
+                    cover_medium: t.artworkUrl100 ? t.artworkUrl100.replace('100x100bb', '600x600bb') : '',
+                    release_date: t.releaseDate || '',
+                    record_type: 'itunes',
+                    artist: { name: t.artistName },
+                    source: 'itunes',
+                    originBadge: 'FEAT',
+                    trackId: t.trackId,  // 실제 피처링 트랙을 바로 재생하기 위해 저장
+                    albumName: t.collectionName
+                });
             });
         }
         renderAllSections();
@@ -1022,6 +1091,84 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
             allResults.push(...kwRes);
             setStatus(`단계 7/7: 키워드 ${kwRes.length}건 (누적 ${allResults.length})`);
 
+            // ============ STEP 8: Apple Music 심층 피처링 검색 ============
+            //   JSONP로 iTunes Search API 호출 → 트랙 제목에 "feat" 포함된 것만 필터
+            //   이미 selectArtist에서 한 번 돌렸지만 심층에서는 더 넓게 탐색
+            setStatus('단계 추가: Apple Music 피처링 검색...');
+            const itunesDeepSearch = (query) => new Promise(resolve => {
+                const cb = `_idf_${Math.random().toString(36).slice(2)}`;
+                let resolved = false;
+                window[cb] = (data) => {
+                    if (resolved) return;
+                    resolved = true;
+                    delete window[cb];
+                    resolve(data?.results || []);
+                };
+                loadJSONP(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&attribute=songTerm&limit=200&country=US&callback=${cb}`);
+                setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        delete window[cb];
+                        resolve([]);
+                    }
+                }, 8000);
+            });
+
+            try {
+                const appleQueries = [
+                    `feat ${currentArtist}`,
+                    `featuring ${currentArtist}`,
+                    `ft ${currentArtist}`,
+                    `with ${currentArtist}`
+                ];
+                const appleRaws = await Promise.all(appleQueries.map(q => itunesDeepSearch(q)));
+                const appleHits = [];
+                const appleSeenAlbums = new Set();
+                // selectArtist 단계에서 이미 잡힌 것은 제외
+                const alreadyItunesIds = new Set((window.itunesFeatFeatures || []).map(t => t.collectionId));
+
+                appleRaws.flat().forEach(t => {
+                    if (t.wrapperType !== 'track') return;
+                    if (!t.trackName || !t.collectionName || !t.collectionId) return;
+                    if (appleSeenAlbums.has(t.collectionId)) return;
+                    if (alreadyItunesIds.has(t.collectionId)) return;
+
+                    const trackArtistLower = (t.artistName || '').toLowerCase();
+                    if (trackArtistLower === artistNameLower) return;
+
+                    const combined = `${t.trackName} ${t.collectionName} ${t.artistName}`.toLowerCase();
+                    if (!combined.includes(artistNameLower)) return;
+
+                    // 피처링 키워드 확인
+                    const trackLower = t.trackName.toLowerCase();
+                    const hasFeatKeyword = /\b(feat\.?|ft\.?|featuring|with)\b/.test(trackLower)
+                        || /\b(feat\.?|ft\.?|featuring)\b/.test((t.collectionName || '').toLowerCase());
+                    if (!hasFeatKeyword) return;
+
+                    appleSeenAlbums.add(t.collectionId);
+                    appleHits.push({
+                        // 이 객체는 아래 Deezer 매칭 로직을 건너뛰고 바로 albumsData.features로 들어갈 수 있도록
+                        // 완성된 형태로 만듦
+                        _appleReady: true,
+                        id: t.collectionId,
+                        title: t.trackName,
+                        cover_medium: t.artworkUrl100 ? t.artworkUrl100.replace('100x100bb', '600x600bb') : '',
+                        release_date: t.releaseDate || '',
+                        artist: { name: t.artistName },
+                        source: 'itunes',
+                        originBadge: 'FEAT',
+                        trackId: t.trackId,
+                        albumName: t.collectionName,
+                        year: t.releaseDate ? parseInt(t.releaseDate.split('-')[0], 10) : null
+                    });
+                });
+
+                allResults.push(...appleHits);
+                setStatus(`Apple Music ${appleHits.length}건 추가 (누적 ${allResults.length})`);
+            } catch (e) {
+                console.warn('[DeepSearch] Apple Music search failed:', e);
+            }
+
         } catch (e) {
             console.error('[DeepSearch] early stop:', e);
             // 초기 실패 시에도 부분 결과가 있으면 진행
@@ -1077,10 +1224,14 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
             return;
         }
 
-        setStatus(`${filtered.length}장 Deezer 매칭 중...`);
+        // Apple Music 결과는 이미 완성된 데이터 → Deezer 매칭 스킵
+        const appleReady = filtered.filter(c => c._appleReady);
+        const needMatch = filtered.filter(c => !c._appleReady);
 
-        // ============ Deezer 매칭 ============
-        const matchPromises = filtered.map(app => new Promise(resolve => {
+        setStatus(`${needMatch.length}장 Deezer 매칭 중...`);
+
+        // ============ Deezer 매칭 (Apple Music 외 항목만) ============
+        const matchPromises = needMatch.map(app => new Promise(resolve => {
             const cb = `_deep_${Math.random().toString(36).slice(2)}`;
             let resolved = false;
             window[cb] = (data) => {
@@ -1150,8 +1301,11 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         const matched = (await Promise.all(matchPromises)).filter(Boolean);
         if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
 
+        // Apple Music 결과와 Deezer 매칭된 결과를 합쳐서 한꺼번에 추가
+        const allToAdd = [...matched, ...appleReady];
+
         let addedCount = 0;
-        matched.forEach(m => {
+        allToAdd.forEach(m => {
             const tid = superCleanTitle(m.title);
             if (existingIds.has(m.id) || existingTitleIds.has(tid)) return;
             albumsData.features.push(m);
@@ -1409,7 +1563,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         const trackList = document.getElementById('studio-track-list'); const notesPane = trackList?.closest('.lg\\:flex-1')?.nextElementSibling?.querySelector('.lg\\:overflow-y-auto');
         if (trackList) trackList.scrollTop = 0; if (notesPane) notesPane.scrollTop = 0;
 
-        const countryCode = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(artist) ? 'KR' : 'US';
+        const countryCode = 'US';
         if (source === 'itunes') loadJSONP(`https://itunes.apple.com/lookup?id=${id}&entity=song&country=${countryCode}&callback=handleItunesTracks`);
         else loadJSONP(`https://api.deezer.com/${type}/${id}/${type==='album'?'tracks':''}?output=jsonp&callback=handleTracks`);
         const cleanTitle = cleanTitleForSearch(title); fetchAlbumWikiStory(cleanTitle, artist); fetchDiscogsCreditsFromServer(cleanTitle, artist);
@@ -1806,7 +1960,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     audio.addEventListener('error', () => { pI.classList.remove('hidden'); psI.classList.add('hidden'); showToast("미리듣기를 불러올 수 없습니다 😞", "error"); }); audio.addEventListener('stalled', () => { showToast("스트리밍이 지연되고 있습니다...", "error"); });
     document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (document.getElementById('session-panel').classList.contains('open')) { closeSessionPanel(); } else if (document.getElementById('studio-view').classList.contains('studio-view-enter')) { closeStudioView(); } });
 
-    window.resetApp = function() { currentArtist = null; currentArtistId = null; albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false }; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; sessionSearchQuery = ""; diggingChain = []; deepSearchDone = false; deepSearchAddedCount = 0; isDeepSearchRunning = false; document.getElementById('search-input').value = ''; document.getElementById('local-search-input').value = ''; document.getElementById('sections-container').innerHTML = ''; document.getElementById('results-controls').classList.add('hidden'); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.add('hidden'); document.getElementById('reset-btn').classList.add('hidden'); setViewMode('grid'); clearAutocomplete(); renderChainBar(); };
+    window.resetApp = function() { currentArtist = null; currentArtistId = null; albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false }; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; window.itunesFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; sessionSearchQuery = ""; diggingChain = []; deepSearchDone = false; deepSearchAddedCount = 0; isDeepSearchRunning = false; document.getElementById('search-input').value = ''; document.getElementById('local-search-input').value = ''; document.getElementById('sections-container').innerHTML = ''; document.getElementById('results-controls').classList.add('hidden'); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.add('hidden'); document.getElementById('reset-btn').classList.add('hidden'); setViewMode('grid'); clearAutocomplete(); renderChainBar(); };
 </script>
 
 </body>
