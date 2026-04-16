@@ -860,7 +860,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         } catch(e) { console.warn('Appearances fetch failed:', e); }
     }
 
-    // 🆕 "더 찾아보기" - 5단계 분할 호출 (Vercel 10s timeout 우회)
+    // 🆕 "더 찾아보기" - 클라이언트에서 Discogs API 직접 호출 (Vercel 함수 우회)
     window.triggerDeepSearch = async function() {
         if (isDeepSearchRunning) { showToast("이미 심층 검색 중입니다", "info"); return; }
         if (!currentArtist) { showToast("먼저 아티스트를 검색해주세요", "error"); return; }
@@ -873,83 +873,169 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 
         const statusEl = () => document.getElementById('deep-search-status');
         const setStatus = (t) => { const el = statusEl(); if (el) el.textContent = t; };
-
         const epochAtStart = _fetchEpoch;
 
-        // 5개 stage를 순차 호출하며 결과 누적
-        const allResults = [];
-        let currentStage = 1;
-        let artistIdCache = null;
-        let stageFailed = false;
-        let lastError = null;
+        const artistNameLower = currentArtist.toLowerCase();
+        const DISCOGS_BASE = 'https://api.discogs.com';
+        // 클라이언트에서는 User-Agent 자동 부여, 토큰 없이 호출 (read-only 엔드포인트는 공개됨)
 
-        while (currentStage !== null && currentStage <= 8) {
-            const stageLabel = `단계 ${currentStage}/8`;
-            setStatus(`${stageLabel}: 조회 중...`);
-
+        // 타임아웃 10초 + 실패해도 다음 진행
+        const discogsFetch = async (url) => {
+            const ctrl = new AbortController();
+            const tid = setTimeout(() => ctrl.abort(), 10000);
             try {
-                const url = `/api/getDiscogsDeep?artistName=${encodeURIComponent(currentArtist)}&stage=${currentStage}${artistIdCache ? `&artistId=${artistIdCache}` : ''}`;
-                const r = await fetch(url);
-                const txt = await r.text();
-                let d = null;
-                try {
-                    d = JSON.parse(txt);
-                } catch (pe) {
-                    const bodyPreview = txt.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 150);
-                    throw new Error(`${stageLabel} non-JSON: ${bodyPreview}`);
-                }
-
-                if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
-
-                if (d.error && d.results?.length === 0 && currentStage === 1) {
-                    // stage 1 실패는 치명적 — 전체 중단
-                    throw new Error(`${stageLabel}: ${d.error}`);
-                }
-                if (d.error) {
-                    // stage 2~5 실패는 경고만 하고 다음으로
-                    console.warn(`[DeepSearch] ${stageLabel} warning:`, d.error);
-                }
-
-                // 결과 누적
-                if (d.results?.length) {
-                    allResults.push(...d.results);
-                    setStatus(`${stageLabel}: ${d.results.length}건 발굴 (누적 ${allResults.length}건)`);
-                }
-
-                // 중간 단계마다 토스트로 진행 상황 알림
-                if (d.stageLabel) {
-                    console.log(`[DeepSearch] ${stageLabel} done: ${d.stageLabel} (+${d.results?.length || 0})`);
-                }
-
-                if (d.artistId && !artistIdCache) artistIdCache = d.artistId;
-
-                if (d.done) break;
-                currentStage = d.nextStage;
+                const r = await fetch(url, { signal: ctrl.signal });
+                clearTimeout(tid);
+                if (r.status === 429) return { _rateLimited: true };
+                if (!r.ok) return { _httpError: r.status };
+                return await r.json();
             } catch (e) {
-                lastError = e;
-                stageFailed = true;
-                console.error(`[DeepSearch] stage ${currentStage} crashed:`, e);
-                // stage 1 실패는 중단, 나머지는 부분 결과로 진행
-                if (currentStage === 1) break;
-                currentStage = currentStage < 8 ? currentStage + 1 : null;
+                clearTimeout(tid);
+                return { _fetchError: e?.message || 'fetch failed' };
             }
+        };
+
+        const parseSearch = (d, badge, role) => {
+            if (!d || d._rateLimited || d._httpError || d._fetchError || !d.results) return [];
+            const out = [];
+            const seen = new Set();
+            d.results.forEach(r => {
+                if (!r.title || seen.has(r.id)) return;
+                seen.add(r.id);
+                const ft = (r.title || '').toLowerCase();
+                if (!ft.includes(artistNameLower)) return;
+                const parts = r.title.split(' - ');
+                let albumTitle, albumArtist = '';
+                if (parts.length >= 2) {
+                    albumArtist = parts[0].trim();
+                    albumTitle = parts.slice(1).join(' - ').trim();
+                } else {
+                    albumTitle = r.title;
+                }
+                if (albumArtist.toLowerCase() === artistNameLower) return;
+                out.push({
+                    title: albumTitle,
+                    artist: albumArtist || 'Various',
+                    year: r.year || null,
+                    role: role,
+                    thumb: r.thumb || '',
+                    discogsId: r.id,
+                    _badge: badge
+                });
+            });
+            return out;
+        };
+
+        const parseReleases = (d) => {
+            if (!d || d._rateLimited || d._httpError || d._fetchError || !d.releases) return [];
+            const out = [];
+            const seen = new Set();
+            d.releases.forEach(r => {
+                if (seen.has(r.id)) return;
+                seen.add(r.id);
+                if (r.role && r.role !== 'Main' && r.artist && r.title) {
+                    out.push({
+                        title: r.title,
+                        artist: r.artist,
+                        year: r.year || null,
+                        role: r.role,
+                        thumb: r.thumb || '',
+                        discogsId: r.id,
+                        _badge: 'SIDEMAN'
+                    });
+                }
+            });
+            return out;
+        };
+
+        const allResults = [];
+        let rateLimitHit = false;
+
+        try {
+            // ============ STEP 1: 아티스트 ID 확보 ============
+            setStatus('단계 1/7: 아티스트 확인...');
+            const sData = await discogsFetch(
+                `${DISCOGS_BASE}/database/search?q=${encodeURIComponent(currentArtist)}&type=artist&per_page=10`
+            );
+            if (sData?._rateLimited) { rateLimitHit = true; throw new Error('Discogs rate limit (1분 후 재시도)'); }
+            if (sData?._fetchError || sData?._httpError) {
+                throw new Error(`아티스트 조회 실패: ${sData._fetchError || 'HTTP ' + sData._httpError}`);
+            }
+            if (!sData?.results?.length) throw new Error('Discogs에서 아티스트를 찾을 수 없음');
+            const exactMatch = sData.results.find(r => r.title?.toLowerCase() === artistNameLower);
+            const artistId = (exactMatch || sData.results[0]).id;
+            console.log('[DeepSearch] artistId:', artistId);
+
+            if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
+
+            // ============ STEP 2-3: 디스코그래피 page 4, 5 (병렬) ============
+            setStatus('단계 2/7: 디스코그래피 확장 조회...');
+            const [p4, p5] = await Promise.all([
+                discogsFetch(`${DISCOGS_BASE}/artists/${artistId}/releases?per_page=100&page=4&sort=year&sort_order=desc`),
+                discogsFetch(`${DISCOGS_BASE}/artists/${artistId}/releases?per_page=100&page=5&sort=year&sort_order=desc`)
+            ]);
+            if (p4?._rateLimited || p5?._rateLimited) rateLimitHit = true;
+            const discoRes = [...parseReleases(p4), ...parseReleases(p5)];
+            allResults.push(...discoRes);
+            setStatus(`단계 2/7: ${discoRes.length}건 (누적 ${allResults.length})`);
+
+            if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
+
+            // Discogs는 분당 25회 제한. rate limit 걸리면 잠시 대기
+            if (rateLimitHit) {
+                setStatus('Rate limit 감지 - 잠시 후 재개...');
+                await new Promise(r => setTimeout(r, 5000));
+                rateLimitHit = false;
+            }
+
+            // ============ STEP 4-5: V.A. Compilation (병렬) ============
+            setStatus('단계 4/7: V.A. 컴필레이션 조회...');
+            const [vc1, vc2] = await Promise.all([
+                discogsFetch(`${DISCOGS_BASE}/database/search?q=${encodeURIComponent(currentArtist)}&type=release&format=Compilation&per_page=100&page=1`),
+                discogsFetch(`${DISCOGS_BASE}/database/search?q=${encodeURIComponent(currentArtist)}&type=release&format=Compilation&per_page=100&page=2`)
+            ]);
+            if (vc1?._rateLimited || vc2?._rateLimited) rateLimitHit = true;
+            const compRes = [...parseSearch(vc1, 'V.A.', 'V.A.'), ...parseSearch(vc2, 'V.A.', 'V.A.')];
+            allResults.push(...compRes);
+            setStatus(`단계 4/7: V.A. ${compRes.length}건 (누적 ${allResults.length})`);
+
+            if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
+
+            if (rateLimitHit) {
+                setStatus('Rate limit 감지 - 잠시 후 재개...');
+                await new Promise(r => setTimeout(r, 5000));
+                rateLimitHit = false;
+            }
+
+            // ============ STEP 6-7: 키워드 조합 (병렬) ============
+            setStatus('단계 6/7: 키워드 조합 검색...');
+            const [kwSummit, kwTribute, kwGuest] = await Promise.all([
+                discogsFetch(`${DISCOGS_BASE}/database/search?q=${encodeURIComponent(currentArtist + ' summit')}&type=release&per_page=50`),
+                discogsFetch(`${DISCOGS_BASE}/database/search?q=${encodeURIComponent(currentArtist + ' tribute')}&type=release&per_page=50`),
+                discogsFetch(`${DISCOGS_BASE}/database/search?q=${encodeURIComponent(currentArtist + ' guest')}&type=release&per_page=50`)
+            ]);
+            const kwRes = [
+                ...parseSearch(kwSummit, 'DEEP', 'Summit'),
+                ...parseSearch(kwTribute, 'DEEP', 'Tribute'),
+                ...parseSearch(kwGuest, 'DEEP', 'Guest')
+            ];
+            allResults.push(...kwRes);
+            setStatus(`단계 7/7: 키워드 ${kwRes.length}건 (누적 ${allResults.length})`);
+
+        } catch (e) {
+            console.error('[DeepSearch] early stop:', e);
+            // 초기 실패 시에도 부분 결과가 있으면 진행
+            if (allResults.length === 0) {
+                const msg = e?.message || String(e);
+                showToast(`❌ 심층 검색 실패: ${msg.length > 100 ? msg.slice(0, 100) + '…' : msg}`, "error");
+                isDeepSearchRunning = false;
+                renderAllSections();
+                return;
+            }
+            showToast(`⚠️ 일부 단계 실패, 부분 결과로 진행`, "info");
         }
 
         if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
-
-        // 모든 단계 종료 후 에러 + 결과 0인 경우만 에러 토스트
-        if (stageFailed && allResults.length === 0) {
-            const msg = lastError?.message || '알 수 없는 오류';
-            const shortMsg = msg.length > 100 ? msg.slice(0, 100) + '…' : msg;
-            showToast(`❌ 심층 검색 실패: ${shortMsg}`, "error");
-            isDeepSearchRunning = false;
-            renderAllSections();
-            return;
-        }
-
-        if (stageFailed && allResults.length > 0) {
-            showToast(`⚠️ 일부 단계 실패, 부분 결과로 진행`, "info");
-        }
 
         if (!allResults.length) {
             showToast("추가로 발굴된 참여작이 없습니다 😢", "info");
@@ -959,7 +1045,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
             return;
         }
 
-        // ============ 이미 존재하는 앨범 필터링 ============
+        // ============ 중복 제거 ============
         const existingTitleIds = new Set();
         [...albumsData.regular, ...albumsData.ep, ...albumsData.features,
          ...albumsData.compilation, ...albumsData.live].forEach(a => {
@@ -993,7 +1079,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 
         setStatus(`${filtered.length}장 Deezer 매칭 중...`);
 
-        // Deezer 매칭
+        // ============ Deezer 매칭 ============
         const matchPromises = filtered.map(app => new Promise(resolve => {
             const cb = `_deep_${Math.random().toString(36).slice(2)}`;
             let resolved = false;
@@ -1018,8 +1104,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
                 });
                 if (bestMatch && bestScore >= 6) {
                     resolve({
-                        id: bestMatch.album.id,
-                        title: bestMatch.album.title,
+                        id: bestMatch.album.id, title: bestMatch.album.title,
                         cover_medium: bestMatch.album.cover_medium,
                         release_date: app.year ? `${app.year}-01-01` : (bestMatch.album.release_date || ''),
                         artist: { name: bestMatch.artist.name },
