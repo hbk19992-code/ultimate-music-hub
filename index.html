@@ -883,8 +883,8 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         let stageFailed = false;
         let lastError = null;
 
-        while (currentStage !== null && currentStage <= 5) {
-            const stageLabel = `단계 ${currentStage}/5`;
+        while (currentStage !== null && currentStage <= 8) {
+            const stageLabel = `단계 ${currentStage}/8`;
             setStatus(`${stageLabel}: 조회 중...`);
 
             try {
@@ -931,7 +931,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
                 console.error(`[DeepSearch] stage ${currentStage} crashed:`, e);
                 // stage 1 실패는 중단, 나머지는 부분 결과로 진행
                 if (currentStage === 1) break;
-                currentStage = currentStage < 5 ? currentStage + 1 : null;
+                currentStage = currentStage < 8 ? currentStage + 1 : null;
             }
         }
 
