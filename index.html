@@ -1139,7 +1139,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         const filteredGroups = activeCreditFilter === 'ALL' ? groups : { [activeCreditFilter]: groups[activeCreditFilter] || [] };
         Object.entries(filteredGroups).forEach(([group, members]) => {
             if (!members.length) return; const groupEl = document.createElement('div'); groupEl.className = 'credit-group'; groupEl.innerHTML = `<div class="credit-group-label">${group}</div>`;
-            members.forEach(ar => { const cleanName = ar.name.replace(/\s\(\d+\)$/, ''); const roleText = ar.role || '–'; const item = document.createElement('div'); item.className = 'credit-item'; item.innerHTML = `<span class="role-pill" title="${roleText.replace(/"/g,'"')}">${roleText}</span><button class="session-trigger" data-name="${cleanName.replace(/"/g,'"')}" data-role="${roleText.replace(/"/g,'"')}">${cleanName}</button>`; groupEl.appendChild(item); }); container.appendChild(groupEl);
+            members.forEach(ar => { const cleanName = sanitizeText(ar.name).replace(/\s\(\d+\)$/, ''); const roleText = sanitizeText(ar.role) || '–'; const item = document.createElement('div'); item.className = 'credit-item'; item.innerHTML = `<span class="role-pill" title="${roleText.replace(/"/g,'&quot;')}">${roleText}</span><button class="session-trigger" data-name="${cleanName.replace(/"/g,'&quot;')}" data-role="${roleText.replace(/"/g,'&quot;')}">${cleanName}</button>`; groupEl.appendChild(item); }); container.appendChild(groupEl);
         });
     }
 
@@ -1225,6 +1225,17 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     function renderWikiText(el, text) { const LIMIT = 220; if (!text || text.length <= LIMIT) { el.innerHTML = text || ''; return; } const short = text.slice(0, LIMIT).trimEnd(); el.innerHTML = `<span class="wiki-preview">${short}…</span><span class="wiki-full hidden">${text}</span><button onclick="toggleWikiExpand(this)" class="mt-2 block text-[10px] text-[#10b981] font-black hover:underline">더 보기 ▾</button>`; }
     window.toggleWikiExpand = function(btn) { const preview = btn.previousElementSibling; const full = preview.previousElementSibling; if (full.classList.contains('hidden')) { full.classList.remove('hidden'); preview.classList.add('hidden'); btn.textContent = '접기 ▴'; } else { full.classList.add('hidden'); preview.classList.remove('hidden'); btn.textContent = '더 보기 ▾'; } };
 
+    // 🆕 스마트 따옴표/특수문자 정화 — Discogs 응답에 섞인 ' " 등을 일반 따옴표로 변환
+    function sanitizeText(s) {
+        if (!s) return '';
+        return String(s)
+            .replace(/[\u2018\u2019\u201A\u201B\u2032\u02BC]/g, "'")
+            .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
+            .replace(/[\u2013\u2014]/g, '-')
+            .replace(/\u2026/g, '...')
+            .trim();
+    }
+
     const RANKING_BLACKLIST = new Set([
         'discogs', 'various', 'various artists', 'unknown artist',
         'no artist', 'traditional', 'anonymous', 'uncredited', 'staff',
@@ -1238,21 +1249,41 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
             .trim();
     }
 
+    // 🆕 순수 악기 세션 화이트리스트 — 이 키워드가 포함된 역할만 랭킹에 카운트
+    const INSTRUMENT_REGEX = /(guitar|bass|drum|piano|keyboard|organ|synth|vocal|voice|sax|trumpet|trombone|horn|flute|clarinet|oboe|bassoon|violin|viola|cello|contrabass|double bass|percussion|harmonica|accordion|banjo|mandolin|ukulele|harp|vibraphone|marimba|xylophone|glockenspiel|cymbal|conga|bongo|tabla|sitar|oud|kalimba|gong|shaker|tambourine|triangle|woodblock|cowbell|wurlitzer|rhodes|hammond|moog|fender|programming|beats|samples|scratch|turntable|choir|chorus|backing|lead vocals|soprano|alto|tenor|baritone|fiddle|pedal steel|lap steel|whistle|recorder|melodica|theremin|hurdy gurdy|bouzouki|charango|berimbau|didgeridoo|zither|dulcimer|autoharp|harpsichord|clavichord|celesta|chimes|bell|tubular bell|crotales|claves|cabasa|guiro|maracas|djembe|udu|bata|surdo|frame drum|drum machine|sequencer|sampler|effects|strings|brass|woodwinds|percussions|rhythm|solo|performer|instruments?|electric piano|acoustic piano|grand piano|upright bass|electric bass|acoustic bass|electric guitar|acoustic guitar|nylon guitar|steel guitar|slide guitar|rhythm guitar|lead guitar|tenor sax|alto sax|soprano sax|baritone sax|french horn|english horn|bass clarinet|piccolo|tuba|euphonium|sousaphone|cornet|flugelhorn|conductor|orchestra|ensemble|quartet|quintet|trio|featuring|featured)/i;
+
+    // 비악기 역할 키워드 (이 키워드가 포함되면 명시적 제외)
+    const NON_INSTRUMENT_REGEX = /(produced|producer|engineer|engineering|mixing|mixed|mastered|mastering|recorded|recording|photography|photographer|photos?|design|artwork|art direction|illustration|liner notes|booklet|sleeve|cover art|layout|typography|a&r|compiled by|management|coordinator|promotion|marketing|publishing|distribution|legal|copyright|consultant|executive|edited|editing|translation|translator|written-by|words by|lyrics by|composed by|arranged by|arrangement|music by)/i;
+
+    function isInstrumentRole(role) {
+        if (!role) return false;
+        const r = String(role);
+        // 비악기 키워드가 있으면 무조건 제외 (예: "Producer, Guitar"는 제외)
+        if (NON_INSTRUMENT_REGEX.test(r)) return false;
+        return INSTRUMENT_REGEX.test(r);
+    }
+
     function addToTally(tally, ar, albumTitle, currentArtistNorm) {
         if (!ar?.name) return;
-        const cleanName = ar.name.replace(/\s\(\d+\)$/, '').trim();
+        const cleanName = sanitizeText(ar.name).replace(/\s\(\d+\)$/, '').trim();
         const lower = cleanName.toLowerCase();
         const norm = normalizeArtistName(cleanName);
 
         if (cleanName.length < 2) return;
         if (RANKING_BLACKLIST.has(lower)) return;
-        if (norm === currentArtistNorm) return; 
+        if (norm === currentArtistNorm) return;
         if (/\b(records|music|publishing|ltd|inc|gmbh|llc|co\.|company|productions|studios?)\b/i.test(cleanName)) return;
 
-        if (!tally[cleanName]) tally[cleanName] = { count: 0, roles: new Set(), albums: new Set() };
-        tally[cleanName].count++;
-        if (ar.role) tally[cleanName].roles.add(ar.role.split(',')[0].trim());
-        tally[cleanName].albums.add(albumTitle);
+        // 🆕 악기 세션이 아니면 제외
+        if (!isInstrumentRole(ar.role)) return;
+
+        if (!tally[cleanName]) tally[cleanName] = { roles: new Set(), albums: new Set() };
+        if (ar.role) {
+            // 첫 번째 악기명만 깔끔하게 표시
+            const cleanRole = sanitizeText(ar.role).split(',')[0].trim();
+            tally[cleanName].roles.add(cleanRole);
+        }
+        tally[cleanName].albums.add(sanitizeText(albumTitle));
     }
 
     async function pMap(items, fn, concurrency = 3) {
@@ -1354,7 +1385,11 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     };
 
     function renderRankingList(tally, subtitleOverride) {
-        const sorted = Object.entries(tally).sort((a, b) => b[1].count - a[1].count).slice(0, 30);
+        // 🆕 앨범 수 기준으로 정렬 (트랙/역할 카운트가 아닌 참여 앨범 수)
+        const sorted = Object.entries(tally)
+            .map(([name, data]) => [name, { ...data, albumCount: data.albums.size }])
+            .sort((a, b) => b[1].albumCount - a[1].albumCount)
+            .slice(0, 30);
         const list = document.getElementById('ranking-list');
 
         if (!sorted.length) {
@@ -1364,13 +1399,13 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 
         if (subtitleOverride) document.getElementById('ranking-subtitle').textContent = subtitleOverride;
 
-        const maxCount = sorted[0][1].count;
+        const maxCount = sorted[0][1].albumCount;
         list.innerHTML = '';
         sorted.forEach(([name, data], i) => {
             const item = document.createElement('div');
             item.className = 'ranking-item';
             const rankLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
-            const pct = Math.round((data.count / maxCount) * 100);
+            const pct = Math.round((data.albumCount / maxCount) * 100);
             const rolesStr = [...data.roles].slice(0, 2).join(', ');
             const albums = [...data.albums];
             const chips = albums.slice(0, 4).map(t =>
@@ -1386,7 +1421,7 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
                         <div class="ranking-bar-fill" data-pct="${pct}"></div>
                     </div>
                 </div>
-                <span class="ranking-count">${data.count}회</span>`;
+                <span class="ranking-count">${data.albumCount}장</span>`;
             item.onclick = () => { closeRankingModal(); openSessionPanel(name, rolesStr); };
             list.appendChild(item);
         });
