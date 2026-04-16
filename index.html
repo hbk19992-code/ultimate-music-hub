@@ -880,19 +880,25 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 
         try {
             const r = await fetch(`/api/getDiscogsDeep?artistName=${encodeURIComponent(currentArtist)}`);
-            // 응답 본문은 JSON일 수도 있고 에러 텍스트일 수도 있음
+            const txt = await r.text();
             let d = null;
-            const ct = r.headers.get('content-type') || '';
-            if (ct.includes('application/json')) {
-                d = await r.json();
-            } else {
-                const txt = await r.text();
-                throw new Error(`서버 응답이 JSON이 아닙니다 (HTTP ${r.status}): ${txt.slice(0, 100)}`);
+            try {
+                d = JSON.parse(txt);
+            } catch (parseErr) {
+                // 서버가 JSON이 아닌 HTML/텍스트를 반환한 경우 - 본문 일부를 보여줌
+                const bodyPreview = txt.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 200);
+                throw new Error(`HTTP ${r.status} non-JSON: ${bodyPreview}`);
             }
-            if (!r.ok) {
-                throw new Error(d?.error || `HTTP ${r.status}`);
+            // JSON은 받았지만 error 필드가 있는 경우
+            if (!r.ok || d?.error) {
+                const detail = d?.error || `HTTP ${r.status}`;
+                const debugInfo = d?.debug?.steps ? ` [단계: ${d.debug.steps.slice(-3).join(' → ')}]` : '';
+                throw new Error(`${detail}${debugInfo}`);
             }
             if (epochAtStart !== _fetchEpoch) { isDeepSearchRunning = false; return; }
+
+            // 콘솔에 debug 정보 항상 노출
+            if (d.debug) console.log('[DeepSearch] debug:', d.debug);
 
             // 부분 결과 경고
             if (d.partialResults && d.warning) {
