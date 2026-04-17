@@ -54,8 +54,9 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     z-index: 200; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
     max-height: 320px; overflow-y: auto;
 }
-.autocomplete-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; }
+.autocomplete-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background 0.15s; min-height: 56px; }
 .autocomplete-item:hover, .autocomplete-item.active { background: #1a1a1a; }
+.autocomplete-item:active { background: rgba(16,185,129,0.12); }
 .autocomplete-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #333; flex-shrink: 0; }
 .autocomplete-item.track-item img { border-radius: 6px; }
 .autocomplete-item .meta { flex: 1; min-width: 0; }
@@ -301,6 +302,15 @@ button:active:not(:disabled) {
 button[onclick*="toggleFavorite"] {
     min-width: 40px;
     min-height: 40px;
+}
+
+/* 접근성: 모션 감소 설정 시 모든 애니메이션 무력화 */
+@media (prefers-reduced-motion: reduce) {
+    .heart-burst, .card-fav-pulse, .shake-it, .grid-fade-in, .ripple-effect {
+        animation: none !important;
+    }
+    .group:active { transform: none !important; }
+    button:active:not(:disabled) { transform: none !important; }
 }
 </style>
 ```
@@ -687,7 +697,17 @@ button[onclick*="toggleFavorite"] {
     document.addEventListener('click', (e) => { if (!e.target.closest('#search-wrapper')) clearAutocomplete(); });
     function fetchAutocomplete(q) { const mode = document.getElementById('search-mode').value; if (mode === 'artist') { const cbName = `handleAC_${Date.now()}`; window[cbName] = (d) => { renderAutocomplete(d.data || [], 'artist'); delete window[cbName]; }; loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}&limit=7&output=jsonp&callback=${cbName}`); } else { const cbName = `handleAC_${Date.now()}`; window[cbName] = (d) => { renderAutocomplete(d.data || [], 'track'); delete window[cbName]; }; loadJSONP(`https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=7&output=jsonp&callback=${cbName}`); } }
     function renderAutocomplete(data, type) { autocompleteResults = data; autocompleteActive = -1; if (!data.length) { clearAutocomplete(); return; } dropdown.innerHTML = ''; data.forEach((item, i) => { const div = document.createElement('div'); div.className = `autocomplete-item ${type === 'track' ? 'track-item' : ''}`; div.dataset.index = i; if (type === 'artist') { div.innerHTML = `<img src="${item.picture_small || 'https://placehold.co/40x40/18181b/10b981?text=?'}" onerror="this.src='https://placehold.co/40x40/18181b/10b981?text=?'"><div class="meta"><div class="meta-name">${item.name}</div><div class="meta-sub">${item.nb_album ? item.nb_album + ' albums' : 'Artist'}</div></div><span class="play-badge">디스코그래피</span>`; } else { div.innerHTML = `<img src="${item.album?.cover_small || 'https://placehold.co/40x40/18181b/10b981?text=?'}" onerror="this.src='https://placehold.co/40x40/18181b/10b981?text=?'"><div class="meta"><div class="meta-name">${item.title}</div><div class="meta-sub">${item.artist?.name || ''}</div></div><span class="play-badge">▶ 재생</span>`; } div.addEventListener('click', () => selectAutocompleteItem(i)); dropdown.appendChild(div); }); dropdown.classList.remove('hidden'); }
-    function highlightAutocompleteItem() { const items = dropdown.querySelectorAll('.autocomplete-item'); items.forEach((el, i) => el.classList.toggle('active', i === autocompleteActive)); if (autocompleteActive >= 0 && autocompleteResults[autocompleteActive]) { const item = autocompleteResults[autocompleteActive]; searchInput.value = item.name || item.title || ''; } }
+    function highlightAutocompleteItem() {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        items.forEach((el, i) => el.classList.toggle('active', i === autocompleteActive));
+        if (autocompleteActive >= 0 && autocompleteResults[autocompleteActive]) {
+            const item = autocompleteResults[autocompleteActive];
+            searchInput.value = item.name || item.title || '';
+            // 활성 항목 보이도록 스크롤
+            const activeEl = items[autocompleteActive];
+            if (activeEl) activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }
     function selectAutocompleteItem(i) { const item = autocompleteResults[i]; const mode = document.getElementById('search-mode').value; clearAutocomplete(); if (mode === 'artist') { searchInput.value = item.name; selectArtist(item.id, item.name); } else { searchInput.value = item.title; playMedia('album', item.album.id, item.album.cover_medium, item.album.title, item.artist.name, true, 'deezer'); window._pendingTrackTitle = item.title; } }
     function clearAutocomplete() { dropdown.classList.add('hidden'); dropdown.innerHTML = ''; autocompleteResults = []; autocompleteActive = -1; }
     window.clearAutocomplete = clearAutocomplete;
@@ -711,6 +731,7 @@ button[onclick*="toggleFavorite"] {
         sessionSearchQuery = ""; document.getElementById('local-search-input').value = ''; clearSniperMode();
         const epoch = ++_fetchEpoch;
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); showSkeletonCards();
+        window._skeletonStartedAt = Date.now();
         const countryCode = 'US';
         
         const itCb = `_it_${epoch}`; window[itCb] = (d) => { 
@@ -838,7 +859,15 @@ button[onclick*="toggleFavorite"] {
     function tryRenderAll(epoch) {
         if (epoch !== undefined && epoch !== _fetchEpoch) return;
         if (!fetchState.albumsDone || !fetchState.featuresDone || !fetchState.itunesDone || !fetchState.featDone) return;
-        
+
+        // 스켈레톤 깜빡임 방지: 최소 350ms는 보여줌
+        const elapsed = Date.now() - (window._skeletonStartedAt || 0);
+        const MIN_SKELETON_MS = 350;
+        if (elapsed < MIN_SKELETON_MS) {
+            setTimeout(() => tryRenderAll(epoch), MIN_SKELETON_MS - elapsed);
+            return;
+        }
+
         document.getElementById('status-message').classList.add('hidden'); document.getElementById('results-controls').classList.remove('hidden'); document.getElementById('reset-btn').classList.remove('hidden');
         
         const getStrictId = (str) => {
@@ -1671,6 +1700,11 @@ button[onclick*="toggleFavorite"] {
             const onlyClass = isDiscogsOnly ? 'border-[#a238ff]/40' : '';
             card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} ${onlyClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; card.setAttribute('data-memo-id', it.id);
             card.onclick = () => {
+                // ripple 효과 + 햅틱
+                card.classList.remove('ripple-effect');
+                void card.offsetWidth;
+                card.classList.add('ripple-effect');
+                if (navigator.vibrate) navigator.vibrate(8);
                 if (isDiscogsOnly) {
                     showToast(`${it.title} - 외부 서비스에서 검색합니다`, 'info');
                     openInSpotify(it.title, it.artist.name);
@@ -1710,6 +1744,7 @@ button[onclick*="toggleFavorite"] {
 
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); };
     window.closeStudioView = function() {
+        if (navigator.vibrate) navigator.vibrate(10);
         document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit');
         window.history.pushState({}, '', window.location.pathname);
         if (diggingChain.length > 0) { currentArtist = diggingChain[0].artist; }
