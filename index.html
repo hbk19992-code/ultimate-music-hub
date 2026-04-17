@@ -306,6 +306,24 @@ button:active:not(:disabled) {
     .group:active { transform: none !important; }
     button:active:not(:disabled) { transform: none !important; }
 }
+
+/* 🆕 iOS Safari 스크롤바 흔적/덧칠 완전 제거 */
+html, body, * {
+    -webkit-overflow-scrolling: touch;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#main-scroll-area::-webkit-scrollbar,
+#studio-view::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+html, body, #main-scroll-area, #studio-view {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
 </style>
 ```
 
@@ -648,8 +666,12 @@ button:active:not(:disabled) {
         e.preventDefault();
         if (!currentUser) return showToast("로그인 후 하트를 눌러보세요!", "error");
 
-        // 시각적 피드백 — 즉시 애니메이션 (e.target에서 버튼 찾기)
-        const btn = (e.target && e.target.closest) ? e.target.closest('button') : null;
+        // 시각적 피드백 — currentTarget이 항상 button을 가리킴 (onclick 바인딩 대상)
+        // 단 SVG path를 클릭한 경우 e.target은 SVG 내부 요소일 수 있어서 closest로 한번 더 보장
+        let btn = e.currentTarget;
+        if (!btn || btn.tagName !== 'BUTTON') {
+            btn = (e.target && e.target.closest) ? e.target.closest('button') : null;
+        }
         const heartSvg = btn?.querySelector('svg');
         if (heartSvg) {
             heartSvg.classList.remove('heart-burst');
@@ -674,12 +696,49 @@ button:active:not(:disabled) {
         } else {
             pendingFavItem = item;
             pendingFavType = type;
-            openFolderModal();
+            // 애니메이션이 잠깐 보일 시간을 주고 모달 열기 (하트 펄스가 묻히지 않도록)
+            setTimeout(() => openFolderModal(), 250);
         }
     }
     function openFolderModal() { const m = document.getElementById('folder-modal'), list = document.getElementById('folder-list'); const existingFolders = [...new Set(favorites.map(f => f.folderName || '기본 보관함'))]; list.innerHTML = existingFolders.map(f => `<button onclick="document.getElementById('new-folder-input').value='${f}'" class="block w-full text-left px-4 py-2.5 hover:bg-zinc-800 rounded-lg text-sm text-zinc-300 font-bold transition-colors">${f}</button>`).join(''); m.classList.remove('hidden'); document.getElementById('new-folder-input').focus(); }
     function closeFolderModal() { document.getElementById('folder-modal').classList.add('hidden'); document.getElementById('new-folder-input').value = ''; pendingFavItem = null; }
-    async function saveToFolder() { if(!pendingFavItem) return; let folderName = document.getElementById('new-folder-input').value.trim() || '기본 보관함'; const itemId = `${pendingFavType}_${pendingFavItem.id}`; const newItem = { ...pendingFavItem, dbId: itemId, itemType: pendingFavType, artistNameCache: currentArtist || pendingFavItem.artist?.name, folderName: folderName }; favorites.push(newItem); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).set(JSON.parse(JSON.stringify(newItem))); showToast(`[${folderName}] 에 저장됨 📁`, "success"); closeFolderModal(); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
+    let _isSavingToFolder = false;
+    async function saveToFolder() {
+        if (_isSavingToFolder) return;  // 연타 방지 락
+        if (!pendingFavItem) return;
+
+        _isSavingToFolder = true;
+        const saveBtn = document.querySelector('#folder-modal button[onclick="saveToFolder()"]');
+        if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '0.5'; }
+
+        try {
+            let folderName = document.getElementById('new-folder-input').value.trim() || '기본 보관함';
+            const itemId = `${pendingFavType}_${pendingFavItem.id}`;
+
+            // 이미 보관함에 같은 ID가 있으면 추가하지 않음
+            if (favorites.some(f => f.dbId === itemId)) {
+                showToast("이미 보관함에 있는 앨범입니다", "info");
+                closeFolderModal();
+                return;
+            }
+
+            const newItem = {
+                ...pendingFavItem,
+                dbId: itemId,
+                itemType: pendingFavType,
+                artistNameCache: currentArtist || pendingFavItem.artist?.name,
+                folderName: folderName
+            };
+            favorites.push(newItem);
+            await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).set(JSON.parse(JSON.stringify(newItem)));
+            showToast(`[${folderName}] 에 저장됨 📁`, "success");
+            closeFolderModal();
+            if (isFavoritesTab) renderFavorites(); else renderAllSections();
+        } finally {
+            _isSavingToFolder = false;
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = ''; }
+        }
+    }
     window.toggleFavorite = toggleFavorite;
     window.closeFolderModal = closeFolderModal;
     window.saveToFolder = saveToFolder;
@@ -1731,6 +1790,57 @@ button:active:not(:disabled) {
             if(source === 'itunes') { loadJSONP(`https://itunes.apple.com/lookup?id=${id}&callback=handleItunesDeepLink`); }
             else { loadJSONP(`https://api.deezer.com/${type}/${id}?output=jsonp&callback=handleDeepLinkInit`); }
         }
+
+        // 🆕 백틱 진단 — 페이지의 모든 텍스트 노드를 훑어 ` 가 노출된 곳을 찾고 화면에 표시
+        setTimeout(() => {
+            try {
+                const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+                const offenders = [];
+                let node;
+                while (node = walker.nextNode()) {
+                    if (/`/.test(node.textContent)) {
+                        // 부모 element의 정보 수집
+                        const p = node.parentElement;
+                        if (!p) continue;
+                        // 스크립트/스타일/숨김 요소는 제외
+                        if (p.closest('script, style, [hidden]')) continue;
+                        const isVisible = p.offsetParent !== null;
+                        if (!isVisible) continue;
+                        offenders.push({
+                            text: node.textContent.slice(0, 40),
+                            tag: p.tagName,
+                            id: p.id || '',
+                            cls: (p.className || '').toString().slice(0, 60),
+                            path: getPath(p)
+                        });
+                    }
+                }
+                function getPath(el) {
+                    const parts = [];
+                    let cur = el;
+                    while (cur && cur !== document.body && parts.length < 5) {
+                        let s = cur.tagName.toLowerCase();
+                        if (cur.id) s += '#' + cur.id;
+                        else if (cur.className && typeof cur.className === 'string') s += '.' + cur.className.split(' ')[0];
+                        parts.unshift(s);
+                        cur = cur.parentElement;
+                    }
+                    return parts.join(' > ');
+                }
+                if (offenders.length > 0) {
+                    console.warn('[BACKTICK HUNT]', offenders);
+                    // 화면 상단에 작은 디버그 박스
+                    const dbg = document.createElement('div');
+                    dbg.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:99999;background:#ff003c;color:#fff;padding:8px 12px;border-radius:8px;font-size:11px;font-family:monospace;max-height:40vh;overflow:auto;line-height:1.4;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+                    dbg.innerHTML = '<b>백틱 발견 ' + offenders.length + '개:</b><br>' +
+                        offenders.slice(0, 8).map(o =>
+                            `<b>${o.tag}</b>${o.id?'#'+o.id:''} → "${o.text.replace(/</g,'&lt;')}"<br>↳ ${o.path}`
+                        ).join('<br>') +
+                        '<br><br><button onclick="this.parentNode.remove()" style="background:#fff;color:#000;border:0;padding:4px 10px;border-radius:4px;font-weight:700;">닫기</button>';
+                    document.body.appendChild(dbg);
+                }
+            } catch (e) { console.error('debug failed', e); }
+        }, 1500);
     });
 
     window.handleItunesDeepLink = function(d) { if(d.results?.length > 0) { const a = d.results[0]; playMedia('album', a.collectionId, a.artworkUrl100?.replace('100x100bb','600x600bb')||'', a.collectionName, a.artistName, false, 'itunes'); } };
@@ -1773,14 +1883,25 @@ button:active:not(:disabled) {
 
     function renderChainBar() {
         const bar = document.getElementById('digging-chain-bar');
-        if (diggingChain.length <= 1) { bar.classList.add('hidden'); return; }
+        if (!diggingChain || diggingChain.length <= 1) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
         bar.classList.remove('hidden'); bar.innerHTML = '';
         diggingChain.forEach((node, i) => {
-            const isCurrent = (i === diggingChain.length - 1); const nodeEl = document.createElement('div'); nodeEl.className = `chain-node ${isCurrent ? 'chain-current' : ''}`;
-            nodeEl.innerHTML = `<img src="${node.cover || ''}" onerror="this.style.display='none'" style="margin-right:5px;"><span class="chain-label">${node.artist}</span>`;
+            // 잘못된 노드 방어
+            if (!node || (!node.artist && !node.albumTitle)) return;
+            const isCurrent = (i === diggingChain.length - 1);
+            const nodeEl = document.createElement('div');
+            nodeEl.className = `chain-node ${isCurrent ? 'chain-current' : ''}`;
+            const safeArtist = (node.artist || '').replace(/[<>"]/g, '');
+            const safeCover = (node.cover || '').replace(/["<>]/g, '');
+            nodeEl.innerHTML = `<img src="${safeCover}" onerror="this.style.display='none'" style="margin-right:5px;"><span class="chain-label">${safeArtist}</span>`;
             if (!isCurrent) { nodeEl.onclick = () => { playMedia(node.type, node.albumId, node.cover, node.albumTitle, node.artist, true, node.source, false, i); }; }
             bar.appendChild(nodeEl);
-            if (!isCurrent) { const arrow = document.createElement('span'); arrow.className = 'chain-arrow'; arrow.textContent = '›'; bar.appendChild(arrow); }
+            if (!isCurrent) {
+                const arrow = document.createElement('span');
+                arrow.className = 'chain-arrow';
+                arrow.textContent = '›';
+                bar.appendChild(arrow);
+            }
         });
         setTimeout(() => { bar.scrollLeft = bar.scrollWidth; }, 50);
     }
