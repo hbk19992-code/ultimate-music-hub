@@ -177,6 +177,131 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 .ranking-album-chip { font-size:9px; color:#52525b; background:#111; border:1px solid #1f1f1f; border-radius:4px; padding:1px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
 .ranking-progress-bar { height:2px; background:#1a1a1a; overflow:hidden; }
 .ranking-progress-fill { height:100%; background:linear-gradient(90deg,#10b981,#a238ff); transition:width 0.3s ease-out; width:0%; }
+
+/* ========== 🆕 모바일 터치 + 시각적 피드백 ========== */
+
+/* 모든 버튼/탭에 더블탭 줌 방지 + 빠른 터치 응답 */
+button, .cursor-pointer, [role="button"], a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS 위에서 당기기 새로고침 방지 */
+body { overscroll-behavior-y: contain; }
+#main-scroll-area { overscroll-behavior-y: contain; }
+
+/* 카드 탭 피드백 (모바일) */
+@media (hover: none) and (pointer: coarse) {
+    /* 모바일: hover 효과 제거하고 active(누르는 순간)에 시각적 반응 */
+    .group:active {
+        transform: scale(0.97) !important;
+        transition: transform 0.1s ease-out !important;
+    }
+    .group:active img {
+        opacity: 0.85 !important;
+    }
+}
+
+/* 모든 버튼이 눌릴 때 살짝 작아지기 */
+button:active:not(:disabled) {
+    transform: scale(0.96);
+    transition: transform 0.08s ease-out;
+}
+
+/* 스튜디오뷰 스와이프 핸들 영역 확대 (실제 핸들은 작지만 터치 영역은 큼) */
+#studio-swipe-handle::before {
+    content: '';
+    position: absolute;
+    inset: -16px -50px;
+    z-index: -1;
+}
+#studio-swipe-handle:active {
+    background: #10b981;
+    height: 5px;
+}
+
+/* 하트 클릭 시 펄스 애니메이션 */
+@keyframes heartBurst {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.4); }
+    50% { transform: scale(0.9); }
+    75% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+.heart-burst { animation: heartBurst 0.5s ease-out; }
+
+/* 즐겨찾기 추가 시 카드 그린 펄스 */
+@keyframes cardFavPulse {
+    0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+    100% { box-shadow: 0 0 0 24px rgba(16,185,129,0); }
+}
+.card-fav-pulse { animation: cardFavPulse 0.6s ease-out; }
+
+/* 미리듣기 없는 트랙 클릭 시 흔들림 */
+@keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%,60% { transform: translateX(-6px); }
+    40%,80% { transform: translateX(6px); }
+}
+.shake-it { animation: shake 0.4s ease-in-out; }
+
+/* 정렬 변경 시 그리드 페이드 */
+@keyframes gridFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.grid-fade-in { animation: gridFadeIn 0.3s ease-out; }
+
+/* 빈 상태 (검색 결과 0건 등) */
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: #52525b;
+}
+.empty-state .emoji {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+    opacity: 0.5;
+}
+.empty-state .title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #71717a;
+    margin-bottom: 6px;
+}
+.empty-state .hint {
+    font-size: 11px;
+    color: #3f3f46;
+    font-weight: 600;
+}
+
+/* 토스트가 글로벌 플레이어 위로 올라오도록 (플레이어 height 90px + 여유 30px = 120px) */
+#toast-container { bottom: 130px !important; }
+
+/* 카드 탭 시 미세 ripple */
+@keyframes ripple {
+    from { box-shadow: 0 0 0 0 rgba(16,185,129,0.3); }
+    to { box-shadow: 0 0 0 16px rgba(16,185,129,0); }
+}
+.ripple-effect { animation: ripple 0.5s ease-out; }
+
+/* 트랙 리스트 항목 active 상태 */
+[id^="track-item-"]:active {
+    background: rgba(16,185,129,0.12) !important;
+}
+
+/* 글로벌 플레이어 컨트롤 버튼 터치 영역 확대 */
+#global-player button {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* 보관함 하트 클릭 영역 확대 (모바일에서 누르기 쉽게) */
+button[onclick*="toggleFavorite"] {
+    min-width: 40px;
+    min-height: 40px;
+}
 </style>
 ```
 
@@ -514,7 +639,40 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     function signOut() { auth.signOut(); }
     auth.onAuthStateChanged(u => { const lb = document.getElementById('login-btn'), up = document.getElementById('user-profile'); if (u) { currentUser = u; lb.classList.add('hidden'); up.classList.remove('hidden'); document.getElementById('user-photo').src = u.photoURL; document.getElementById('user-name').textContent = u.displayName; loadFavoritesFromCloud(); } else { currentUser = null; favorites = []; lb.classList.remove('hidden'); up.classList.add('hidden'); } });
     async function loadFavoritesFromCloud() { if (!currentUser) return; const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); favorites = []; snap.forEach(d => favorites.push(d.data())); await loadAllMemos(); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
-    async function toggleFavorite(e, item, type) { e.stopPropagation(); if (!currentUser) return showToast("로그인 후 하트를 눌러보세요!", "error"); const itemId = `${type}_${item.id}`, idx = favorites.findIndex(f => f.dbId === itemId); if (idx > -1) { favorites.splice(idx, 1); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).delete(); showToast("보관함 삭제", "info"); if (isFavoritesTab) renderFavorites(); else renderAllSections(); } else { pendingFavItem = item; pendingFavType = type; openFolderModal(); } }
+    async function toggleFavorite(e, item, type) {
+        e.stopPropagation();
+        if (!currentUser) return showToast("로그인 후 하트를 눌러보세요!", "error");
+
+        // 시각적 피드백 — 즉시 애니메이션
+        const btn = e.currentTarget;
+        const heartSvg = btn?.querySelector('svg');
+        if (heartSvg) {
+            heartSvg.classList.remove('heart-burst');
+            void heartSvg.offsetWidth; // reflow trick
+            heartSvg.classList.add('heart-burst');
+        }
+        const card = btn?.closest('.group');
+        if (card) {
+            card.classList.remove('card-fav-pulse');
+            void card.offsetWidth;
+            card.classList.add('card-fav-pulse');
+            setTimeout(() => card.classList.remove('card-fav-pulse'), 700);
+        }
+        // 햅틱 피드백 (지원되는 기기에서만)
+        if (navigator.vibrate) navigator.vibrate(10);
+
+        const itemId = `${type}_${item.id}`, idx = favorites.findIndex(f => f.dbId === itemId);
+        if (idx > -1) {
+            favorites.splice(idx, 1);
+            await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).delete();
+            showToast("보관함 삭제", "info");
+            if (isFavoritesTab) renderFavorites(); else renderAllSections();
+        } else {
+            pendingFavItem = item;
+            pendingFavType = type;
+            openFolderModal();
+        }
+    }
     function openFolderModal() { const m = document.getElementById('folder-modal'), list = document.getElementById('folder-list'); const existingFolders = [...new Set(favorites.map(f => f.folderName || '기본 보관함'))]; list.innerHTML = existingFolders.map(f => `<button onclick="document.getElementById('new-folder-input').value='${f}'" class="block w-full text-left px-4 py-2.5 hover:bg-zinc-800 rounded-lg text-sm text-zinc-300 font-bold transition-colors">${f}</button>`).join(''); m.classList.remove('hidden'); document.getElementById('new-folder-input').focus(); }
     function closeFolderModal() { document.getElementById('folder-modal').classList.add('hidden'); document.getElementById('new-folder-input').value = ''; pendingFavItem = null; }
     async function saveToFolder() { if(!pendingFavItem) return; let folderName = document.getElementById('new-folder-input').value.trim() || '기본 보관함'; const itemId = `${pendingFavType}_${pendingFavItem.id}`; const newItem = { ...pendingFavItem, dbId: itemId, itemType: pendingFavType, artistNameCache: currentArtist || pendingFavItem.artist?.name, folderName: folderName }; favorites.push(newItem); await db.collection('users').doc(currentUser.uid).collection('favorites').doc(itemId).set(JSON.parse(JSON.stringify(newItem))); showToast(`[${folderName}] 에 저장됨 📁`, "success"); closeFolderModal(); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
@@ -1419,7 +1577,10 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     function renderTimelineView(allItems) {
         const c = document.getElementById('sections-container'); c.innerHTML = '';
         const filtered = allItems.filter(it => { const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g,''); if (!q) return true; const searchQ = sessionSearchQuery.replace(/\s/g,''); const t = it.title.toLowerCase().replace(/\s/g,''); if (searchQ === q) return it.sessionMatched || t.includes(q); return t.includes(q); });
-        if (!filtered.length) { c.innerHTML = '<div class="text-center py-20 text-zinc-600 font-bold">검색 결과가 없습니다</div>'; return; }
+        if (!filtered.length) {
+            c.innerHTML = `<div class="empty-state"><span class="emoji">🔍</span><div class="title">검색 결과가 없습니다</div><div class="hint">다른 키워드로 시도해 보세요</div></div>`;
+            return;
+        }
         const byYear = {}; filtered.forEach(it => { const y = it.release_date ? it.release_date.split('-')[0] : '연도 미상'; if (!byYear[y]) byYear[y] = []; byYear[y].push(it); });
         const years = Object.keys(byYear).sort((a, b) => albumSortOrder === 'desc' ? b - a : a - b );
         const wrap = document.createElement('div'); wrap.className = 'timeline-wrap';
@@ -1445,6 +1606,15 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         const f = (it) => { const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g, ''); if (!q) return true; const searchQ = sessionSearchQuery.replace(/\s/g, ''); const targetTitle = it.title.toLowerCase().replace(/\s/g, ''); if (searchQ === q) return it.sessionMatched || targetTitle.includes(q); return targetTitle.includes(q); };
         const sort = (arr) => arr.sort((a,b) => albumSortOrder === 'desc' ? new Date(b.release_date || 0) - new Date(a.release_date || 0) : new Date(a.release_date || 0) - new Date(b.release_date || 0));
         if (currentViewMode === 'timeline') { const all = sort([...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features].filter(f)); renderTimelineView(all); return; }
+
+        // 모든 섹션에 결과가 0건이고 검색어가 있을 때 빈 상태
+        const localQ = document.getElementById('local-search-input').value.trim();
+        const totalFiltered = albumsData.regular.filter(f).length + albumsData.ep.filter(f).length + albumsData.compilation.filter(f).length + albumsData.live.filter(f).length + albumsData.features.filter(f).length;
+        if (localQ && totalFiltered === 0) {
+            c.innerHTML = `<div class="empty-state"><span class="emoji">🔎</span><div class="title">"${localQ}" 검색 결과 없음</div><div class="hint">검색어를 비우거나 다른 키워드를 시도해 보세요</div></div>`;
+            return;
+        }
+
         renderSection('💿 정규 앨범', sort(albumsData.regular.filter(f)), 'album'); renderSection('📀 EP & 싱글', sort(albumsData.ep.filter(f)), 'album'); renderSection('💽 컴필레이션', sort(albumsData.compilation.filter(f)), 'album'); renderSection('🎤 라이브', sort(albumsData.live.filter(f)), 'album'); renderSection('🤝 피처링 참여곡', albumsData.features.filter(f), 'album');
 
         // 🆕 "더 찾아보기" 버튼 — 아티스트가 선택되어 있고 피처링 탭 기준으로 더 깊이 파고 싶을 때
@@ -1482,14 +1652,17 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         tabsHtml += `</div>`; c.innerHTML = tabsHtml;
         document.getElementById('fav-folder-tabs').addEventListener('click', e => { const btn = e.target.closest('.fav-folder-btn'); if (btn) window.setFavFolder(btn.dataset.folder); });
         const fItems = favorites.filter(it => { const folderMatch = (currentFavFolder === '전체 보관함' || (it.folderName || '기본 보관함') === currentFavFolder); if (!folderMatch) return false; const q = document.getElementById('local-search-input').value.toLowerCase().replace(/\s/g, ''); if (!q) return true; const searchQ = sessionSearchQuery.replace(/\s/g, ''); const targetTitle = it.title.toLowerCase().replace(/\s/g, ''); if (searchQ === q) return it.sessionMatched || targetTitle.includes(q); return targetTitle.includes(q); });
-        if(!fItems.length) { c.innerHTML += "<div class='text-center py-20 text-zinc-600 font-bold'>폴더가 비어있습니다 ☁️</div>"; return; }
+        if(!fItems.length) {
+            c.innerHTML += `<div class="empty-state"><span class="emoji">☁️</span><div class="title">폴더가 비어있습니다</div><div class="hint">앨범을 좋아하면 여기에 모입니다</div></div>`;
+            return;
+        }
         renderSection(`📁 ${currentFavFolder}`, fItems, 'mixed');
     }
     window.setFavFolder = function(f) { currentFavFolder = f; renderFavorites(); };
 
     function renderSection(title, items, sectionType) {
         if (!items.length) return; const c = document.getElementById('sections-container'), sh = document.createElement('div');
-        sh.innerHTML = `<h3 class="text-xl md:text-2xl font-black mb-6 border-l-4 border-[#10b981] pl-4 md:pl-5">${title} <span class="text-zinc-600 text-xs md:text-sm ml-2">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-8 px-4 md:px-0"></div>`;
+        sh.innerHTML = `<h3 class="text-xl md:text-2xl font-black mb-6 border-l-4 border-[#10b981] pl-4 md:pl-5">${title} <span class="text-zinc-600 text-xs md:text-sm ml-2">${items.length}</span></h3><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 md:gap-8 px-4 md:px-0 grid-fade-in"></div>`;
         c.appendChild(sh); const g = sh.querySelector('div');
         items.forEach(it => {
             const type = sectionType === 'mixed' ? it.itemType : sectionType; const cover = it.cover_medium; const year = it.release_date ? it.release_date.split('-')[0] : ''; const isFav = favorites.some(f => f.dbId === `${type}_${it.id}`);
@@ -1589,7 +1762,18 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
         currentAlbumTracks = d.data || [d]; const list = document.getElementById('studio-track-list'); list.innerHTML = '';
         currentAlbumTracks.forEach((t, i) => {
             const div = document.createElement('div'); div.id = `track-item-${i}`; div.className = `p-3 md:p-4 hover:bg-white/5 cursor-pointer rounded-xl flex items-center gap-4 ${!t.preview ? 'opacity-30' : ''}`;
-            div.onclick = () => t.preview ? playSpecificTrack(i) : showToast("미리듣기가 없는 트랙입니다", "error");
+            div.onclick = (ev) => {
+                if (t.preview) {
+                    playSpecificTrack(i);
+                } else {
+                    // 시각적 피드백: 흔들림 + 햅틱
+                    div.classList.remove('shake-it');
+                    void div.offsetWidth;
+                    div.classList.add('shake-it');
+                    if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
+                    showToast("미리듣기가 없는 트랙입니다", "error");
+                }
+            };
             div.innerHTML = `<span class="track-num text-zinc-600 font-mono w-6 text-center text-sm">${i+1}</span><span class="font-bold flex-1 truncate text-sm">${t.title}</span>${t.preview ? '<svg class="w-4 h-4 text-zinc-700 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' : ''}`; list.appendChild(div);
         });
         if (window._pendingTrackTitle) { const pending = window._pendingTrackTitle.toLowerCase(); const matchIdx = currentAlbumTracks.findIndex(t => t.title.toLowerCase().includes(pending) || pending.includes(t.title.toLowerCase())); if (matchIdx >= 0 && currentAlbumTracks[matchIdx].preview) { setTimeout(() => playSpecificTrack(matchIdx), 300); } window._pendingTrackTitle = null; }
