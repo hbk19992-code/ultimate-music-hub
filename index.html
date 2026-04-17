@@ -298,12 +298,6 @@ button:active:not(:disabled) {
     min-height: 44px;
 }
 
-/* 보관함 하트 클릭 영역 확대 (모바일에서 누르기 쉽게) */
-button[onclick*="toggleFavorite"] {
-    min-width: 40px;
-    min-height: 40px;
-}
-
 /* 접근성: 모션 감소 설정 시 모든 애니메이션 무력화 */
 @media (prefers-reduced-motion: reduce) {
     .heart-burst, .card-fav-pulse, .shake-it, .grid-fade-in, .ripple-effect {
@@ -651,14 +645,15 @@ button[onclick*="toggleFavorite"] {
     async function loadFavoritesFromCloud() { if (!currentUser) return; const snap = await db.collection('users').doc(currentUser.uid).collection('favorites').get(); favorites = []; snap.forEach(d => favorites.push(d.data())); await loadAllMemos(); if (isFavoritesTab) renderFavorites(); else renderAllSections(); }
     async function toggleFavorite(e, item, type) {
         e.stopPropagation();
+        e.preventDefault();
         if (!currentUser) return showToast("로그인 후 하트를 눌러보세요!", "error");
 
-        // 시각적 피드백 — 즉시 애니메이션
-        const btn = e.currentTarget;
+        // 시각적 피드백 — 즉시 애니메이션 (e.target에서 버튼 찾기)
+        const btn = (e.target && e.target.closest) ? e.target.closest('button') : null;
         const heartSvg = btn?.querySelector('svg');
         if (heartSvg) {
             heartSvg.classList.remove('heart-burst');
-            void heartSvg.offsetWidth; // reflow trick
+            void heartSvg.offsetWidth;
             heartSvg.classList.add('heart-burst');
         }
         const card = btn?.closest('.group');
@@ -668,7 +663,6 @@ button[onclick*="toggleFavorite"] {
             card.classList.add('card-fav-pulse');
             setTimeout(() => card.classList.remove('card-fav-pulse'), 700);
         }
-        // 햅틱 피드백 (지원되는 기기에서만)
         if (navigator.vibrate) navigator.vibrate(10);
 
         const itemId = `${type}_${item.id}`, idx = favorites.findIndex(f => f.dbId === itemId);
@@ -1712,7 +1706,7 @@ button[onclick*="toggleFavorite"] {
                     playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
                 }
             };
-            const safeIt = JSON.stringify(it).replace(/"/g, '"'); const hasMemo = allUserMemos[String(it.id)];
+            const safeIt = JSON.stringify(it).replace(/"/g, '&quot;'); const hasMemo = allUserMemos[String(it.id)];
             let originBadgeHtml = '';
             if (it.originBadge === 'BAND') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-[#a238ff] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🎸 BAND</span>';
             else if (it.originBadge === 'FEAT') originBadgeHtml = '<span class="absolute bottom-2 left-2 bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🎤 FEAT</span>';
