@@ -1791,63 +1791,47 @@ html, body, #main-scroll-area, #studio-view {
             else { loadJSONP(`https://api.deezer.com/${type}/${id}?output=jsonp&callback=handleDeepLinkInit`); }
         }
 
-        // 🆕 백틱 진단 — 페이지의 모든 텍스트 노드를 훑어 ` 가 노출된 곳을 찾고 화면에 표시
-        setTimeout(() => {
+        // 외부 확장/번역 도구가 페이지에 주입하는 백틱(```) 자동 제거
+        // (iOS Safari Writing Tools / 일부 번역 확장이 마크다운 코드블록 마커를 누설하는 케이스)
+        const stripBackticks = () => {
             try {
                 const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-                const offenders = [];
+                const targets = [];
                 let node;
                 while (node = walker.nextNode()) {
-                    if (/`/.test(node.textContent)) {
-                        const p = node.parentElement;
-                        if (!p) continue;
-                        if (p.closest('script, style, [hidden]')) continue;
-                        offenders.push({ node, parent: p });
+                    if (/`/.test(node.textContent) && !node.parentElement?.closest('script, style')) {
+                        targets.push(node);
                     }
                 }
+                targets.forEach(t => { t.textContent = t.textContent.replace(/`/g, ''); });
+            } catch (e) {}
+        };
+        // 초기 1회 + 약간 늦게 1회 (확장이 늦게 주입하는 경우 대비)
+        stripBackticks();
+        setTimeout(stripBackticks, 800);
+        setTimeout(stripBackticks, 2500);
 
-                if (offenders.length > 0) {
-                    console.warn('[BACKTICK HUNT]', offenders);
-
-                    // 각 백틱 텍스트 노드를 즉시 제거
-                    offenders.forEach(o => {
-                        try {
-                            o.node.textContent = o.node.textContent.replace(/`/g, '');
-                        } catch (e) {}
-                    });
-
-                    // 디버그 박스
-                    const dbg = document.createElement('div');
-                    dbg.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:99999;background:#10b981;color:#000;padding:10px 14px;border-radius:8px;font-size:11px;font-family:monospace;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
-                    dbg.innerHTML = `<b>✓ 백틱 ${offenders.length}개 자동 제거됨</b><br>외부 확장/번역 프로그램이 주입한 것으로 추정됩니다<br><button onclick="this.parentNode.remove()" style="background:#000;color:#10b981;border:0;padding:4px 10px;border-radius:4px;font-weight:700;margin-top:6px;">닫기</button>`;
-                    document.body.appendChild(dbg);
-
-                    // 5초 후 자동 닫기
-                    setTimeout(() => dbg.remove(), 5000);
-                }
-
-                // 추가로 — DOM이 변경될 때마다 백틱이 다시 들어오면 제거 (지속 감시)
-                const observer = new MutationObserver((mutations) => {
-                    mutations.forEach(m => {
-                        m.addedNodes.forEach(n => {
-                            if (n.nodeType === 3 && /`/.test(n.textContent)) {
-                                n.textContent = n.textContent.replace(/`/g, '');
-                            } else if (n.nodeType === 1) {
-                                // 추가된 element의 모든 텍스트 노드 검사
-                                const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT, null);
-                                let tn;
-                                while (tn = w.nextNode()) {
-                                    if (/`/.test(tn.textContent) && !tn.parentElement?.closest('script, style')) {
-                                        tn.textContent = tn.textContent.replace(/`/g, '');
-                                    }
+        // 이후엔 새로 추가/변경되는 노드만 감시
+        try {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach(m => {
+                    m.addedNodes.forEach(n => {
+                        if (n.nodeType === 3 && /`/.test(n.textContent)) {
+                            n.textContent = n.textContent.replace(/`/g, '');
+                        } else if (n.nodeType === 1) {
+                            const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT, null);
+                            let tn;
+                            while (tn = w.nextNode()) {
+                                if (/`/.test(tn.textContent) && !tn.parentElement?.closest('script, style')) {
+                                    tn.textContent = tn.textContent.replace(/`/g, '');
                                 }
                             }
-                        });
+                        }
                     });
                 });
-                observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-            } catch (e) { console.error('debug failed', e); }
-        }, 1500);
+            });
+            observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+        } catch (e) {}
     });
 
     window.handleItunesDeepLink = function(d) { if(d.results?.length > 0) { const a = d.results[0]; playMedia('album', a.collectionId, a.artworkUrl100?.replace('100x100bb','600x600bb')||'', a.collectionName, a.artistName, false, 'itunes'); } };
