@@ -1799,46 +1799,53 @@ html, body, #main-scroll-area, #studio-view {
                 let node;
                 while (node = walker.nextNode()) {
                     if (/`/.test(node.textContent)) {
-                        // 부모 element의 정보 수집
                         const p = node.parentElement;
                         if (!p) continue;
-                        // 스크립트/스타일/숨김 요소는 제외
                         if (p.closest('script, style, [hidden]')) continue;
-                        const isVisible = p.offsetParent !== null;
-                        if (!isVisible) continue;
-                        offenders.push({
-                            text: node.textContent.slice(0, 40),
-                            tag: p.tagName,
-                            id: p.id || '',
-                            cls: (p.className || '').toString().slice(0, 60),
-                            path: getPath(p)
-                        });
+                        offenders.push({ node, parent: p });
                     }
                 }
-                function getPath(el) {
-                    const parts = [];
-                    let cur = el;
-                    while (cur && cur !== document.body && parts.length < 5) {
-                        let s = cur.tagName.toLowerCase();
-                        if (cur.id) s += '#' + cur.id;
-                        else if (cur.className && typeof cur.className === 'string') s += '.' + cur.className.split(' ')[0];
-                        parts.unshift(s);
-                        cur = cur.parentElement;
-                    }
-                    return parts.join(' > ');
-                }
+
                 if (offenders.length > 0) {
                     console.warn('[BACKTICK HUNT]', offenders);
-                    // 화면 상단에 작은 디버그 박스
+
+                    // 각 백틱 텍스트 노드를 즉시 제거
+                    offenders.forEach(o => {
+                        try {
+                            o.node.textContent = o.node.textContent.replace(/`/g, '');
+                        } catch (e) {}
+                    });
+
+                    // 디버그 박스
                     const dbg = document.createElement('div');
-                    dbg.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:99999;background:#ff003c;color:#fff;padding:8px 12px;border-radius:8px;font-size:11px;font-family:monospace;max-height:40vh;overflow:auto;line-height:1.4;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
-                    dbg.innerHTML = '<b>백틱 발견 ' + offenders.length + '개:</b><br>' +
-                        offenders.slice(0, 8).map(o =>
-                            `<b>${o.tag}</b>${o.id?'#'+o.id:''} → "${o.text.replace(/</g,'&lt;')}"<br>↳ ${o.path}`
-                        ).join('<br>') +
-                        '<br><br><button onclick="this.parentNode.remove()" style="background:#fff;color:#000;border:0;padding:4px 10px;border-radius:4px;font-weight:700;">닫기</button>';
+                    dbg.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:99999;background:#10b981;color:#000;padding:10px 14px;border-radius:8px;font-size:11px;font-family:monospace;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+                    dbg.innerHTML = `<b>✓ 백틱 ${offenders.length}개 자동 제거됨</b><br>외부 확장/번역 프로그램이 주입한 것으로 추정됩니다<br><button onclick="this.parentNode.remove()" style="background:#000;color:#10b981;border:0;padding:4px 10px;border-radius:4px;font-weight:700;margin-top:6px;">닫기</button>`;
                     document.body.appendChild(dbg);
+
+                    // 5초 후 자동 닫기
+                    setTimeout(() => dbg.remove(), 5000);
                 }
+
+                // 추가로 — DOM이 변경될 때마다 백틱이 다시 들어오면 제거 (지속 감시)
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach(m => {
+                        m.addedNodes.forEach(n => {
+                            if (n.nodeType === 3 && /`/.test(n.textContent)) {
+                                n.textContent = n.textContent.replace(/`/g, '');
+                            } else if (n.nodeType === 1) {
+                                // 추가된 element의 모든 텍스트 노드 검사
+                                const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT, null);
+                                let tn;
+                                while (tn = w.nextNode()) {
+                                    if (/`/.test(tn.textContent) && !tn.parentElement?.closest('script, style')) {
+                                        tn.textContent = tn.textContent.replace(/`/g, '');
+                                    }
+                                }
+                            }
+                        });
+                    });
+                });
+                observer.observe(document.body, { childList: true, subtree: true, characterData: true });
             } catch (e) { console.error('debug failed', e); }
         }, 1500);
     });
