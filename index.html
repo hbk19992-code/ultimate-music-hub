@@ -1849,7 +1849,11 @@ html, body, #main-scroll-area, #studio-view {
             byYear[year].forEach(it => {
                 const card = document.createElement('div'); card.className = `timeline-card${it.sessionMatched ? ' tc-matched' : ''}`; const hasMemo = allUserMemos[String(it.id)];
                 card.innerHTML = `<img src="${it.cover_medium}" onerror="this.src='https://placehold.co/48x48/18181b/10b981?text=?'"><div class="tc-info flex-1 min-w-0"><div class="tc-title">${it.title}</div><div class="tc-meta">${it.artist?.name || currentArtist || ''} ${it.source === 'itunes' ? '· 🍎' : ''}${hasMemo ? ' · <span style="color:#a238ff">📝</span>' : ''}</div></div>${it.sessionMatched ? '<span style="color:#10b981;font-size:11px;flex-shrink:0;font-weight:900;">🎯</span>' : ''}<svg class="w-4 h-4 flex-shrink-0" style="color:#3f3f46" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>`;
-                card.onclick = () => playMedia('album', it.id, it.cover_medium, it.title, (it.artistNameCache || currentArtist) || it.artist?.name, true, it.source);
+                card.onclick = () => {
+                    const albumArtist = (it.artistNameCache || currentArtist) || it.artist?.name;
+                    const shouldPush = diggingChain.length > 0 && currentArtist && (currentArtist.toLowerCase() === albumArtist?.toLowerCase());
+                    playMedia('album', it.id, it.cover_medium, it.title, albumArtist, true, it.source, shouldPush);
+                };
                 group.appendChild(card);
             });
             wrap.appendChild(group);
@@ -1939,7 +1943,13 @@ html, body, #main-scroll-area, #studio-view {
                     showToast(`${it.title} - 외부 서비스에서 검색합니다`, 'info');
                     openInSpotify(it.title, it.artist.name);
                 } else {
-                    playMedia(type, it.id, cover, it.title, (it.artistNameCache||currentArtist)||it.artist.name, true, it.source);
+                    // ★ 체인 컨텍스트 유지: 현재 메인이 체인 안의 어떤 아티스트라면 push
+                    //   (디스코그래피 → 트랙 → 세션맨 → 디스코그래피 → 트랙... 흐름에서 체인 끊김 방지)
+                    const albumArtist = (it.artistNameCache||currentArtist)||it.artist.name;
+                    const shouldPush = diggingChain.length > 0 &&
+                                       currentArtist &&
+                                       (currentArtist.toLowerCase() === albumArtist?.toLowerCase());
+                    playMedia(type, it.id, cover, it.title, albumArtist, true, it.source, shouldPush);
                 }
             };
             const safeIt = JSON.stringify(it).replace(/"/g, '&quot;'); const hasMemo = allUserMemos[String(it.id)];
@@ -2021,26 +2031,36 @@ html, body, #main-scroll-area, #studio-view {
             showToast("아티스트 정보를 찾을 수 없습니다", "error");
             return;
         }
+        // 이미 그 아티스트의 메인 디스코그래피를 보고 있으면 안내만
+        if (currentArtist && artistName.toLowerCase() === currentArtist.toLowerCase() && diggingChain.length <= 1) {
+            showToast(`이미 ${artistName} 디스코그래피를 보고 있어요`, "info");
+            closeStudioView();
+            return;
+        }
         if (navigator.vibrate) navigator.vibrate(10);
-        // 스튜디오뷰 닫고 아티스트 검색 (체인 완전 리셋)
-        closeStudioView();
-        setTimeout(() => {
-            // Deezer로 아티스트 검색 → 첫 결과의 ID로 selectArtist
-            const cbName = `_jumpArtist_${Date.now()}`;
-            window[cbName] = (d) => {
-                delete window[cbName];
-                if (d?.data?.length) {
-                    // 정확 매치 먼저
-                    const exact = d.data.find(a => a.name.toLowerCase() === artistName.toLowerCase());
-                    const target = exact || d.data[0];
-                    selectArtist(target.id, target.name);
-                    showToast(`🎯 ${target.name} 디스코그래피`, "success");
-                } else {
-                    showToast(`"${artistName}" 을(를) 찾을 수 없습니다`, "error");
-                }
-            };
-            loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5&output=jsonp&callback=${cbName}`);
-        }, 300);
+        showToast(`🎯 ${artistName} 디스코그래피 로드 중...`, "info");
+
+        // ★ 핵심 변경: 먼저 selectArtist를 비동기로 시작 (데이터 로드 시작)
+        //    그동안 스튜디오뷰는 그대로 두고, 잠깐 후 자연스럽게 닫기
+        const cbName = `_jumpArtist_${Date.now()}`;
+        window[cbName] = (d) => {
+            delete window[cbName];
+            if (d?.data?.length) {
+                const exact = d.data.find(a => a.name.toLowerCase() === artistName.toLowerCase());
+                const target = exact || d.data[0];
+                // 백그라운드에서 디스코그래피 데이터 로드 시작
+                selectArtist(target.id, target.name);
+                // 데이터 로드는 비동기로 진행되므로 약간의 딜레이 후 닫기
+                // → 사용자에겐 "닫혔더니 이미 디스코그래피가 준비되어 있다"는 매끄러운 경험
+                setTimeout(() => {
+                    closeStudioView();
+                    showToast(`✓ ${target.name} 디스코그래피`, "success");
+                }, 350);
+            } else {
+                showToast(`"${artistName}" 을(를) 찾을 수 없습니다`, "error");
+            }
+        };
+        loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5&output=jsonp&callback=${cbName}`);
     };
 
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); };
@@ -2139,23 +2159,27 @@ html, body, #main-scroll-area, #studio-view {
                 <span>처음</span>`;
             rootBtn.onclick = (e) => {
                 e.stopPropagation();
-                // 루트 아티스트로 디스코그래피 복귀
                 const artistName = rootNode.artist;
                 if (navigator.vibrate) navigator.vibrate(10);
-                closeStudioView();
-                setTimeout(() => {
-                    const cb = `_rootJump_${Date.now()}`;
-                    window[cb] = (d) => {
-                        delete window[cb];
-                        if (d?.data?.length) {
-                            const exact = d.data.find(a => a.name.toLowerCase() === artistName.toLowerCase());
-                            const target = exact || d.data[0];
-                            selectArtist(target.id, target.name);
-                            showToast(`↩️ ${target.name} 디스코그래피`, "success");
-                        }
-                    };
-                    loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5&output=jsonp&callback=${cb}`);
-                }, 300);
+                showToast(`↩️ ${artistName} 으로 돌아가는 중...`, "info");
+
+                const cb = `_rootJump_${Date.now()}`;
+                window[cb] = (d) => {
+                    delete window[cb];
+                    if (d?.data?.length) {
+                        const exact = d.data.find(a => a.name.toLowerCase() === artistName.toLowerCase());
+                        const target = exact || d.data[0];
+                        // 데이터 로드 시작 → 잠깐 후 스튜디오뷰 닫기
+                        selectArtist(target.id, target.name);
+                        setTimeout(() => {
+                            closeStudioView();
+                            showToast(`✓ ${target.name} 디스코그래피`, "success");
+                        }, 350);
+                    } else {
+                        showToast(`"${artistName}" 을(를) 찾을 수 없습니다`, "error");
+                    }
+                };
+                loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5&output=jsonp&callback=${cb}`);
             };
             bar.appendChild(rootBtn);
         }
