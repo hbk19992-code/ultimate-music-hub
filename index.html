@@ -106,9 +106,9 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
     gap: 0;
     overflow-x: auto;
     overflow-y: hidden;
-    background: #0a0a0a;
-    border-bottom: 1px solid #1a1a1a;
-    padding: 14px 16px 14px 16px;
+    background: transparent;
+    border-bottom: 1px solid rgba(39,39,42,0.5);
+    padding: 10px 12px;
     z-index: 155;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
@@ -117,15 +117,60 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 }
 #digging-chain-bar::-webkit-scrollbar { display: none; }
 #digging-chain-bar.hidden { display: none; }
-.chain-node { display: flex; align-items: center; gap: 6px; flex-shrink: 0; cursor: pointer; padding: 4px 8px; border-radius: 20px; transition: background 0.15s; max-width: 140px; }
-.chain-node:hover { background: rgba(255,255,255,0.07); }
-.chain-node.chain-current { background: rgba(16,185,129,0.12); cursor: default; }
-.chain-node img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
-.chain-node .chain-label { font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
-.chain-node.chain-current .chain-label { color: #10b981; }
-.chain-node:not(.chain-current) .chain-label { color: #71717a; }
-.chain-node:not(.chain-current):hover .chain-label { color: #a1a1aa; }
-.chain-arrow { color: #3f3f46; font-size: 10px; flex-shrink: 0; padding: 0 2px; }
+
+/* 체인 바 오른쪽 끝 페이드 (긴 체인일 때 컨텐츠가 닫기 버튼에 잘려 보이는 것 완화) */
+#studio-header-row {
+    position: relative;
+    border-bottom: 1px solid rgba(39,39,42,0.5);
+}
+#digging-chain-bar.flex-1 { border-bottom: none; }
+.chain-node {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 2px; flex-shrink: 0; cursor: pointer;
+    padding: 6px 10px; border-radius: 12px;
+    transition: all 0.15s; max-width: 170px;
+    position: relative;
+}
+.chain-node:not(.chain-current):hover { background: rgba(255,255,255,0.06); }
+.chain-node.chain-current {
+    background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.08));
+    border: 1px solid rgba(16,185,129,0.5);
+    cursor: default;
+}
+.chain-node-top {
+    display: flex; align-items: center; gap: 6px;
+    width: 100%;
+}
+.chain-node-top img {
+    width: 18px; height: 18px; border-radius: 4px;
+    object-fit: cover; border: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
+.chain-node-artist {
+    font-size: 9px; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 120px; letter-spacing: 0.02em;
+}
+.chain-node-album {
+    font-size: 11px; font-weight: 800;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 150px; padding-left: 24px;
+    line-height: 1.2;
+}
+.chain-node:not(.chain-current) .chain-node-artist { color: #52525b; }
+.chain-node:not(.chain-current) .chain-node-album { color: #a1a1aa; }
+.chain-node:not(.chain-current):hover .chain-node-album { color: #fff; }
+.chain-node.chain-current .chain-node-artist { color: rgba(16,185,129,0.7); }
+.chain-node.chain-current .chain-node-album { color: #10b981; }
+.chain-node.chain-current::after {
+    content: 'NOW';
+    position: absolute; top: -6px; right: -4px;
+    background: #10b981; color: #000;
+    font-size: 7px; font-weight: 900; letter-spacing: 0.05em;
+    padding: 2px 5px; border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(16,185,129,0.4);
+}
+.chain-arrow { color: #3f3f46; font-size: 14px; flex-shrink: 0; padding: 0 4px; align-self: center; }
 @keyframes chainSlideIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
 .chain-loaded { animation: chainSlideIn 0.25s ease-out; }
 .context-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 6px; padding: 4px 8px; font-size: 10px; color: #10b981; font-weight: 700; margin-bottom: 12px; }
@@ -396,23 +441,45 @@ html, body, #main-scroll-area, #studio-view {
 .cg-empty-title { font-size: 14px; font-weight: 800; color: #71717a; margin-bottom: 8px; }
 .cg-empty-hint { font-size: 11px; color: #3f3f46; text-align: center; max-width: 320px; line-height: 1.6; }
 
-/* 체인 바 내부 그래프 버튼 (체인 맨 앞에 위치) */
+/* 체인 바 내부 그래프 버튼 (체인 맨 앞에 sticky 고정) */
 .chain-graph-inline-btn {
     flex-shrink: 0;
+    position: sticky;
+    left: 0;
     display: inline-flex; align-items: center; gap: 4px;
-    background: rgba(162,56,255,0.18);
+    background: linear-gradient(135deg, rgba(162,56,255,0.25), rgba(162,56,255,0.15));
     border: 1px solid rgba(162,56,255,0.5);
     color: #a238ff;
-    padding: 5px 10px;
+    padding: 6px 12px;
+    border-radius: 14px;
+    font-size: 11px; font-weight: 800;
+    cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
+    margin-right: 10px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+.chain-graph-inline-btn:active { transform: scale(0.94); background: rgba(162,56,255,0.32); }
+.chain-graph-inline-btn svg { width: 12px; height: 12px; }
+
+/* 체인 바 "처음으로" 버튼 — 우측 끝에 고정 */
+.chain-root-btn {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.4);
+    color: #10b981;
+    padding: 6px 10px;
     border-radius: 14px;
     font-size: 10px; font-weight: 800;
     cursor: pointer; transition: all 0.15s;
     white-space: nowrap;
-    margin-right: 8px;
-    backdrop-filter: blur(8px);
+    margin-left: 10px;
 }
-.chain-graph-inline-btn:active { transform: scale(0.95); background: rgba(162,56,255,0.32); }
-.chain-graph-inline-btn svg { width: 11px; height: 11px; }
+.chain-root-btn:active { transform: scale(0.94); background: rgba(16,185,129,0.28); }
+.chain-root-btn svg { width: 11px; height: 11px; }
 </style>
 ```
 
@@ -564,10 +631,10 @@ html, body, #main-scroll-area, #studio-view {
 <div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950/98 backdrop-blur-3xl transition-all duration-500 studio-view-exit flex flex-col">
     <div id="studio-swipe-handle"></div>
     <!-- 헤더 영역: 체인 바 + 닫기 버튼 (겹치지 않도록 flex row) -->
-    <div id="studio-header-row" class="flex items-stretch flex-shrink-0 justify-end">
+    <div id="studio-header-row" class="flex items-center flex-shrink-0 justify-end">
         <div id="digging-chain-bar" class="hidden flex-1 min-w-0"></div>
-        <button id="studio-close-btn" onclick="closeStudioView()" class="flex-shrink-0 m-3 p-2.5 bg-zinc-800 hover:bg-red-500 text-white rounded-full shadow-2xl transition-transform hover:rotate-90 self-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
+        <button id="studio-close-btn" onclick="closeStudioView()" class="flex-shrink-0 mr-3 ml-2 p-2 bg-zinc-900/80 hover:bg-red-500 text-zinc-400 hover:text-white rounded-full transition-colors" aria-label="닫기">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
         </button>
     </div>
 
@@ -592,7 +659,10 @@ html, body, #main-scroll-area, #studio-view {
             <img id="studio-cover" src="" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-28 h-28 md:w-56 md:h-56 rounded-2xl shadow-2xl object-cover border border-zinc-800">
             <div class="flex-1 min-w-0 pb-1">
                 <h2 id="studio-title" class="text-2xl md:text-5xl font-black text-white truncate mb-1 leading-tight tracking-tighter">앨범 제목</h2>
-                <p id="studio-artist" class="text-sm md:text-2xl text-[#10b981] font-bold truncate opacity-80">아티스트</p>
+                <button id="studio-artist-btn" onclick="jumpToArtistDiscography()" class="group flex items-center gap-1.5 max-w-full hover:opacity-100 transition-opacity" title="이 아티스트의 디스코그래피로 이동">
+                    <span id="studio-artist" class="text-sm md:text-2xl text-[#10b981] font-bold truncate opacity-80 group-hover:underline decoration-dotted underline-offset-4">아티스트</span>
+                    <svg class="w-3 h-3 md:w-4 md:h-4 text-[#10b981] opacity-50 group-hover:opacity-100 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
                 <div class="flex flex-wrap gap-2 mt-3">
                     <button onclick="copyDeepLink()" class="bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold flex items-center gap-1.5 transition-colors">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg> 링크 복사
@@ -1944,6 +2014,35 @@ html, body, #main-scroll-area, #studio-view {
     window.handleItunesDeepLink = function(d) { if(d.results?.length > 0) { const a = d.results[0]; playMedia('album', a.collectionId, a.artworkUrl100?.replace('100x100bb','600x600bb')||'', a.collectionName, a.artistName, false, 'itunes'); } };
     window.handleDeepLinkInit = function(d) { if(d && !d.error) { const cover = d.cover_medium || (d.album && d.album.cover_medium); playMedia(d.record_type ? 'album' : 'track', d.id, cover, d.title, d.artist?.name, false, 'deezer'); } };
 
+    // 🆕 현재 스튜디오뷰 앨범의 아티스트 디스코그래피로 점프
+    window.jumpToArtistDiscography = function() {
+        const artistName = document.getElementById('studio-artist').textContent.trim();
+        if (!artistName || artistName === '아티스트') {
+            showToast("아티스트 정보를 찾을 수 없습니다", "error");
+            return;
+        }
+        if (navigator.vibrate) navigator.vibrate(10);
+        // 스튜디오뷰 닫고 아티스트 검색 (체인 완전 리셋)
+        closeStudioView();
+        setTimeout(() => {
+            // Deezer로 아티스트 검색 → 첫 결과의 ID로 selectArtist
+            const cbName = `_jumpArtist_${Date.now()}`;
+            window[cbName] = (d) => {
+                delete window[cbName];
+                if (d?.data?.length) {
+                    // 정확 매치 먼저
+                    const exact = d.data.find(a => a.name.toLowerCase() === artistName.toLowerCase());
+                    const target = exact || d.data[0];
+                    selectArtist(target.id, target.name);
+                    showToast(`🎯 ${target.name} 디스코그래피`, "success");
+                } else {
+                    showToast(`"${artistName}" 을(를) 찾을 수 없습니다`, "error");
+                }
+            };
+            loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5&output=jsonp&callback=${cbName}`);
+        }, 300);
+    };
+
     window.openStudioView = function() { document.getElementById('studio-view').classList.replace('studio-view-exit', 'studio-view-enter'); };
     window.closeStudioView = function() {
         if (navigator.vibrate) navigator.vibrate(10);
@@ -2004,9 +2103,20 @@ html, body, #main-scroll-area, #studio-view {
             const nodeEl = document.createElement('div');
             nodeEl.className = `chain-node ${isCurrent ? 'chain-current' : ''}`;
             const safeArtist = (node.artist || '').replace(/[<>"]/g, '');
+            const safeAlbum = (node.albumTitle || '').replace(/[<>"]/g, '');
             const safeCover = (node.cover || '').replace(/["<>]/g, '');
-            nodeEl.innerHTML = `<img src="${safeCover}" onerror="this.style.display='none'" style="margin-right:5px;"><span class="chain-label">${safeArtist}</span>`;
-            if (!isCurrent) { nodeEl.onclick = () => { playMedia(node.type, node.albumId, node.cover, node.albumTitle, node.artist, true, node.source, false, i); }; }
+            nodeEl.innerHTML = `
+                <div class="chain-node-top">
+                    <img src="${safeCover}" onerror="this.style.display='none'">
+                    <span class="chain-node-artist">${safeArtist}</span>
+                </div>
+                <div class="chain-node-album">${safeAlbum}</div>
+            `;
+            if (!isCurrent) {
+                nodeEl.onclick = () => {
+                    playMedia(node.type, node.albumId, node.cover, node.albumTitle, node.artist, true, node.source, false, i);
+                };
+            }
             bar.appendChild(nodeEl);
             if (!isCurrent) {
                 const arrow = document.createElement('span');
@@ -2015,7 +2125,41 @@ html, body, #main-scroll-area, #studio-view {
                 bar.appendChild(arrow);
             }
         });
-        setTimeout(() => { bar.scrollLeft = 0; }, 50);  // 버튼이 맨 앞에 있으므로 시작 위치로 스크롤
+
+        // 🆕 "루트로" 버튼 — 체인 시작점 아티스트 디스코그래피로 복귀 (체인이 3개 이상일 때만)
+        if (diggingChain.length >= 3) {
+            const rootNode = diggingChain[0];
+            const rootBtn = document.createElement('button');
+            rootBtn.className = 'chain-root-btn';
+            rootBtn.setAttribute('title', `${rootNode.artist} 디스코그래피로 돌아가기`);
+            rootBtn.innerHTML = `
+                <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span>처음</span>`;
+            rootBtn.onclick = (e) => {
+                e.stopPropagation();
+                // 루트 아티스트로 디스코그래피 복귀
+                const artistName = rootNode.artist;
+                if (navigator.vibrate) navigator.vibrate(10);
+                closeStudioView();
+                setTimeout(() => {
+                    const cb = `_rootJump_${Date.now()}`;
+                    window[cb] = (d) => {
+                        delete window[cb];
+                        if (d?.data?.length) {
+                            const exact = d.data.find(a => a.name.toLowerCase() === artistName.toLowerCase());
+                            const target = exact || d.data[0];
+                            selectArtist(target.id, target.name);
+                            showToast(`↩️ ${target.name} 디스코그래피`, "success");
+                        }
+                    };
+                    loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5&output=jsonp&callback=${cb}`);
+                }, 300);
+            };
+            bar.appendChild(rootBtn);
+        }
+        setTimeout(() => { bar.scrollLeft = bar.scrollWidth; }, 50);  // 현재 노드(오른쪽 끝)로 스크롤, sticky 버튼은 항상 보임
     }
 
     // 🆕 Chain Digging Graph (A안) — 노드/엣지 그래프 팝업
