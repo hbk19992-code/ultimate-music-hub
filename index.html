@@ -381,16 +381,23 @@ html, body, #main-scroll-area, #studio-view {
 .cg-empty-title { font-size: 14px; font-weight: 800; color: #71717a; margin-bottom: 8px; }
 .cg-empty-hint { font-size: 11px; color: #3f3f46; text-align: center; max-width: 320px; line-height: 1.6; }
 
-#chain-graph-btn {
-    position: absolute; top: 12px; right: 60px; z-index: 158;
-    background: rgba(162,56,255,0.15); border: 1px solid rgba(162,56,255,0.4);
-    padding: 6px 12px; border-radius: 20px;
-    font-size: 10px; font-weight: 700; color: #a238ff;
-    display: none; align-items: center; gap: 6px;
+/* 체인 바 내부 그래프 버튼 (체인 맨 앞에 위치) */
+.chain-graph-inline-btn {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(162,56,255,0.18);
+    border: 1px solid rgba(162,56,255,0.5);
+    color: #a238ff;
+    padding: 5px 10px;
+    border-radius: 14px;
+    font-size: 10px; font-weight: 800;
     cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
+    margin-right: 8px;
+    backdrop-filter: blur(8px);
 }
-#chain-graph-btn.visible { display: flex; }
-#chain-graph-btn:active { transform: scale(0.95); background: rgba(162,56,255,0.3); }
+.chain-graph-inline-btn:active { transform: scale(0.95); background: rgba(162,56,255,0.32); }
+.chain-graph-inline-btn svg { width: 11px; height: 11px; }
 </style>
 ```
 
@@ -542,13 +549,6 @@ html, body, #main-scroll-area, #studio-view {
 <div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950/98 backdrop-blur-3xl transition-all duration-500 studio-view-exit flex flex-col">
     <div id="studio-swipe-handle"></div>
     <div id="digging-chain-bar" class="hidden"></div>
-    <button id="chain-graph-btn" onclick="openChainGraph()" title="경로 그래프 보기">
-        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><circle cx="18" cy="6" r="2"/>
-            <path d="M8 6h8M8 7v10M18 8v8" stroke-linecap="round"/>
-        </svg>
-        경로
-    </button>
     <button onclick="closeStudioView()" class="absolute top-3 right-4 md:top-4 md:right-8 p-2.5 bg-zinc-800 hover:bg-red-500 text-white rounded-full z-[160] shadow-2xl transition-transform hover:rotate-90">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
     </button>
@@ -1965,6 +1965,20 @@ html, body, #main-scroll-area, #studio-view {
         const bar = document.getElementById('digging-chain-bar');
         if (!diggingChain || diggingChain.length <= 1) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
         bar.classList.remove('hidden'); bar.innerHTML = '';
+
+        // 🆕 체인 맨 앞에 "경로 그래프" 버튼 주입 (겹침 방지 + 자연스러운 스크롤)
+        const graphBtn = document.createElement('button');
+        graphBtn.className = 'chain-graph-inline-btn';
+        graphBtn.setAttribute('title', '경로 그래프 보기');
+        graphBtn.innerHTML = `
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><circle cx="18" cy="6" r="2"/>
+                <path d="M8 6h8M8 7v10M18 8v8" stroke-linecap="round"/>
+            </svg>
+            <span>경로</span>`;
+        graphBtn.onclick = (e) => { e.stopPropagation(); openChainGraph(); };
+        bar.appendChild(graphBtn);
+
         diggingChain.forEach((node, i) => {
             // 잘못된 노드 방어
             if (!node || (!node.artist && !node.albumTitle)) return;
@@ -1983,11 +1997,7 @@ html, body, #main-scroll-area, #studio-view {
                 bar.appendChild(arrow);
             }
         });
-        setTimeout(() => { bar.scrollLeft = bar.scrollWidth; }, 50);
-
-        // 🆕 체인이 2개 이상이면 그래프 버튼도 표시
-        const graphBtn = document.getElementById('chain-graph-btn');
-        if (graphBtn) graphBtn.classList.toggle('visible', diggingChain.length >= 2);
+        setTimeout(() => { bar.scrollLeft = 0; }, 50);  // 버튼이 맨 앞에 있으므로 시작 위치로 스크롤
     }
 
     // 🆕 Chain Digging Graph (A안) — 노드/엣지 그래프 팝업
