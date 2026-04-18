@@ -2445,7 +2445,40 @@ html, body, #main-scroll-area, #studio-view {
     window.closeSessionPanel = closeSessionPanel;
     window.openSessionPanel = openSessionPanel;
 
-    window.searchSessionFromPanel = function() { closeSessionPanel(); const searchInput = document.getElementById('search-input'); const searchMode = document.getElementById('search-mode'); if (searchInput && searchMode) { searchMode.value = 'artist'; searchInput.value = sessionPanelCurrentName; clearAutocomplete(); window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => initSearch(), 400); } };
+    window.searchSessionFromPanel = function() {
+        const name = sessionPanelCurrentName;
+        if (!name) return;
+        closeSessionPanel();
+        const searchInput = document.getElementById('search-input');
+        const searchMode = document.getElementById('search-mode');
+        if (searchInput && searchMode) {
+            searchMode.value = 'artist';
+            searchInput.value = name;
+            clearAutocomplete();
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // ★ 변경: 검색 12명 그리드를 띄우는 대신, 가장 잘 매칭되는 아티스트로 바로 selectArtist
+        //   → 정규앨범 포함 풀 디스코그래피 즉시 로드
+        showToast(`🎯 ${name} 디스코그래피 로드 중...`, "info");
+        const cb = `_sessionDisco_${Date.now()}`;
+        window[cb] = (d) => {
+            delete window[cb];
+            if (d?.data?.length) {
+                // 정확 매치(대소문자 무시) 우선, 없으면 첫 결과
+                const exact = d.data.find(a => (a.name || '').toLowerCase() === name.toLowerCase());
+                const target = exact || d.data[0];
+                selectArtist(target.id, target.name);
+                showToast(`✓ ${target.name} 디스코그래피`, "success");
+            } else {
+                showToast(`"${name}" 을(를) 찾을 수 없습니다`, "error");
+                // fallback: 일반 검색
+                if (searchInput) initSearch();
+            }
+        };
+        // limit을 키워서 정확 매칭 가능성 향상
+        loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=10&output=jsonp&callback=${cb}`);
+    };
 
     async function fetchSessionMusicianAlbums(name) {
         const content = document.getElementById('session-panel-content'); const loading = document.getElementById('session-panel-loading'); const stats = document.getElementById('session-panel-stats');
