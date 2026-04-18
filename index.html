@@ -3,49 +3,33 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Can you dig it?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        html, body { font-family: 'Pretendard Variable', sans-serif; background-color: #050505; color: #fff; margin: 0; padding: 0; width: 100%; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .text-gradient { background: linear-gradient(135deg, #a238ff 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0a0a0a; } ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        .role-badge { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; margin-right: 6px; pointer-events: none; }
+        #main-scroll-area { height: 100vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 120px; }
+        .studio-view-enter { transform: translateY(0); opacity: 1; pointer-events: auto; visibility: visible; }
+        .studio-view-exit { transform: translateY(100%); opacity: 0; pointer-events: none; visibility: hidden; }
+        #studio-view { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .card-fav-active { color: #10b981 !important; fill: #10b981 !important; }
+        .aura-chill { background: linear-gradient(to right, #0f172a, #1e1b4b, #000000) !important; }
+        .aura-groove { background: linear-gradient(to right, #064e3b, #065f46, #000000) !important; }
+        .aura-hype { background: linear-gradient(to right, #7f1d1d, #991b1b, #000000) !important; }
+        .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
+        .toast-animate { animation: slideUpFade 4s ease-in-out forwards; }
 
 ```
-<!-- PWA -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#10b981">
-<meta name="application-name" content="Can You Dig It?">
-<meta name="description" content="Sideman hunter — 앨범과 세션 뮤지션을 발굴하는 음악 디깅 앱">
-
-<!-- iOS PWA 지원 -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Dig It">
-<link rel="apple-touch-icon" href="/icon-180.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
-
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<style>
-    html, body { font-family: 'Pretendard Variable', sans-serif; background-color: #050505; color: #fff; margin: 0; padding: 0; width: 100%; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-    .text-gradient { background: linear-gradient(135deg, #a238ff 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0a0a0a; } ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
-    .role-badge { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; margin-right: 6px; pointer-events: none; }
-    #main-scroll-area { height: 100vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 120px; }
-    .studio-view-enter { transform: translateY(0); opacity: 1; pointer-events: auto; visibility: visible; }
-    .studio-view-exit { transform: translateY(100%); opacity: 0; pointer-events: none; visibility: hidden; }
-    #studio-view { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-    .card-fav-active { color: #10b981 !important; fill: #10b981 !important; }
-    .aura-chill { background: linear-gradient(to right, #0f172a, #1e1b4b, #000000) !important; }
-    .aura-groove { background: linear-gradient(to right, #064e3b, #065f46, #000000) !important; }
-    .aura-hype { background: linear-gradient(to right, #7f1d1d, #991b1b, #000000) !important; }
-    .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
-    .toast-animate { animation: slideUpFade 4s ease-in-out forwards; }
-
 /* 👾 8-BIT RETRO THEME */
 @keyframes crt-flicker { 0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; } }
 body.pixel-theme { font-family: 'Galmuri11', 'Galmuri9', sans-serif !important; background-color: #000 !important; animation: crt-flicker 0.15s infinite; cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important; }
@@ -1937,13 +1921,6 @@ html, body, #main-scroll-area, #studio-view {
             });
             observer.observe(document.body, { childList: true, subtree: true, characterData: true });
         } catch (e) {}
-
-        // 🆕 PWA 서비스 워커 등록
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
-                .catch(err => console.warn('[PWA] SW registration failed:', err));
-        }
     });
 
     window.handleItunesDeepLink = function(d) { if(d.results?.length > 0) { const a = d.results[0]; playMedia('album', a.collectionId, a.artworkUrl100?.replace('100x100bb','600x600bb')||'', a.collectionName, a.artistName, false, 'itunes'); } };
