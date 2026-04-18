@@ -622,6 +622,23 @@ html, body, #main-scroll-area, #studio-view {
     </button>
 </div>
 
+<!-- 🆕 체인 디깅 컨텍스트 배너 (메인뷰에서도 체인 유지 알림) -->
+<div id="chain-context-banner" class="hidden mb-6 flex items-center justify-between gap-3 bg-gradient-to-r from-[#a238ff]/10 to-[#10b981]/10 border border-[#a238ff]/30 px-4 py-3 rounded-2xl">
+    <div class="flex items-center gap-3 min-w-0 flex-1">
+        <span class="text-lg flex-shrink-0">🕸️</span>
+        <div class="min-w-0 flex-1">
+            <p class="text-[#a238ff] font-black text-xs uppercase tracking-wider">체인 디깅 진행 중</p>
+            <p id="chain-context-label" class="text-zinc-300 text-[11px] mt-0.5 font-bold truncate"></p>
+        </div>
+    </div>
+    <button id="chain-context-back-btn" class="flex-shrink-0 px-3 py-1.5 bg-[#a238ff]/20 border border-[#a238ff]/40 text-[#a238ff] text-[10px] font-black rounded-lg hover:bg-[#a238ff]/30 transition-colors">
+        ↩ 마지막
+    </button>
+    <button onclick="clearDiggingChain()" class="flex-shrink-0 px-2 py-1.5 text-zinc-500 hover:text-white text-[10px] font-bold transition-colors" title="체인 종료">
+        ✕
+    </button>
+</div>
+
 <div id="sections-container" class="space-y-16"></div>
 </div>
 ```
@@ -945,6 +962,9 @@ html, body, #main-scroll-area, #studio-view {
     function initSearch() {
         const q = document.getElementById('search-input').value.trim(); if (!q) return;
         const mode = document.getElementById('search-mode').value;
+        // ★ 새 검색 = 새 시작점 → 체인 명시적 리셋
+        diggingChain = [];
+        if (typeof updateChainContextBanner === 'function') updateChainContextBanner();
         document.getElementById('sections-container').innerHTML = ''; document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden');
         albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false };
         window.itunesAlbums = []; window.deezerUniqueFeatures = []; sessionSearchQuery = '';
@@ -1851,7 +1871,7 @@ html, body, #main-scroll-area, #studio-view {
                 card.innerHTML = `<img src="${it.cover_medium}" onerror="this.src='https://placehold.co/48x48/18181b/10b981?text=?'"><div class="tc-info flex-1 min-w-0"><div class="tc-title">${it.title}</div><div class="tc-meta">${it.artist?.name || currentArtist || ''} ${it.source === 'itunes' ? '· 🍎' : ''}${hasMemo ? ' · <span style="color:#a238ff">📝</span>' : ''}</div></div>${it.sessionMatched ? '<span style="color:#10b981;font-size:11px;flex-shrink:0;font-weight:900;">🎯</span>' : ''}<svg class="w-4 h-4 flex-shrink-0" style="color:#3f3f46" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>`;
                 card.onclick = () => {
                     const albumArtist = (it.artistNameCache || currentArtist) || it.artist?.name;
-                    const shouldPush = diggingChain.length > 0 && currentArtist && (currentArtist.toLowerCase() === albumArtist?.toLowerCase());
+                    const shouldPush = diggingChain.length > 0;
                     playMedia('album', it.id, it.cover_medium, it.title, albumArtist, true, it.source, shouldPush);
                 };
                 group.appendChild(card);
@@ -1943,12 +1963,9 @@ html, body, #main-scroll-area, #studio-view {
                     showToast(`${it.title} - 외부 서비스에서 검색합니다`, 'info');
                     openInSpotify(it.title, it.artist.name);
                 } else {
-                    // ★ 체인 컨텍스트 유지: 현재 메인이 체인 안의 어떤 아티스트라면 push
-                    //   (디스코그래피 → 트랙 → 세션맨 → 디스코그래피 → 트랙... 흐름에서 체인 끊김 방지)
+                    // ★ 체인이 활성화되어 있으면 push, 없으면 새 root
                     const albumArtist = (it.artistNameCache||currentArtist)||it.artist.name;
-                    const shouldPush = diggingChain.length > 0 &&
-                                       currentArtist &&
-                                       (currentArtist.toLowerCase() === albumArtist?.toLowerCase());
+                    const shouldPush = diggingChain.length > 0;
                     playMedia(type, it.id, cover, it.title, albumArtist, true, it.source, shouldPush);
                 }
             };
@@ -2068,8 +2085,9 @@ html, body, #main-scroll-area, #studio-view {
         if (navigator.vibrate) navigator.vibrate(10);
         document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit');
         window.history.pushState({}, '', window.location.pathname);
-        if (diggingChain.length > 0) { currentArtist = diggingChain[0].artist; }
-        diggingChain = []; renderChainBar();
+        // ★ 체인 보존: 메인뷰의 체인 배너에 표시되어 사용자가 컨텍스트 유지
+        //   배너의 "↩ 마지막" 버튼이나 "✕"로 명시적 종료 가능
+        renderChainBar();  // 배너 동기화
     };
 
     window.playMedia = function(type, id, cover, title, artist, updateUrl = true, source = 'deezer', chainPush = false, chainJump = -1) {
@@ -2098,7 +2116,44 @@ html, body, #main-scroll-area, #studio-view {
         const cleanTitle = cleanTitleForSearch(title); fetchAlbumWikiStory(cleanTitle, artist); fetchDiscogsCreditsFromServer(cleanTitle, artist);
     };
 
+    // 🆕 메인뷰 체인 컨텍스트 배너 업데이트 (스튜디오뷰 외부에서도 체인 표시)
+    function updateChainContextBanner() {
+        const banner = document.getElementById('chain-context-banner');
+        const label = document.getElementById('chain-context-label');
+        const backBtn = document.getElementById('chain-context-back-btn');
+        if (!banner) return;
+
+        if (!diggingChain || diggingChain.length === 0) {
+            banner.classList.add('hidden');
+            return;
+        }
+
+        banner.classList.remove('hidden');
+        // 체인 경로 텍스트: "Kurt Rosenwinkel › Joe Martin › 현재"
+        const path = diggingChain.map(n => n.artist).join(' › ');
+        label.textContent = path;
+
+        // "마지막" 버튼 → 체인 마지막 앨범 스튜디오뷰로 복귀
+        const lastNode = diggingChain[diggingChain.length - 1];
+        backBtn.onclick = () => {
+            if (!lastNode) return;
+            if (navigator.vibrate) navigator.vibrate(8);
+            playMedia(lastNode.type, lastNode.albumId, lastNode.cover, lastNode.albumTitle, lastNode.artist, true, lastNode.source, false, diggingChain.length - 1);
+        };
+    }
+
+    // 🆕 체인 명시적 종료
+    window.clearDiggingChain = function() {
+        if (navigator.vibrate) navigator.vibrate(10);
+        diggingChain = [];
+        updateChainContextBanner();
+        showToast("체인 디깅 종료", "info");
+    };
+
     function renderChainBar() {
+        // 메인뷰의 체인 배너도 항상 동기화
+        updateChainContextBanner();
+
         const bar = document.getElementById('digging-chain-bar');
         if (!diggingChain || diggingChain.length <= 1) { bar.classList.add('hidden'); bar.innerHTML = ''; return; }
         bar.classList.remove('hidden'); bar.innerHTML = '';
@@ -2448,7 +2503,20 @@ html, body, #main-scroll-area, #studio-view {
     window.searchSessionFromPanel = function() {
         const name = sessionPanelCurrentName;
         if (!name) return;
+
+        // ★ 체인 보존: 현재 스튜디오뷰에 있던 앨범을 체인에 유지
+        //   디스코그래피로 가도 체인 끊기지 않고, 다음 앨범 클릭 시 자연스럽게 push 됨
+        //   (사용자가 "처음" 버튼으로 원래 root로 복귀 가능)
+        const preservedChain = [...(diggingChain || [])];
+
         closeSessionPanel();
+        // 스튜디오뷰가 열려있으면 닫되, 체인은 보존
+        const studioOpen = document.getElementById('studio-view').classList.contains('studio-view-enter');
+        if (studioOpen) {
+            document.getElementById('studio-view').classList.replace('studio-view-enter', 'studio-view-exit');
+            window.history.pushState({}, '', window.location.pathname);
+        }
+
         const searchInput = document.getElementById('search-input');
         const searchMode = document.getElementById('search-mode');
         if (searchInput && searchMode) {
@@ -2458,25 +2526,23 @@ html, body, #main-scroll-area, #studio-view {
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // ★ 변경: 검색 12명 그리드를 띄우는 대신, 가장 잘 매칭되는 아티스트로 바로 selectArtist
-        //   → 정규앨범 포함 풀 디스코그래피 즉시 로드
         showToast(`🎯 ${name} 디스코그래피 로드 중...`, "info");
         const cb = `_sessionDisco_${Date.now()}`;
         window[cb] = (d) => {
             delete window[cb];
             if (d?.data?.length) {
-                // 정확 매치(대소문자 무시) 우선, 없으면 첫 결과
                 const exact = d.data.find(a => (a.name || '').toLowerCase() === name.toLowerCase());
                 const target = exact || d.data[0];
                 selectArtist(target.id, target.name);
-                showToast(`✓ ${target.name} 디스코그래피`, "success");
+                // ★ selectArtist 후 체인 복구
+                diggingChain = preservedChain;
+                renderChainBar();
+                showToast(`✓ ${target.name} 디스코그래피${preservedChain.length > 0 ? ' (체인 유지됨)' : ''}`, "success");
             } else {
                 showToast(`"${name}" 을(를) 찾을 수 없습니다`, "error");
-                // fallback: 일반 검색
                 if (searchInput) initSearch();
             }
         };
-        // limit을 키워서 정확 매칭 가능성 향상
         loadJSONP(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=10&output=jsonp&callback=${cb}`);
     };
 
