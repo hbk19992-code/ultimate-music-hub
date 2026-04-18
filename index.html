@@ -3,33 +3,49 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Can you dig it?</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <style>
-        html, body { font-family: 'Pretendard Variable', sans-serif; background-color: #050505; color: #fff; margin: 0; padding: 0; width: 100%; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-        .text-gradient { background: linear-gradient(135deg, #a238ff 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0a0a0a; } ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
-        .role-badge { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; margin-right: 6px; pointer-events: none; }
-        #main-scroll-area { height: 100vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 120px; }
-        .studio-view-enter { transform: translateY(0); opacity: 1; pointer-events: auto; visibility: visible; }
-        .studio-view-exit { transform: translateY(100%); opacity: 0; pointer-events: none; visibility: hidden; }
-        #studio-view { overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .card-fav-active { color: #10b981 !important; fill: #10b981 !important; }
-        .aura-chill { background: linear-gradient(to right, #0f172a, #1e1b4b, #000000) !important; }
-        .aura-groove { background: linear-gradient(to right, #064e3b, #065f46, #000000) !important; }
-        .aura-hype { background: linear-gradient(to right, #7f1d1d, #991b1b, #000000) !important; }
-        .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
-        .toast-animate { animation: slideUpFade 4s ease-in-out forwards; }
 
 ```
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#10b981">
+<meta name="application-name" content="Can You Dig It?">
+<meta name="description" content="Sideman hunter — 앨범과 세션 뮤지션을 발굴하는 음악 디깅 앱">
+
+<!-- iOS PWA 지원 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dig It">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<style>
+    html, body { font-family: 'Pretendard Variable', sans-serif; background-color: #050505; color: #fff; margin: 0; padding: 0; width: 100%; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+    .text-gradient { background: linear-gradient(135deg, #a238ff 0%, #10b981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0a0a0a; } ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+    .role-badge { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; margin-right: 6px; pointer-events: none; }
+    #main-scroll-area { height: 100vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 120px; }
+    .studio-view-enter { transform: translateY(0); opacity: 1; pointer-events: auto; visibility: visible; }
+    .studio-view-exit { transform: translateY(100%); opacity: 0; pointer-events: none; visibility: hidden; }
+    #studio-view { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .card-fav-active { color: #10b981 !important; fill: #10b981 !important; }
+    .aura-chill { background: linear-gradient(to right, #0f172a, #1e1b4b, #000000) !important; }
+    .aura-groove { background: linear-gradient(to right, #064e3b, #065f46, #000000) !important; }
+    .aura-hype { background: linear-gradient(to right, #7f1d1d, #991b1b, #000000) !important; }
+    .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes slideUpFade { 0% { transform: translate(-50%, 100%); opacity: 0; } 10% { transform: translate(-50%, 0); opacity: 1; } 90% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -20px); opacity: 0; } }
+    .toast-animate { animation: slideUpFade 4s ease-in-out forwards; }
+
 /* 👾 8-BIT RETRO THEME */
 @keyframes crt-flicker { 0% { opacity: 0.98; } 50% { opacity: 0.95; } 100% { opacity: 1; } }
 body.pixel-theme { font-family: 'Galmuri11', 'Galmuri9', sans-serif !important; background-color: #000 !important; animation: crt-flicker 0.15s infinite; cursor: url('https://cdn.custom-cursor.com/db/8222/32/pixel-cursor.png'), auto !important; }
@@ -324,6 +340,73 @@ html, body, #main-scroll-area, #studio-view {
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
+
+/* 🆕 Chain Graph 모달 */
+#chain-graph-modal {
+    position: fixed; inset: 0; z-index: 450;
+    background: rgba(0,0,0,0.94); backdrop-filter: blur(18px);
+    display: none; align-items: stretch; justify-content: center;
+    opacity: 0; transition: opacity 0.25s;
+}
+#chain-graph-modal.open { display: flex; opacity: 1; }
+#chain-graph-panel {
+    background: #050505; width: 100%; max-width: 960px;
+    display: flex; flex-direction: column; overflow: hidden;
+}
+#chain-graph-header {
+    padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #18181b; flex-shrink: 0;
+}
+#chain-graph-header h2 {
+    font-size: 14px; font-weight: 900; letter-spacing: 0.08em;
+    background: linear-gradient(135deg, #a238ff, #10b981);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+#chain-graph-svg {
+    flex: 1; width: 100%; background:
+        radial-gradient(ellipse at center, rgba(162,56,255,0.05) 0%, transparent 60%),
+        #050505;
+    cursor: grab; touch-action: none;
+}
+#chain-graph-svg:active { cursor: grabbing; }
+.cg-link { stroke: rgba(16,185,129,0.25); stroke-width: 2; fill: none; pointer-events: none; }
+.cg-link.cg-link-current { stroke: #10b981; stroke-width: 3; filter: drop-shadow(0 0 8px rgba(16,185,129,0.6)); }
+.cg-node { cursor: pointer; }
+.cg-node-ring { fill: #0a0a0a; stroke: #27272a; stroke-width: 2; }
+.cg-node.cg-current .cg-node-ring { stroke: #10b981; stroke-width: 3; filter: drop-shadow(0 0 14px rgba(16,185,129,0.6)); }
+.cg-node.cg-past .cg-node-ring { stroke: rgba(162,56,255,0.45); }
+.cg-node-cover { clip-path: inset(0 round 50%); }
+.cg-label {
+    fill: #e4e4e7; font-size: 10px; font-weight: 700; text-anchor: middle;
+    pointer-events: none;
+}
+.cg-label.cg-label-current { fill: #10b981; }
+.cg-sub-label {
+    fill: #71717a; font-size: 8px; font-weight: 600; text-anchor: middle;
+    pointer-events: none;
+}
+.cg-edge-label {
+    fill: #a238ff; font-size: 9px; font-weight: 700; text-anchor: middle;
+    pointer-events: none;
+}
+.cg-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; color: #52525b; padding: 40px;
+}
+.cg-empty-emoji { font-size: 56px; margin-bottom: 16px; opacity: 0.4; }
+.cg-empty-title { font-size: 14px; font-weight: 800; color: #71717a; margin-bottom: 8px; }
+.cg-empty-hint { font-size: 11px; color: #3f3f46; text-align: center; max-width: 320px; line-height: 1.6; }
+
+#chain-graph-btn {
+    position: absolute; top: 12px; right: 60px; z-index: 158;
+    background: rgba(162,56,255,0.15); border: 1px solid rgba(162,56,255,0.4);
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; color: #a238ff;
+    display: none; align-items: center; gap: 6px;
+    cursor: pointer; transition: all 0.15s;
+}
+#chain-graph-btn.visible { display: flex; }
+#chain-graph-btn:active { transform: scale(0.95); background: rgba(162,56,255,0.3); }
 </style>
 ```
 
@@ -475,9 +558,31 @@ html, body, #main-scroll-area, #studio-view {
 <div id="studio-view" class="fixed inset-0 lg:bottom-[88px] z-[150] bg-zinc-950/98 backdrop-blur-3xl transition-all duration-500 studio-view-exit flex flex-col">
     <div id="studio-swipe-handle"></div>
     <div id="digging-chain-bar" class="hidden"></div>
+    <button id="chain-graph-btn" onclick="openChainGraph()" title="경로 그래프 보기">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><circle cx="18" cy="6" r="2"/>
+            <path d="M8 6h8M8 7v10M18 8v8" stroke-linecap="round"/>
+        </svg>
+        경로
+    </button>
     <button onclick="closeStudioView()" class="absolute top-3 right-4 md:top-4 md:right-8 p-2.5 bg-zinc-800 hover:bg-red-500 text-white rounded-full z-[160] shadow-2xl transition-transform hover:rotate-90">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M19 9l-7 7-7-7"></path></svg>
     </button>
+
+<!-- 🆕 Chain Digging Graph 모달 -->
+
+<div id="chain-graph-modal" onclick="if(event.target===this) closeChainGraph()">
+    <div id="chain-graph-panel" onclick="event.stopPropagation()">
+        <div id="chain-graph-header">
+            <div>
+                <h2>🕸️ DIGGING PATH</h2>
+                <p id="chain-graph-subtitle" class="text-zinc-500 text-[10px] mt-1 font-bold"></p>
+            </div>
+            <button onclick="closeChainGraph()" class="p-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-full text-xs">✕</button>
+        </div>
+        <svg id="chain-graph-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+</div>
 
 <div id="studio-inner" class="max-w-7xl mx-auto w-full p-6 md:p-10 flex flex-col lg:flex-row gap-10">
     <div class="w-full lg:flex-1 flex flex-col lg:h-[calc(100vh-250px)] shrink-0">
@@ -1832,6 +1937,13 @@ html, body, #main-scroll-area, #studio-view {
             });
             observer.observe(document.body, { childList: true, subtree: true, characterData: true });
         } catch (e) {}
+
+        // 🆕 PWA 서비스 워커 등록
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+                .catch(err => console.warn('[PWA] SW registration failed:', err));
+        }
     });
 
     window.handleItunesDeepLink = function(d) { if(d.results?.length > 0) { const a = d.results[0]; playMedia('album', a.collectionId, a.artworkUrl100?.replace('100x100bb','600x600bb')||'', a.collectionName, a.artistName, false, 'itunes'); } };
@@ -1895,6 +2007,193 @@ html, body, #main-scroll-area, #studio-view {
             }
         });
         setTimeout(() => { bar.scrollLeft = bar.scrollWidth; }, 50);
+
+        // 🆕 체인이 2개 이상이면 그래프 버튼도 표시
+        const graphBtn = document.getElementById('chain-graph-btn');
+        if (graphBtn) graphBtn.classList.toggle('visible', diggingChain.length >= 2);
+    }
+
+    // 🆕 Chain Digging Graph (A안) — 노드/엣지 그래프 팝업
+    window.openChainGraph = function() {
+        if (!diggingChain || diggingChain.length < 2) {
+            showToast("체인이 아직 짧습니다 (2개 이상 필요)", "info");
+            return;
+        }
+        const modal = document.getElementById('chain-graph-modal');
+        modal.classList.add('open');
+        if (navigator.vibrate) navigator.vibrate(10);
+        renderChainGraph();
+    };
+    window.closeChainGraph = function() {
+        document.getElementById('chain-graph-modal').classList.remove('open');
+    };
+
+    function renderChainGraph() {
+        const svg = document.getElementById('chain-graph-svg');
+        const subtitle = document.getElementById('chain-graph-subtitle');
+        if (!svg) return;
+
+        // SVG 초기화
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+        const nodes = diggingChain || [];
+        subtitle.textContent = `${nodes.length}개 노드 · ${diggingChain[0]?.artist || ''} 에서 시작`;
+
+        // 레이아웃 파라미터
+        const W = 800, H = 600;
+        const padding = 80;
+        const isMobile = window.innerWidth < 768;
+        const nodeRadius = 36;
+
+        // 노드 위치 계산 — 지그재그 세로 흐름 (모바일) 또는 S자 가로 흐름 (데스크톱)
+        const positions = [];
+        if (isMobile || nodes.length <= 3) {
+            // 세로 지그재그
+            const usableH = H - padding * 2;
+            const step = nodes.length > 1 ? usableH / (nodes.length - 1) : 0;
+            nodes.forEach((_, i) => {
+                const xOffset = (i % 2 === 0) ? -80 : 80;
+                positions.push({
+                    x: W / 2 + xOffset,
+                    y: padding + i * step
+                });
+            });
+        } else {
+            // S자 가로 흐름
+            const usableW = W - padding * 2;
+            const step = usableW / (nodes.length - 1);
+            nodes.forEach((_, i) => {
+                const yOffset = Math.sin(i * 0.9) * 100;
+                positions.push({
+                    x: padding + i * step,
+                    y: H / 2 + yOffset
+                });
+            });
+        }
+
+        const ns = 'http://www.w3.org/2000/svg';
+
+        // 엣지 먼저 그리기 (노드 아래 레이어)
+        for (let i = 0; i < nodes.length - 1; i++) {
+            const p1 = positions[i];
+            const p2 = positions[i + 1];
+            // 베지어 곡선
+            const midX = (p1.x + p2.x) / 2;
+            const midY = (p1.y + p2.y) / 2;
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            // 커브 강도: 거리에 비례
+            const curveOffset = Math.min(60, Math.sqrt(dx * dx + dy * dy) * 0.3);
+            const cx = midX + (dy > 0 ? -curveOffset : curveOffset) * 0.3;
+            const cy = midY + (dx > 0 ? curveOffset : -curveOffset) * 0.3;
+
+            const path = document.createElementNS(ns, 'path');
+            const isLast = (i === nodes.length - 2);
+            path.setAttribute('d', `M${p1.x},${p1.y} Q${cx},${cy} ${p2.x},${p2.y}`);
+            path.setAttribute('class', `cg-link ${isLast ? 'cg-link-current' : ''}`);
+            svg.appendChild(path);
+
+            // 엣지에 "→" 또는 방향 라벨
+            const arrowX = p1.x + (p2.x - p1.x) * 0.55;
+            const arrowY = p1.y + (p2.y - p1.y) * 0.55 - 6;
+            const arrow = document.createElementNS(ns, 'text');
+            arrow.setAttribute('class', 'cg-edge-label');
+            arrow.setAttribute('x', arrowX);
+            arrow.setAttribute('y', arrowY);
+            arrow.textContent = '→';
+            svg.appendChild(arrow);
+        }
+
+        // 노드 그리기
+        nodes.forEach((node, i) => {
+            const p = positions[i];
+            const isCurrent = (i === nodes.length - 1);
+            const isPast = !isCurrent;
+
+            const g = document.createElementNS(ns, 'g');
+            g.setAttribute('class', `cg-node ${isCurrent ? 'cg-current' : (isPast ? 'cg-past' : '')}`);
+            g.setAttribute('transform', `translate(${p.x}, ${p.y})`);
+
+            // 링 (배경 원)
+            const ring = document.createElementNS(ns, 'circle');
+            ring.setAttribute('r', nodeRadius);
+            ring.setAttribute('class', 'cg-node-ring');
+            g.appendChild(ring);
+
+            // 커버 이미지 (클리핑된 원)
+            if (node.cover) {
+                const clipId = `cg-clip-${i}`;
+                const defs = document.createElementNS(ns, 'defs');
+                const clipPath = document.createElementNS(ns, 'clipPath');
+                clipPath.setAttribute('id', clipId);
+                const clipCircle = document.createElementNS(ns, 'circle');
+                clipCircle.setAttribute('r', nodeRadius - 4);
+                clipPath.appendChild(clipCircle);
+                defs.appendChild(clipPath);
+                g.appendChild(defs);
+
+                const img = document.createElementNS(ns, 'image');
+                img.setAttribute('href', node.cover);
+                img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', node.cover);
+                img.setAttribute('x', -(nodeRadius - 4));
+                img.setAttribute('y', -(nodeRadius - 4));
+                img.setAttribute('width', (nodeRadius - 4) * 2);
+                img.setAttribute('height', (nodeRadius - 4) * 2);
+                img.setAttribute('clip-path', `url(#${clipId})`);
+                img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+                g.appendChild(img);
+            }
+
+            // 클릭 가능한 투명 원
+            const hitArea = document.createElementNS(ns, 'circle');
+            hitArea.setAttribute('r', nodeRadius);
+            hitArea.setAttribute('fill', 'transparent');
+            hitArea.style.cursor = 'pointer';
+            hitArea.addEventListener('click', () => {
+                if (!isCurrent) {
+                    playMedia(node.type, node.albumId, node.cover, node.albumTitle, node.artist, true, node.source, false, i);
+                    closeChainGraph();
+                }
+            });
+            g.appendChild(hitArea);
+
+            svg.appendChild(g);
+
+            // 라벨 (아티스트)
+            const label = document.createElementNS(ns, 'text');
+            label.setAttribute('class', `cg-label ${isCurrent ? 'cg-label-current' : ''}`);
+            label.setAttribute('x', p.x);
+            label.setAttribute('y', p.y + nodeRadius + 18);
+            const artistText = (node.artist || '').length > 16 ? node.artist.slice(0, 16) + '…' : (node.artist || '');
+            label.textContent = artistText;
+            svg.appendChild(label);
+
+            // 앨범 제목 (서브 라벨)
+            const subLabel = document.createElementNS(ns, 'text');
+            subLabel.setAttribute('class', 'cg-sub-label');
+            subLabel.setAttribute('x', p.x);
+            subLabel.setAttribute('y', p.y + nodeRadius + 32);
+            const albumText = (node.albumTitle || '').length > 20 ? node.albumTitle.slice(0, 20) + '…' : (node.albumTitle || '');
+            subLabel.textContent = albumText;
+            svg.appendChild(subLabel);
+
+            // 순서 번호 (좌상단 뱃지)
+            const badge = document.createElementNS(ns, 'g');
+            badge.setAttribute('transform', `translate(${-nodeRadius + 8}, ${-nodeRadius + 8})`);
+            const badgeBg = document.createElementNS(ns, 'circle');
+            badgeBg.setAttribute('r', 10);
+            badgeBg.setAttribute('fill', isCurrent ? '#10b981' : '#a238ff');
+            badge.appendChild(badgeBg);
+            const badgeText = document.createElementNS(ns, 'text');
+            badgeText.setAttribute('text-anchor', 'middle');
+            badgeText.setAttribute('dominant-baseline', 'central');
+            badgeText.setAttribute('fill', '#000');
+            badgeText.setAttribute('font-size', '11');
+            badgeText.setAttribute('font-weight', '900');
+            badgeText.textContent = (i + 1).toString();
+            badge.appendChild(badgeText);
+            svg.appendChild(badge);
+        });
     }
 
     window.handleItunesTracks = function(d) { if (!d.results) return; handleTracks({ data: d.results.filter(t => t.wrapperType === 'track').map(t => ({ id: t.trackId, title: t.trackName, preview: t.previewUrl, artist: { name: t.artistName } })) }); };
@@ -2283,7 +2582,7 @@ html, body, #main-scroll-area, #studio-view {
     (function initSwipeClose() { const studioView = document.getElementById('studio-view'); let touchStartY = 0, touchStartTime = 0, isDragging = false; studioView.addEventListener('touchstart', (e) => { if (e.target.closest('#studio-track-list, .lg\\:overflow-y-auto, #session-panel')) return; touchStartY = e.touches[0].clientY; touchStartTime = Date.now(); isDragging = true; }, { passive: true }); studioView.addEventListener('touchmove', (e) => { if (!isDragging) return; const dy = e.touches[0].clientY - touchStartY; if (dy > 0) { studioView.style.transform = `translateY(${Math.min(dy * 0.4, 120)}px)`; studioView.style.transition = 'none'; } }, { passive: true }); studioView.addEventListener('touchend', (e) => { if (!isDragging) return; isDragging = false; const dy = e.changedTouches[0].clientY - touchStartY; const dt = Date.now() - touchStartTime; studioView.style.transition = ''; studioView.style.transform = ''; if (dy > 120 || (dy > 60 && dt < 200)) { closeStudioView(); } }, { passive: true }); })();
 
     audio.addEventListener('error', () => { pI.classList.remove('hidden'); psI.classList.add('hidden'); showToast("미리듣기를 불러올 수 없습니다 😞", "error"); }); audio.addEventListener('stalled', () => { showToast("스트리밍이 지연되고 있습니다...", "error"); });
-    document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (document.getElementById('session-panel').classList.contains('open')) { closeSessionPanel(); } else if (document.getElementById('studio-view').classList.contains('studio-view-enter')) { closeStudioView(); } });
+    document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (document.getElementById('chain-graph-modal').classList.contains('open')) { closeChainGraph(); } else if (document.getElementById('session-panel').classList.contains('open')) { closeSessionPanel(); } else if (document.getElementById('studio-view').classList.contains('studio-view-enter')) { closeStudioView(); } });
 
     window.resetApp = function() { currentArtist = null; currentArtistId = null; albumsData = { regular: [], ep: [], live: [], compilation: [], features: [] }; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false }; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; window.itunesFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; sessionSearchQuery = ""; diggingChain = []; deepSearchDone = false; deepSearchAddedCount = 0; isDeepSearchRunning = false; document.getElementById('search-input').value = ''; document.getElementById('local-search-input').value = ''; document.getElementById('sections-container').innerHTML = ''; document.getElementById('results-controls').classList.add('hidden'); document.getElementById('sniper-active-banner').classList.add('hidden'); document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.add('hidden'); document.getElementById('reset-btn').classList.add('hidden'); setViewMode('grid'); clearAutocomplete(); renderChainBar(); };
 </script>
