@@ -67,11 +67,47 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 /* 크레딧 역할 그룹 */
 .credit-group { margin-bottom: 20px; }
 .credit-group-label { font-size: 9px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; color: #52525b; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #18181b; }
-.credit-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 10px; transition: background 0.15s; margin-bottom: 4px; }
+.credit-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 10px; transition: background 0.15s; margin-bottom: 4px; position: relative; }
 .credit-item:hover { background: rgba(16,185,129,0.05); }
 .credit-item .role-pill { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 7px; font-size: 9px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: flex-start; }
-.session-trigger { font-size: 13px; font-weight: 800; color: #fff; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; background: none; border: none; padding: 0; cursor: pointer; }
+.session-trigger { font-size: 13px; font-weight: 800; color: #fff; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 32px); background: none; border: none; padding: 0; cursor: pointer; }
 .session-trigger:hover { color: #10b981; }
+/* 🆕 크로스매치 추가 버튼 */
+.crossmatch-add-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    width: 24px; height: 24px;
+    background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.3);
+    color: #22d3ee; border-radius: 6px;
+    font-size: 13px; font-weight: 900; line-height: 1;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+}
+.crossmatch-add-btn:active { transform: translateY(-50%) scale(0.9); background: rgba(34,211,238,0.25); }
+.crossmatch-add-btn.added { background: rgba(34,211,238,0.3); border-color: #22d3ee; color: #67e8f9; font-size: 10px; }
+/* 🆕 크로스매치 멤버 칩 */
+.cm-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 8px 4px 10px; border-radius: 999px;
+    background: rgba(34,211,238,0.15); border: 1px solid rgba(34,211,238,0.4);
+    color: #67e8f9; font-size: 11px; font-weight: 800;
+}
+.cm-chip-role { font-size: 9px; color: rgba(103,232,249,0.6); font-weight: 700; }
+.cm-chip button { background: none; border: none; color: #67e8f9; cursor: pointer; font-weight: 900; padding: 0 2px; font-size: 14px; line-height: 1; }
+.cm-chip button:hover { color: #fff; }
+/* 🆕 앨범 카드에 크로스매치 배지 */
+.cm-match-badges {
+    position: absolute; bottom: 2px; left: 2px; right: 2px;
+    display: flex; flex-wrap: wrap; gap: 2px;
+    pointer-events: none;
+}
+.cm-match-badge {
+    background: rgba(34,211,238,0.9); color: #000;
+    font-size: 8px; font-weight: 900;
+    padding: 2px 5px; border-radius: 3px;
+    max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* 카드에 크로스매치 매칭 시 강조 */
+.group.cm-matched { border-color: #22d3ee !important; box-shadow: 0 0 0 2px rgba(34,211,238,0.3); }
 
 /* 세션 뮤지션 사이드패널 */
 #session-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 420px; background: #0a0a0a; border-left: 1px solid #1a1a1a; z-index: 500; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; box-shadow: -20px 0 60px rgba(0,0,0,0.8); }
@@ -631,12 +667,40 @@ html, body, #main-scroll-area, #studio-view {
             <p id="chain-context-label" class="text-zinc-300 text-[11px] mt-0.5 font-bold truncate"></p>
         </div>
     </div>
+    <button id="chain-share-btn" onclick="shareChain()" class="flex-shrink-0 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white text-[10px] font-black rounded-lg transition-colors" title="체인 경로 공유">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+        </svg>
+    </button>
     <button id="chain-context-back-btn" class="flex-shrink-0 px-3 py-1.5 bg-[#a238ff]/20 border border-[#a238ff]/40 text-[#a238ff] text-[10px] font-black rounded-lg hover:bg-[#a238ff]/30 transition-colors">
         ↩ 마지막
     </button>
     <button onclick="clearDiggingChain()" class="flex-shrink-0 px-2 py-1.5 text-zinc-500 hover:text-white text-[10px] font-bold transition-colors" title="체인 종료">
         ✕
     </button>
+</div>
+
+<!-- 🆕 세션맨 크로스매칭 배너 -->
+<div id="crossmatch-banner" class="hidden mb-6 bg-gradient-to-r from-cyan-500/10 to-[#10b981]/10 border border-cyan-500/30 px-4 py-3 rounded-2xl">
+    <div class="flex items-center justify-between gap-3 mb-2">
+        <div class="flex items-center gap-2 min-w-0">
+            <span class="text-lg flex-shrink-0">🎯</span>
+            <p class="text-cyan-400 font-black text-xs uppercase tracking-wider">크로스매칭</p>
+            <button id="crossmatch-mode-toggle" class="flex-shrink-0 px-2 py-0.5 bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[10px] font-black rounded-md hover:bg-cyan-500/30 transition-colors">
+                AND
+            </button>
+        </div>
+        <div class="flex gap-1.5 flex-shrink-0">
+            <button id="crossmatch-run-btn" class="px-3 py-1 bg-cyan-500 text-black text-[10px] font-black rounded-lg hover:bg-cyan-400 transition-colors">
+                실행
+            </button>
+            <button onclick="clearCrossmatch()" class="px-2 py-1 text-zinc-500 hover:text-white text-[10px] font-bold transition-colors" title="초기화">
+                ✕
+            </button>
+        </div>
+    </div>
+    <div id="crossmatch-members" class="flex flex-wrap gap-1.5"></div>
+    <p id="crossmatch-hint" class="text-zinc-500 text-[10px] font-bold mt-2"></p>
 </div>
 
 <div id="sections-container" class="space-y-16"></div>
@@ -813,6 +877,11 @@ html, body, #main-scroll-area, #studio-view {
     let sessionPanelCurrentName = "";
     let sessionPanelCurrentRole = "";
     let diggingChain = [];
+
+    // 🆕 세션맨 크로스매칭 상태 — 여러 명의 세션맨 공통 참여 앨범 찾기
+    let crossmatchMembers = [];  // [{ name, role }]
+    let crossmatchMode = 'AND';  // AND = 모두 참여, OR = 한 명 이상 참여
+    let crossmatchMatches = {};  // { albumId: [name1, name2, ...] } 매칭된 이름 목록
     let currentViewMode = 'grid'; 
     let memoCurrentAlbumId = null;
     let memoCurrentRating = 0;
@@ -979,6 +1048,9 @@ html, body, #main-scroll-area, #studio-view {
         currentArtist = name; currentArtistId = id; window.allFetchedAlbums = []; window.itunesAlbums = []; window.deezerUniqueFeatures = []; window.deezerFeatFeatures = []; allFetchedFeatures = []; featureFetchCount = 0; fetchState = { albumsDone: false, featuresDone: false, itunesDone: false, featDone: false };
         deepSearchDone = false; deepSearchAddedCount = 0; isDeepSearchRunning = false;
         sessionSearchQuery = ""; document.getElementById('local-search-input').value = ''; clearSniperMode();
+        // 🆕 크로스매치도 초기화 (새 아티스트 = 새 컨텍스트)
+        crossmatchMembers = []; crossmatchMatches = {};
+        if (typeof renderCrossmatchBanner === 'function') renderCrossmatchBanner();
         const epoch = ++_fetchEpoch;
         document.getElementById('artist-selection-container').classList.add('hidden'); document.getElementById('status-message').classList.remove('hidden'); showSkeletonCards();
         window._skeletonStartedAt = Date.now();
@@ -1952,7 +2024,10 @@ html, body, #main-scroll-area, #studio-view {
             const card = document.createElement('div'); const matchedClass = it.sessionMatched ? 'border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'border-zinc-800/50';
             const isDiscogsOnly = it.source === 'discogs-only';
             const onlyClass = isDiscogsOnly ? 'border-[#a238ff]/40' : '';
-            card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} ${onlyClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; card.setAttribute('data-memo-id', it.id);
+            // 🆕 크로스매치 매칭 확인
+            const cmMatched = crossmatchMatches[it.id];
+            const cmClass = cmMatched ? ' cm-matched' : '';
+            card.className = `group bg-zinc-900/40 rounded-2xl overflow-hidden relative border ${matchedClass} ${onlyClass}${cmClass} cursor-pointer hover:border-[#10b981] md:hover:-translate-y-2 transition-all shadow-lg`; card.setAttribute('data-memo-id', it.id);
             card.onclick = () => {
                 // ripple 효과 + 햅틱
                 card.classList.remove('ripple-effect');
@@ -1979,9 +2054,15 @@ html, body, #main-scroll-area, #studio-view {
             const sourceBadge = it.source === 'itunes' ? '<span class="absolute top-2 left-2 bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🍎 Apple</span>'
                 : isDiscogsOnly ? '<span class="absolute top-2 left-2 bg-[#a238ff]/80 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">🔍 Discogs</span>'
                 : '';
+            // 🆕 크로스매치 매칭된 세션맨 뱃지
+            let cmBadgesHtml = '';
+            if (cmMatched && cmMatched.length > 0) {
+                cmBadgesHtml = `<div class="cm-match-badges">${cmMatched.map(name => `<span class="cm-match-badge">${name}</span>`).join('')}</div>`;
+            }
             card.innerHTML = `${hasMemo ? '<div class="memo-dot"></div>' : ''}<div class="relative aspect-square overflow-hidden bg-zinc-800"><img src="${cover}" onerror="this.src='https://placehold.co/300x300/18181b/10b981?text=No+Cover'" class="w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700">
             ${sourceBadge}
             ${originBadgeHtml}
+            ${cmBadgesHtml}
             <button onclick="toggleFavorite(event, JSON.parse(this.dataset.item), '${type}')" data-item="${safeIt}" class="absolute top-2 right-2 md:top-3 md:right-3 p-2 md:p-2.5 bg-black/60 backdrop-blur-md rounded-full z-20"><svg class="w-4 h-4 md:w-5 md:h-5 ${isFav?'card-fav-active text-[#10b981] fill-current':'text-white'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="p-3 md:p-4"><h4 class="font-bold text-[11px] md:text-sm truncate leading-tight">${it.title}</h4><p class="text-zinc-500 text-[9px] md:text-[11px] mt-1 font-bold uppercase tracking-wider">${year}${isDiscogsOnly && it.artist?.name ? ' · ' + it.artist.name : ''}</p></div>`;
             g.appendChild(card);
         });
@@ -1990,7 +2071,36 @@ html, body, #main-scroll-area, #studio-view {
     window.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search);
         const type = params.get('type'), id = params.get('id'), source = params.get('source') || 'deezer';
-        if (type && id) {
+        const chainParam = params.get('chain');
+
+        // 🆕 체인 URL 복원 우선 처리
+        if (chainParam) {
+            restoreChainFromUrl(chainParam).then(restored => {
+                if (restored.length > 0) {
+                    diggingChain = restored;
+                    // 마지막 노드를 현재로 열기
+                    const last = restored[restored.length - 1];
+                    // URL의 type/id/source를 마지막 노드로 동기화
+                    const url = new URL(window.location);
+                    url.searchParams.set('type', last.type);
+                    url.searchParams.set('id', last.albumId);
+                    url.searchParams.set('source', last.source);
+                    url.searchParams.delete('chain');
+                    window.history.replaceState({}, '', url);
+                    // 앨범 fetch → 스튜디오뷰 열기
+                    if (last.source === 'itunes') {
+                        loadJSONP(`https://itunes.apple.com/lookup?id=${last.albumId}&callback=handleItunesDeepLink`);
+                    } else {
+                        loadJSONP(`https://api.deezer.com/${last.type}/${last.albumId}?output=jsonp&callback=handleDeepLinkInit`);
+                    }
+                    setTimeout(() => {
+                        updateChainContextBanner();
+                        renderChainBar();
+                        showToast(`🕸️ 체인 복원: ${restored.length}개 노드`, "success");
+                    }, 800);
+                }
+            });
+        } else if (type && id) {
             if(source === 'itunes') { loadJSONP(`https://itunes.apple.com/lookup?id=${id}&callback=handleItunesDeepLink`); }
             else { loadJSONP(`https://api.deezer.com/${type}/${id}?output=jsonp&callback=handleDeepLinkInit`); }
         }
@@ -2148,6 +2258,242 @@ html, body, #main-scroll-area, #studio-view {
         diggingChain = [];
         updateChainContextBanner();
         showToast("체인 디깅 종료", "info");
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    // 🆕 세션맨 크로스매칭 (여러 명 공통/교집합 참여 앨범)
+    // ═══════════════════════════════════════════════════════════
+
+    window.addCrossmatchMember = function(name, role) {
+        if (!name) return;
+        const exists = crossmatchMembers.some(m => m.name.toLowerCase() === name.toLowerCase());
+        if (exists) {
+            showToast(`${name} 은(는) 이미 크로스매치에 있습니다`, "info");
+            return;
+        }
+        if (crossmatchMembers.length >= 5) {
+            showToast("크로스매치는 최대 5명까지 추가 가능합니다", "error");
+            return;
+        }
+        crossmatchMembers.push({ name, role: role || '' });
+        if (navigator.vibrate) navigator.vibrate(8);
+        renderCrossmatchBanner();
+        showToast(`+ ${name}`, "success");
+    };
+
+    window.removeCrossmatchMember = function(name) {
+        crossmatchMembers = crossmatchMembers.filter(m => m.name.toLowerCase() !== name.toLowerCase());
+        renderCrossmatchBanner();
+        // 매칭 상태도 초기화 (다시 실행 버튼 누르도록)
+        crossmatchMatches = {};
+        applyCrossmatchHighlight();
+    };
+
+    window.clearCrossmatch = function() {
+        if (navigator.vibrate) navigator.vibrate(10);
+        crossmatchMembers = [];
+        crossmatchMatches = {};
+        renderCrossmatchBanner();
+        applyCrossmatchHighlight();
+        showToast("크로스매치 초기화", "info");
+    };
+
+    window.toggleCrossmatchMode = function() {
+        crossmatchMode = (crossmatchMode === 'AND') ? 'OR' : 'AND';
+        renderCrossmatchBanner();
+        if (Object.keys(crossmatchMatches).length > 0) {
+            applyCrossmatchHighlight();  // 기존 매칭 재계산
+        }
+    };
+
+    function renderCrossmatchBanner() {
+        const banner = document.getElementById('crossmatch-banner');
+        const membersEl = document.getElementById('crossmatch-members');
+        const hintEl = document.getElementById('crossmatch-hint');
+        const modeBtn = document.getElementById('crossmatch-mode-toggle');
+        const runBtn = document.getElementById('crossmatch-run-btn');
+        if (!banner) return;
+
+        if (crossmatchMembers.length === 0) {
+            banner.classList.add('hidden');
+            return;
+        }
+        banner.classList.remove('hidden');
+
+        membersEl.innerHTML = crossmatchMembers.map(m => {
+            const nameEsc = m.name.replace(/"/g, '&quot;');
+            return `<span class="cm-chip">
+                <span>${m.name}</span>
+                ${m.role ? `<span class="cm-chip-role">${m.role}</span>` : ''}
+                <button onclick="removeCrossmatchMember('${nameEsc}')" title="제거">×</button>
+            </span>`;
+        }).join('');
+
+        if (modeBtn) {
+            modeBtn.textContent = crossmatchMode;
+            modeBtn.onclick = toggleCrossmatchMode;
+            modeBtn.title = crossmatchMode === 'AND' ? '모든 멤버 참여 (교집합)' : '한 명 이상 참여 (합집합)';
+        }
+
+        if (runBtn) {
+            runBtn.onclick = runCrossmatch;
+        }
+
+        if (hintEl) {
+            const modeDesc = crossmatchMode === 'AND' ? '모두 참여한' : '한 명 이상 참여한';
+            const matched = Object.keys(crossmatchMatches).length;
+            if (matched > 0) {
+                hintEl.textContent = `✓ ${matched}장 매칭 (${modeDesc}) · "실행" 다시 누르면 재계산`;
+            } else {
+                hintEl.textContent = `${crossmatchMembers.length}명이 ${modeDesc} 앨범 찾기`;
+            }
+        }
+    }
+
+    async function runCrossmatch() {
+        if (crossmatchMembers.length < 2) {
+            showToast("크로스매치는 2명 이상 필요합니다", "info");
+            return;
+        }
+        if (!currentArtist) {
+            showToast("먼저 아티스트를 선택해주세요", "error");
+            return;
+        }
+        const runBtn = document.getElementById('crossmatch-run-btn');
+        if (runBtn) { runBtn.disabled = true; runBtn.textContent = '...'; runBtn.style.opacity = '0.5'; }
+
+        const hintEl = document.getElementById('crossmatch-hint');
+        if (hintEl) hintEl.textContent = `🔄 ${crossmatchMembers.length}명 매칭 중...`;
+
+        try {
+            // 각 멤버별 병렬 fetch — 현재 아티스트의 디스코그래피 중 그 세션맨이 참여한 앨범 제목들
+            const results = await Promise.all(
+                crossmatchMembers.map(m =>
+                    fetch(`/api/getDiscogs?deepSearch=true&artistName=${encodeURIComponent(currentArtist)}&sessionName=${encodeURIComponent(m.name)}`)
+                        .then(r => r.ok ? r.json() : { matchedTitles: [] })
+                        .then(d => ({ name: m.name, titles: (d.matchedTitles || []).map(t => superCleanTitle(t)) }))
+                        .catch(() => ({ name: m.name, titles: [] }))
+                )
+            );
+
+            // 교차 매칭 계산
+            const allAlbums = [...albumsData.regular, ...albumsData.ep, ...albumsData.compilation, ...albumsData.live, ...albumsData.features];
+            crossmatchMatches = {};
+
+            allAlbums.forEach(album => {
+                const albTitle = superCleanTitle(album.title);
+                const matchedBy = [];
+                results.forEach(r => {
+                    const hit = r.titles.some(t => albTitle.includes(t) || t.includes(albTitle));
+                    if (hit) matchedBy.push(r.name);
+                });
+
+                const passes = (crossmatchMode === 'AND')
+                    ? matchedBy.length === crossmatchMembers.length
+                    : matchedBy.length > 0;
+
+                if (passes) {
+                    crossmatchMatches[album.id] = matchedBy;
+                }
+            });
+
+            const matchCount = Object.keys(crossmatchMatches).length;
+            if (matchCount === 0) {
+                showToast(`매칭되는 앨범이 없습니다 (${crossmatchMode})`, "info");
+            } else {
+                showToast(`🎯 ${matchCount}장 매칭! (${crossmatchMode})`, "success");
+                if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
+            }
+            applyCrossmatchHighlight();
+            renderCrossmatchBanner();
+        } catch (e) {
+            console.error('crossmatch error:', e);
+            showToast("크로스매치 실패 (네트워크 오류)", "error");
+        } finally {
+            if (runBtn) { runBtn.disabled = false; runBtn.textContent = '실행'; runBtn.style.opacity = ''; }
+        }
+    }
+
+    function applyCrossmatchHighlight() {
+        // 카드 재렌더링 — cm-matched 클래스와 뱃지가 적용됨
+        if (isFavoritesTab) renderFavorites(); else renderAllSections();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+
+    // 🆕 체인 경로 URL로 인코딩 (한 노드: id~source~type~title 최소 정보)
+    //    구분자: | (노드 간), ~ (필드 간)
+    //    title은 복구 시 fetch로 덮어씌우므로 없어도 OK, 있으면 preview에 사용
+    function encodeChainToUrl(chain) {
+        return chain.map(n => {
+            const parts = [
+                n.albumId || '',
+                n.source || 'deezer',
+                n.type || 'album',
+                encodeURIComponent((n.artist || '').slice(0, 40)),
+                encodeURIComponent((n.albumTitle || '').slice(0, 60))
+            ];
+            return parts.join('~');
+        }).join('|');
+    }
+
+    // 🆕 URL에서 체인 복원
+    async function restoreChainFromUrl(encoded) {
+        if (!encoded) return [];
+        const nodes = encoded.split('|').map(chunk => {
+            const [id, source, type, artist, albumTitle] = chunk.split('~');
+            return {
+                albumId: id,
+                source: source || 'deezer',
+                type: type || 'album',
+                artist: artist ? decodeURIComponent(artist) : '',
+                albumTitle: albumTitle ? decodeURIComponent(albumTitle) : '',
+                cover: ''  // 나중에 fetch로 채움
+            };
+        }).filter(n => n.albumId);
+        return nodes;
+    }
+
+    // 🆕 체인 공유 — URL 복사 + 네이티브 공유 시트(가능한 경우)
+    window.shareChain = async function() {
+        if (!diggingChain || diggingChain.length < 2) {
+            showToast("공유할 체인이 없습니다 (2개 이상 필요)", "info");
+            return;
+        }
+        if (navigator.vibrate) navigator.vibrate(10);
+
+        const encoded = encodeChainToUrl(diggingChain);
+        const url = new URL(window.location.origin + window.location.pathname);
+        url.searchParams.set('chain', encoded);
+        const shareUrl = url.toString();
+
+        // 미리보기 텍스트
+        const pathText = diggingChain.map(n => n.artist).join(' → ');
+        const shareText = `🕸️ Can You Dig It? 디깅 경로\n${pathText}\n\n${shareUrl}`;
+
+        // Web Share API 시도 (모바일/지원 브라우저)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Can You Dig It? 디깅 경로',
+                    text: `🕸️ ${pathText}`,
+                    url: shareUrl
+                });
+                showToast("공유 완료!", "success");
+                return;
+            } catch (e) {
+                // 사용자 취소 또는 실패 — 폴백으로 진행
+                if (e.name === 'AbortError') return;
+            }
+        }
+
+        // 폴백: 클립보드 복사
+        try {
+            await navigator.clipboard.writeText(shareText);
+            showToast(`🔗 체인 링크 복사됨 (${diggingChain.length}개 노드)`, "success");
+        } catch (e) {
+            showToast("클립보드 복사 실패", "error");
+        }
     };
 
     function renderChainBar() {
@@ -2491,7 +2837,22 @@ html, body, #main-scroll-area, #studio-view {
         const filteredGroups = activeCreditFilter === 'ALL' ? groups : { [activeCreditFilter]: groups[activeCreditFilter] || [] };
         Object.entries(filteredGroups).forEach(([group, members]) => {
             if (!members.length) return; const groupEl = document.createElement('div'); groupEl.className = 'credit-group'; groupEl.innerHTML = `<div class="credit-group-label">${group}</div>`;
-            members.forEach(ar => { const cleanName = sanitizeText(ar.name).replace(/\s\(\d+\)$/, ''); const roleText = sanitizeText(ar.role) || '–'; const item = document.createElement('div'); item.className = 'credit-item'; item.innerHTML = `<span class="role-pill" title="${roleText.replace(/"/g,'&quot;')}">${roleText}</span><button class="session-trigger" data-name="${cleanName.replace(/"/g,'&quot;')}" data-role="${roleText.replace(/"/g,'&quot;')}">${cleanName}</button>`; groupEl.appendChild(item); }); container.appendChild(groupEl);
+            members.forEach(ar => {
+                const cleanName = sanitizeText(ar.name).replace(/\s\(\d+\)$/, '');
+                const roleText = sanitizeText(ar.role) || '–';
+                const item = document.createElement('div');
+                item.className = 'credit-item';
+                const nameEsc = cleanName.replace(/"/g,'&quot;');
+                const roleEsc = roleText.replace(/"/g,'&quot;');
+                const alreadyAdded = crossmatchMembers.some(m => m.name.toLowerCase() === cleanName.toLowerCase());
+                item.innerHTML = `
+                    <span class="role-pill" title="${roleEsc}">${roleText}</span>
+                    <button class="session-trigger" data-name="${nameEsc}" data-role="${roleEsc}">${cleanName}</button>
+                    <button class="crossmatch-add-btn ${alreadyAdded ? 'added' : ''}" data-name="${nameEsc}" data-role="${roleEsc}" title="${alreadyAdded ? '이미 크로스매치에 있음' : '크로스매치에 추가'}">
+                        ${alreadyAdded ? '✓' : '+'}
+                    </button>`;
+                groupEl.appendChild(item);
+            }); container.appendChild(groupEl);
         });
     }
 
@@ -2576,7 +2937,26 @@ html, body, #main-scroll-area, #studio-view {
         } catch(e) { loading.classList.add('hidden'); content.innerHTML = `<p class="text-rose-400 text-sm text-center py-4">로드 실패: ${e.message}</p>`; }
     }
 
-    document.getElementById('studio-view').addEventListener('click', function(e) { const trigger = e.target.closest('.session-trigger'); if (trigger) { const name = trigger.getAttribute('data-name'); const role = trigger.getAttribute('data-role'); openSessionPanel(name, role); } });
+    document.getElementById('studio-view').addEventListener('click', function(e) {
+        const cmBtn = e.target.closest('.crossmatch-add-btn');
+        if (cmBtn) {
+            e.stopPropagation();
+            const name = cmBtn.getAttribute('data-name');
+            const role = cmBtn.getAttribute('data-role');
+            addCrossmatchMember(name, role);
+            // 버튼 상태 즉시 업데이트
+            cmBtn.classList.add('added');
+            cmBtn.textContent = '✓';
+            cmBtn.title = '이미 크로스매치에 있음';
+            return;
+        }
+        const trigger = e.target.closest('.session-trigger');
+        if (trigger) {
+            const name = trigger.getAttribute('data-name');
+            const role = trigger.getAttribute('data-role');
+            openSessionPanel(name, role);
+        }
+    });
 
     let _discogsAbort = null; let _wikiAbort = null;
     async function fetchDiscogsCreditsFromServer(title, artist) {
