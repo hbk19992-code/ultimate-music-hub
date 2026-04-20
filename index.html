@@ -897,7 +897,17 @@ html, body, #main-scroll-area, #studio-view {
     let allUserMemos = {}; 
 
     function superCleanTitle(title) { return !title ? "" : cleanTitleForSearch(title).toLowerCase().replace(/[^a-z0-9가-힣]/g, ''); }
-    function cleanTitleForSearch(title) { if (!title) return ""; return title.replace(/\s*[\(\[].*?(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*?[\)\]]/gi, '').replace(/\s*-\s*(remaster|deluxe|edition|version|bonus|live|expanded|feat|ft).*$/gi, '').trim(); }
+    function cleanTitleForSearch(title) {
+        if (!title) return "";
+        return title
+            .replace(/\s*[\(\[].*?(remaster|remastered|deluxe|edition|version|bonus|live|expanded|remix|stereo|mono|reissue|feat|ft|cd|lp|legacy|anniversary|collector|sacd|extended|alternate|take|japan|japanese|us|uk|eu|europe|original|complete).*?[\)\]]/gi, '')
+            .replace(/\s*-\s*(remaster|remastered|deluxe|edition|version|bonus|live|expanded|remix|stereo|mono|reissue|feat|ft|cd|lp|legacy|anniversary|collector|sacd|extended|alternate|take|japan|japanese|us|uk|eu|europe|original|complete).*$/gi, '')
+            .replace(/\s*\(?\s*\d+(st|nd|rd|th)\s+(anniversary|edition|year).*?\)?/gi, '')
+            .replace(/\s*\(?\s*(feat\.?|featuring|ft\.?|with)\s+[^)]+\)?/gi, '')
+            .replace(/\s+(19|20)\d{2}\s*(remaster|remastered|mix|version)?$/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
     
     function isStrictMatch(targetStr, queryStr) { if (!targetStr || !queryStr) return false; return targetStr.toLowerCase().includes(queryStr.toLowerCase()); }
 
@@ -1883,15 +1893,17 @@ html, body, #main-scroll-area, #studio-view {
             const d = await r.json(); 
             let matchCount = 0;
             
-            if (d.matchedTitles?.length) { 
-                const snipedTitles = d.matchedTitles.map(t => superCleanTitle(t)); 
-                targetAlbums.forEach(album => { 
-                    const albTitle = superCleanTitle(album.title); 
-                    if (snipedTitles.some(st => albTitle.includes(st) || st.includes(albTitle))) { 
-                        album.sessionMatched = true; 
-                        matchCount++; 
-                    } 
-                }); 
+            if (d.matchedTitles?.length) {
+                const snipedTitles = d.matchedTitles.map(t => superCleanTitle(t)).filter(t => t.length >= 3);
+                targetAlbums.forEach(album => {
+                    const albTitle = superCleanTitle(album.title);
+                    if (albTitle.length < 3) return;
+                    if (snipedTitles.some(st => albTitle.includes(st) || st.includes(albTitle))) {
+                        album.sessionMatched = true;
+                        matchCount++;
+                    }
+                });
+                console.log(`[스나이퍼] 서버 ${d.matchedTitles.length}개, 정제 ${snipedTitles.length}개, 매칭 ${matchCount}개`);
             }
             
             statusMsg.classList.add('hidden');
