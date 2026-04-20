@@ -67,23 +67,31 @@ body.pixel-theme .toast-animate { border: 4px solid #fff !important; background:
 /* 크레딧 역할 그룹 */
 .credit-group { margin-bottom: 20px; }
 .credit-group-label { font-size: 9px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; color: #52525b; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #18181b; }
-.credit-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 10px; transition: background 0.15s; margin-bottom: 4px; position: relative; }
+.credit-item {
+    display: flex; flex-direction: row; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 10px;
+    transition: background 0.15s; margin-bottom: 4px;
+}
 .credit-item:hover { background: rgba(16,185,129,0.05); }
+.credit-item-main {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 3px;
+}
 .credit-item .role-pill { display: inline-block; background: #18181b; color: #10b981; border: 1px solid #27272a; border-radius: 4px; padding: 2px 7px; font-size: 9px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: flex-start; }
-.session-trigger { font-size: 13px; font-weight: 800; color: #fff; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 32px); background: none; border: none; padding: 0; cursor: pointer; }
+.session-trigger { font-size: 13px; font-weight: 800; color: #fff; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; background: none; border: none; padding: 0; cursor: pointer; }
 .session-trigger:hover { color: #10b981; }
-/* 🆕 크로스매치 추가 버튼 */
+/* 🆕 크로스매치 추가 버튼 — flex row 안에 자연스럽게 */
 .crossmatch-add-btn {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-    width: 24px; height: 24px;
+    flex-shrink: 0;
+    width: 28px; height: 28px;
     background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.3);
     color: #22d3ee; border-radius: 6px;
-    font-size: 13px; font-weight: 900; line-height: 1;
+    font-size: 14px; font-weight: 900; line-height: 1;
     cursor: pointer; transition: all 0.15s;
     display: flex; align-items: center; justify-content: center;
 }
-.crossmatch-add-btn:active { transform: translateY(-50%) scale(0.9); background: rgba(34,211,238,0.25); }
-.crossmatch-add-btn.added { background: rgba(34,211,238,0.3); border-color: #22d3ee; color: #67e8f9; font-size: 10px; }
+.crossmatch-add-btn:active { transform: scale(0.9); background: rgba(34,211,238,0.25); }
+.crossmatch-add-btn.added { background: rgba(34,211,238,0.3); border-color: #22d3ee; color: #67e8f9; font-size: 12px; }
 /* 🆕 크로스매치 멤버 칩 */
 .cm-chip {
     display: inline-flex; align-items: center; gap: 5px;
@@ -2278,13 +2286,24 @@ html, body, #main-scroll-area, #studio-view {
         crossmatchMembers.push({ name, role: role || '' });
         if (navigator.vibrate) navigator.vibrate(8);
         renderCrossmatchBanner();
+        // 동일 이름의 다른 + 버튼들도 업데이트
+        document.querySelectorAll(`.crossmatch-add-btn[data-name="${name.replace(/"/g, '&quot;')}"]`).forEach(b => {
+            b.classList.add('added');
+            b.textContent = '✓';
+            b.title = '이미 크로스매치에 있음';
+        });
         showToast(`+ ${name}`, "success");
     };
 
     window.removeCrossmatchMember = function(name) {
         crossmatchMembers = crossmatchMembers.filter(m => m.name.toLowerCase() !== name.toLowerCase());
         renderCrossmatchBanner();
-        // 매칭 상태도 초기화 (다시 실행 버튼 누르도록)
+        // 같은 이름의 + 버튼 상태 복원
+        document.querySelectorAll(`.crossmatch-add-btn[data-name="${name.replace(/"/g, '&quot;')}"]`).forEach(b => {
+            b.classList.remove('added');
+            b.textContent = '+';
+            b.title = '크로스매치에 추가';
+        });
         crossmatchMatches = {};
         applyCrossmatchHighlight();
     };
@@ -2846,8 +2865,10 @@ html, body, #main-scroll-area, #studio-view {
                 const roleEsc = roleText.replace(/"/g,'&quot;');
                 const alreadyAdded = crossmatchMembers.some(m => m.name.toLowerCase() === cleanName.toLowerCase());
                 item.innerHTML = `
-                    <span class="role-pill" title="${roleEsc}">${roleText}</span>
-                    <button class="session-trigger" data-name="${nameEsc}" data-role="${roleEsc}">${cleanName}</button>
+                    <div class="credit-item-main">
+                        <span class="role-pill" title="${roleEsc}">${roleText}</span>
+                        <button class="session-trigger" data-name="${nameEsc}" data-role="${roleEsc}">${cleanName}</button>
+                    </div>
                     <button class="crossmatch-add-btn ${alreadyAdded ? 'added' : ''}" data-name="${nameEsc}" data-role="${roleEsc}" title="${alreadyAdded ? '이미 크로스매치에 있음' : '크로스매치에 추가'}">
                         ${alreadyAdded ? '✓' : '+'}
                     </button>`;
